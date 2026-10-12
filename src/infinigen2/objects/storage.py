@@ -415,6 +415,20 @@ def _shelf_geometry(
         selection=instance_vertical_boards_selection,
     )
 
+    def tagged(geometry: pf.ProcNode, part: int) -> pf.ProcNode:
+        return pf.nodes.geo.store_named_attribute(
+            geometry=geometry,
+            name="spray_part",
+            value=part,
+            domain="FACE",
+            data_type="INT",
+        )
+
+    join_sides = tagged(join_sides, 0)
+    enable_back = tagged(enable_back, 1)
+    instance_horizontal_boards = tagged(instance_horizontal_boards, 2)
+    instance_vertical_boards = tagged(instance_vertical_boards, 3)
+
     join = pf.nodes.geo.join_geometry(
         [join_sides, enable_back, instance_horizontal_boards, instance_vertical_boards]
     )
@@ -580,6 +594,7 @@ def storage_cell_shelf_rand(
     row_divider_width: float | None = None,
     col_divider_width: float | None = None,
     desired_slot_aspect: float | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
     """Open cell shelf; storage_composite_rand adds sampled drawer or door fronts."""
     rng_params, rng_bevel = rng.spawn(2)
@@ -608,6 +623,8 @@ def storage_cell_shelf_rand(
     geo = pf.nodes.geo.set_material(geometry=geo, material=params.material)
     geo = mesh_util.crease_sharp(geo, threshold_degrees=30.0)
     result = pf.nodes.to_mesh_object(geo)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result, True, "spray_target", domain="FACE")
     pf.ops.modifier.bevel(
         result, width=pf.random.uniform(rng_bevel, 0.001, 0.005), segments=2
     )

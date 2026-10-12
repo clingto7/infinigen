@@ -8,6 +8,7 @@
 import math
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -494,7 +495,11 @@ def cup_material_rand(rng: pf.RNG, vector: pf.ProcNode[pf.Vector]) -> pf.Materia
     return material_func(rng_func, vector)
 
 
-def cup_rand(rng: pf.RNG, material: pf.Material | None = None) -> VaseResult:
+def cup_rand(
+    rng: pf.RNG,
+    material: pf.Material | None = None,
+    spray_tags: bool = False,
+) -> VaseResult:
     (
         rng_diameter,
         rng_height,
@@ -547,4 +552,13 @@ def cup_rand(rng: pf.RNG, material: pf.Material | None = None) -> VaseResult:
     thickness = pf.random.uniform(rng_thickness, 0.002, 0.004)
     pf.ops.modifier.solidify(obj, thickness=thickness)
     pf.ops.modifier.subdivide_surface(obj, levels=1, _skip_apply=True)
+    if spray_tags:
+        # A one-piece coating candidate. The coating task itself still needs review.
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return VaseResult(mesh=obj)

@@ -96,6 +96,13 @@ def _door_body_geometry(
     )
     panel = pf.nodes.geo.set_material(panel, material=panel_material)
 
+    frame = pf.nodes.geo.store_named_attribute(
+        geometry=frame, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    panel = pf.nodes.geo.store_named_attribute(
+        geometry=panel, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+
     door = pf.nodes.geo.join_geometry([frame, panel])
     return pf.nodes.geo.transform(geometry=door, rotation=(1.5708, 0.0, 1.5708))
 
@@ -152,6 +159,7 @@ def door_body_rand(
     dimensions: pf.Vector | None = None,
     frame_material: pf.Material | None = None,
     panel_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> DoorResult:
     rng, rng_mat_choice, rng_mat = rng.spawn(3)
     if dimensions is None:
@@ -161,7 +169,7 @@ def door_body_rand(
         dimensions = pf.Vector((thickness, width, height))
 
     vec = pf.nodes.shader.coord().uv
-    if frame_material is None and panel_material is None:
+    if frame_material is None and panel_material is None and not spray_tags:
         mat_func = pf.control.choice(
             rng_mat_choice,
             [(_same_opaque, 2.0), (_two_opaque, 0.5), (_opaque_and_glass, 0.5)],
@@ -169,6 +177,10 @@ def door_body_rand(
         mats = mat_func(rng_mat, vec)
         frame_material = mats[0]
         panel_material = mats[1]
+    if spray_tags and frame_material is None:
+        frame_material = furniture_material_rand(rng_mat, vec)
+    if spray_tags and panel_material is None:
+        panel_material = frame_material
 
     thickness = dimensions.x
     n_panels = pf.random.randint(rng, 1, 5)
@@ -184,7 +196,10 @@ def door_body_rand(
         panel_thickness=thickness * pf.random.uniform(rng, 0.35, 0.5),
     )
     bevel_width = pf.random.uniform(rng, 0.001, 0.005)
-    return _door_body_finish(geo, bevel_width=bevel_width)
+    result = _door_body_finish(geo, bevel_width=bevel_width)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def door_with_handle(

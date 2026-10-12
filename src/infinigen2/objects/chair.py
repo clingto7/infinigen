@@ -10,6 +10,7 @@ from collections.abc import Callable
 from functools import cache, partial
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 from procfunc.nodes.util.bpy_node_info import NodeDataType
@@ -1800,6 +1801,7 @@ def _dining_seat_with_back(
     back_sink: float,
     slant: float,
     back_bend: float,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     """The seat: a pan with the given back seated on its rear edge. Builds the pan,
     sets the back's rear face on the pan's rear edge, bends the back to follow that
@@ -1836,6 +1838,14 @@ def _dining_seat_with_back(
     back = _shear_back(
         back, slant=slant * -1.0, base_z=base_z, height=back_height, bend=back_bend
     )
+
+    if spray_tags:
+        seat = pf.nodes.geo.store_named_attribute(
+            geometry=seat, name="spray_part", value=0, domain="FACE", data_type="INT"
+        )
+        back = pf.nodes.geo.store_named_attribute(
+            geometry=back, name="spray_part", value=1, domain="FACE", data_type="INT"
+        )
 
     obj = pf.nodes.to_mesh_object(seat)
     seat_round = pf.random.uniform(rng, 0.05, 0.49) * thickness
@@ -1916,7 +1926,13 @@ def chair_base_stable_rand(
     return base_fn(rng, dimensions, material, close_edges=close_edges)
 
 
-def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairResult:
+def chair_dining_rand(
+    rng: pf.RNG,
+    dimensions: pf.Vector | None = None,
+    back_style: str | None = None,
+    base_style: str | None = None,
+    spray_tags: bool = False,
+) -> ChairResult:
     """Wooden dining chair: bezier-outline seat pan + slat or solid back bent to
     follow the seat's rear edge, on straight legs. Real chair dimensions."""
     (
@@ -1944,12 +1960,16 @@ def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> Chair
     material1 = cache(partial(furniture_material_rand, rng_mat1, vec))
     material2 = cache(partial(furniture_material_rand, rng_mat2, vec))
     fabric = cache(partial(fabric_sturdy_rand, rng_fabric, vec))
-    seat_material_fn = pf.control.choice(
-        rng_seat_sel, [(material1, 2.0), (fabric, 1.0)]
+    seat_material_fn = (
+        material1 if spray_tags else pf.control.choice(
+            rng_seat_sel, [(material1, 2.0), (fabric, 1.0)]
+        )
     )
     seat_material = seat_material_fn()
-    backrest_material_fn = pf.control.choice(
-        rng_backrest_sel, [(material1, 2.0), (fabric, 1.0)]
+    backrest_material_fn = (
+        material1 if spray_tags else pf.control.choice(
+            rng_backrest_sel, [(material1, 2.0), (fabric, 1.0)]
+        )
     )
     backrest_material = backrest_material_fn()
     leg_material_fn = pf.control.choice(
@@ -1968,9 +1988,14 @@ def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> Chair
     thickness = pf.random.clip_gaussian(rng, 0.06, 0.04, 0.02, 0.2)
 
     back_height = pf.random.uniform(rng, 0.35, 0.55)
-    back_fn = pf.control.choice(
+    back_fn = {
+        "slat": _dining_slat_back,
+        "solid": _dining_solid_back,
+    }.get(back_style) if back_style is not None else pf.control.choice(
         rng_back_sel, [(_dining_slat_back, 0.6), (_dining_solid_back, 0.4)]
     )
+    if back_fn is None:
+        raise ValueError(f"Unknown back_style: {back_style}")
     # the pan mid-plane is the one depth still inside the pan for any round-over
     back_sink = thickness * 0.5
     back_built = back_height + back_sink
@@ -1996,6 +2021,7 @@ def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> Chair
         back_sink=back_sink,
         slant=slant,
         back_bend=bend_frac * 0.15 * back_height * -1.0,
+        spray_tags=spray_tags,
     )
 
     leg_spread = pf.random.uniform(rng, 0.8, 0.95)
@@ -2018,13 +2044,18 @@ def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> Chair
             material,
         )
 
-    base_fn = pf.control.choice(
+    base_fn = {
+        "straight": _chair_straight_base_rand,
+        "wheeled": wheeled_fn,
+    }.get(base_style) if base_style is not None else pf.control.choice(
         rng_base_sel,
         [
             (_chair_straight_base_rand, 3.0),
             (wheeled_fn, 1.0),
         ],
     )
+    if base_fn is None:
+        raise ValueError(f"Unknown base_style: {base_style}")
     base_dimensions = (
         dimensions[0] * leg_scale,
         dimensions[1] * leg_scale,
@@ -2032,7 +2063,17 @@ def chair_dining_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> Chair
     )
     base = base_fn(rng_base, base_dimensions, leg_material).mesh
 
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            base,
+            np.full(len(base.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+
     pf.ops.object.join(seat, base)
+    if spray_tags:
+        pf.ops.attr.write_attribute(seat, True, "spray_target", domain="FACE")
     seat = pf.nodes.to_mesh_object(mesh.crease_sharp(seat, threshold_degrees=40.0))
     pf.ops.modifier.subdivide_surface(seat, levels=_CHAIR_SUBDIV, _skip_apply=True)
     return ChairResult(mesh=seat)
