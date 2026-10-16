@@ -1,95 +1,95 @@
 index,generator,geometry_screen_passed,near_zero_triangle_fraction_max,triangles_min,triangles_max,contact_sheet,owner,verdict,family,sub_structures,duplicate_of,coarse_coating_task,notes
-0,infinigen2.objects.random_primitives.primitive_with_effect_rand,True,0.0,12,16896,contact_sheets/000_primitive_with_effect_rand.jpg,A,,,,,,
-1,infinigen2.objects.ant_landscape.landscape_canyon_rand,True,0.0,498002,498002,contact_sheets/001_landscape_canyon_rand.jpg,A,,,,,,
-2,infinigen2.objects.ant_landscape.landscape_cliff_rand,True,0.0,498002,498002,contact_sheets/002_landscape_cliff_rand.jpg,A,,,,,,
-3,infinigen2.objects.ant_landscape.landscape_generalized_rand,True,0.0,498002,498002,contact_sheets/003_landscape_generalized_rand.jpg,A,,,,,,
-4,infinigen2.objects.ant_landscape.landscape_mesa_rand,True,0.0,498002,498002,contact_sheets/004_landscape_mesa_rand.jpg,A,,,,,,
-5,infinigen2.objects.ant_landscape.landscape_mountain_rand,True,0.0,498002,498002,contact_sheets/005_landscape_mountain_rand.jpg,A,,,,,,
-6,infinigen2.objects.ant_landscape.landscape_rand,True,0.0,498002,498002,contact_sheets/006_landscape_rand.jpg,A,,,,,,
-7,infinigen2.objects.ant_landscape.landscape_river_rand,True,0.0,498002,498002,contact_sheets/007_landscape_river_rand.jpg,A,,,,,,
-8,infinigen2.objects.ant_landscape.landscape_volcano_rand,True,0.0,498002,498002,contact_sheets/008_landscape_volcano_rand.jpg,A,,,,,,
-9,infinigen2.objects.bathroom_hardware.hardware_bathroom_rand,True,0.0,36,1528,contact_sheets/009_hardware_bathroom_rand.jpg,A,,,,,,
-10,infinigen2.objects.bathroom_hardware.hardware_hook_rand,True,0.0,36,564,contact_sheets/010_hardware_hook_rand.jpg,A,,,,,,
-11,infinigen2.objects.bathroom_hardware.hardware_holder_rand,True,0.0,36,564,contact_sheets/011_hardware_holder_rand.jpg,A,,,,,,
-12,infinigen2.objects.bathroom_hardware.hardware_bar_rand,True,0.0,60,940,contact_sheets/012_hardware_bar_rand.jpg,A,,,,,,
-13,infinigen2.objects.bathroom_hardware.hardware_ring_rand,True,0.0,1176,1528,contact_sheets/013_hardware_ring_rand.jpg,A,,,,,,
-14,infinigen2.objects.bathtub.bathtub_rand,True,0.0,1176,1176,contact_sheets/014_bathtub_rand.jpg,A,,,,,,
-15,infinigen2.objects.bathtub.sink_bathroom_rand,True,0.0,1176,1176,contact_sheets/015_sink_bathroom_rand.jpg,A,,,,,,
-16,infinigen2.objects.toilet.toilet_rand,True,0.0,14316,15596,contact_sheets/016_toilet_rand.jpg,A,,,,,,
-17,infinigen2.objects.boulder.boulder_abstract_rand,True,0.0,4740,173660,contact_sheets/017_boulder_abstract_rand.jpg,A,,,,,,
-18,infinigen2.objects.boulder.boulder_cauliflower_rand,True,0.0,2714,99666,contact_sheets/018_boulder_cauliflower_rand.jpg,A,,,,,,
-19,infinigen2.objects.boulder.boulder_crystalline_rand,True,0.0,2444,91056,contact_sheets/019_boulder_crystalline_rand.jpg,A,,,,,,
-20,infinigen2.objects.boulder.boulder_flatstones_rand,True,0.0,3772,135564,contact_sheets/020_boulder_flatstones_rand.jpg,A,,,,,,
-21,infinigen2.objects.boulder.boulder_rand,True,0.0,3348,106752,contact_sheets/021_boulder_rand.jpg,A,,,,,,
-22,infinigen2.objects.boulder.boulder_ridged_rand,True,0.0,3500,126672,contact_sheets/022_boulder_ridged_rand.jpg,A,,,,,,
-23,infinigen2.objects.boulder.boulder_rock_rand,True,0.0,3500,126672,contact_sheets/023_boulder_rock_rand.jpg,A,,,,,,
-24,infinigen2.objects.boulder.rock_rand,True,0.0,598,34400,contact_sheets/024_rock_rand.jpg,A,,,,,,
-25,infinigen2.objects.sofa.sofa_rand,True,0.0,1584,5616,contact_sheets/025_sofa_rand.jpg,A,,,,,,
-26,infinigen2.objects.cushion.cushion_bed_pillow_rand,True,0.0,144,144,contact_sheets/026_cushion_bed_pillow_rand.jpg,A,,,,,,
-27,infinigen2.objects.cushion.cushion_throw_pillow_rand,True,0.0,144,432,contact_sheets/027_cushion_throw_pillow_rand.jpg,A,,,,,,
-28,infinigen2.objects.window.window_rand,True,0.0,304,2548,contact_sheets/028_window_rand.jpg,A,,,,,,
-29,infinigen2.objects.window.window_composite_rand,True,0.0,304,5246,contact_sheets/029_window_composite_rand.jpg,A,,,,,,
-30,infinigen2.objects.window.window_rectangular_composite_rand,True,0.0,304,8742,contact_sheets/030_window_rectangular_composite_rand.jpg,A,,,,,,
-31,infinigen2.objects.window.window_curved_rand,True,0.0,304,616,contact_sheets/031_window_curved_rand.jpg,A,,,,,,
-32,infinigen2.objects.window.curtain_rand,True,0.0,3000,6692,contact_sheets/032_curtain_rand.jpg,A,,,,,,
-33,infinigen2.objects.ceiling_light.light_ceiling_rand,True,0.0,490,490,contact_sheets/033_light_ceiling_rand.jpg,A,,,,,,
-34,infinigen2.objects.table.table_dining_rand,True,0.0,524,1708,contact_sheets/034_table_dining_rand.jpg,A,,,,,,
-35,infinigen2.objects.table.table_dining_circular_rand,True,0.0,924,1116,contact_sheets/035_table_dining_circular_rand.jpg,A,,,,,,
-36,infinigen2.objects.desk.desk_rand,False,0.03495176340344773,660,25292,contact_sheets/036_desk_rand.jpg,A,,,,,,
-37,infinigen2.objects.table.table_coffee_rand,True,0.003813300793166565,524,10164,contact_sheets/037_table_coffee_rand.jpg,A,,,,,,
-38,infinigen2.objects.table.table_coffee_storage_rand,True,0.003813300793166565,840,10164,contact_sheets/038_table_coffee_storage_rand.jpg,A,,,,,,
-39,infinigen2.objects.table.table_side_rand,False,0.030534351145038167,524,1060,contact_sheets/039_table_side_rand.jpg,A,,,,,,
-40,infinigen2.objects.table.table_coffee_circular_rand,True,0.0,924,1116,contact_sheets/040_table_coffee_circular_rand.jpg,A,,,,,,
-41,infinigen2.objects.table.table_side_circular_rand,True,0.0,924,1116,contact_sheets/041_table_side_circular_rand.jpg,A,,,,,,
-42,infinigen2.objects.table.table_cocktail_rand,True,0.0,524,1708,contact_sheets/042_table_cocktail_rand.jpg,A,,,,,,
-43,infinigen2.objects.table.table_cocktail_circular_rand,True,0.0,924,1116,contact_sheets/043_table_cocktail_circular_rand.jpg,A,,,,,,
-44,infinigen2.objects.furniture_bases.base_straight_rand,True,0.0,496,608,contact_sheets/044_base_straight_rand.jpg,A,,,,,,
-45,infinigen2.objects.furniture_bases.base_pedestal_rand,True,0.0,416,416,contact_sheets/045_base_pedestal_rand.jpg,A,,,,,,
-46,infinigen2.objects.furniture_bases.base_square_rand,True,0.0,952,1600,contact_sheets/046_base_square_rand.jpg,A,,,,,,
-47,infinigen2.objects.chair.chair_office_rand,False,0.12679917751884853,836,5836,contact_sheets/047_chair_office_rand.jpg,B,,,,,,
-48,infinigen2.objects.chair.chair_back_rand,True,0.0,180,2232,contact_sheets/048_chair_back_rand.jpg,B,,,,,,
-49,infinigen2.objects.chair.chair_dining_rand,False,0.4624203821656051,1128,7960,contact_sheets/049_chair_dining_rand.jpg,B,,,,,,
-50,infinigen2.objects.chair.chair_rand,False,0.5,836,6120,contact_sheets/050_chair_rand.jpg,B,,,,,,
-51,infinigen2.objects.chair.chair_seat_curvy_rand,False,0.040229885057471264,348,348,contact_sheets/051_chair_seat_curvy_rand.jpg,B,,,,,,
-52,infinigen2.objects.chair.chair_seat_round_rand,True,0.0,284,284,contact_sheets/052_chair_seat_round_rand.jpg,B,,,,,,
-53,infinigen2.objects.chair.chair_base_wheeled_rand,False,0.13228862973760933,4408,5488,contact_sheets/053_chair_base_wheeled_rand.jpg,B,,,,,,
-54,infinigen2.objects.flower.flower_rand,False,0.06958438287153652,2672,8352,contact_sheets/054_flower_rand.jpg,B,,,,,,
-55,infinigen2.objects.lamp.lamp_rand,True,0.0001768033946251768,740,5656,contact_sheets/055_lamp_rand.jpg,B,,,,,,
-56,infinigen2.objects.lamp.lamp_ceiling_shade_rand,True,0.0,740,1652,contact_sheets/056_lamp_ceiling_shade_rand.jpg,B,,,,,,
-57,infinigen2.objects.lamp.lamp_desk_rand,True,0.0,740,5656,contact_sheets/057_lamp_desk_rand.jpg,B,,,,,,
-58,infinigen2.objects.monitor.monitor_rand,True,0.0,370,370,contact_sheets/058_monitor_rand.jpg,B,,,,,,
-59,infinigen2.objects.monitor.monitor_tv_rand,True,0.0,370,370,contact_sheets/059_monitor_tv_rand.jpg,B,,,,,,
-60,infinigen2.objects.lamp.lamp_floor_rand,True,0.0,740,1980,contact_sheets/060_lamp_floor_rand.jpg,B,,,,,,
-61,infinigen2.objects.bowl.bowl_rand,True,0.007030906694009082,27308,27308,contact_sheets/061_bowl_rand.jpg,B,,,,,,
-62,infinigen2.objects.vase.vase_rand,True,0.0,3260,6140,contact_sheets/062_vase_rand.jpg,B,,,,,,
-63,infinigen2.objects.vase.cup_rand,True,0.003134796238244514,1276,20476,contact_sheets/063_cup_rand.jpg,B,,,,,,
-64,infinigen2.objects.tap.tap_rand,True,0.0,1342,5646,contact_sheets/064_tap_rand.jpg,B,,,,,,
-65,infinigen2.objects.sink.sink_rand,True,0.0,5792,5792,contact_sheets/065_sink_rand.jpg,B,,,,,,
-66,infinigen2.objects.door.door_body_rand,True,0.0,1772,5492,contact_sheets/066_door_body_rand.jpg,B,,,,,,
-67,infinigen2.objects.door.door_with_handle_rand,False,0.01023778071334214,2092,7296,contact_sheets/067_door_with_handle_rand.jpg,B,,,,,,
-68,infinigen2.objects.door.door_composite_rand,False,0.026405451448040886,1140,7296,contact_sheets/068_door_composite_rand.jpg,B,,,,,,
-69,infinigen2.objects.door.door_double_rand,False,0.012219286657859974,1040,12512,contact_sheets/069_door_double_rand.jpg,B,,,,,,
-70,infinigen2.objects.handles.handle_lever_rand,False,0.041019955654102,1228,1804,contact_sheets/070_handle_lever_rand.jpg,B,,,,,,
-71,infinigen2.objects.handles.handle_bar_pull_rand,True,0.0,180,180,contact_sheets/071_handle_bar_pull_rand.jpg,B,,,,,,
-72,infinigen2.objects.drawer.drawer_rand,True,0.00589622641509434,832,1076,contact_sheets/072_drawer_rand.jpg,B,,,,,,
-73,infinigen2.objects.handles.handle_curved_pull_rand,True,0.0,764,764,contact_sheets/073_handle_curved_pull_rand.jpg,B,,,,,,
-74,infinigen2.objects.handles.handle_knob_rand,True,0.0,320,320,contact_sheets/074_handle_knob_rand.jpg,B,,,,,,
-75,infinigen2.objects.rug.rug_rand,False,0.9366786140979689,2970,5022,contact_sheets/075_rug_rand.jpg,B,,,,,,
-76,infinigen2.objects.storage.storage_cell_shelf_rand,True,0.0,588,5748,contact_sheets/076_storage_cell_shelf_rand.jpg,B,,,,,,
-77,infinigen2.objects.storage.storage_cabinet_with_door_rand,False,0.03183411214953271,1588,12580,contact_sheets/077_storage_cabinet_with_door_rand.jpg,B,,,,,,
-78,infinigen2.objects.storage.storage_drawer_door_rand,False,0.028397302904564315,2700,13380,contact_sheets/078_storage_drawer_door_rand.jpg,B,,,,,,
-79,infinigen2.objects.storage.storage_cabinet_with_base_rand,True,0.0,1084,2884,contact_sheets/079_storage_cabinet_with_base_rand.jpg,B,,,,,,
-80,infinigen2.objects.sofa.sofa_with_base_rand,True,0.0,1432,7280,contact_sheets/080_sofa_with_base_rand.jpg,B,,,,,,
-81,infinigen2.objects.wall_art.wall_art_rand,True,0.0,42,490,contact_sheets/081_wall_art_rand.jpg,B,,,,,,
-82,infinigen2.objects.wall_art.mirror_rand,True,0.0,42,522,contact_sheets/082_mirror_rand.jpg,B,,,,,,
-83,infinigen2.scenes.floating_objects.obj_with_postprocessing,False,0.4292682926829268,186,6140,contact_sheets/083_obj_with_postprocessing.jpg,B,,,,,,
-84,infinigen2.objects.bed.bed_rand,True,0.0,1120,22208,contact_sheets/084_bed_rand.jpg,B,,,,,,
-85,infinigen2.objects.storage.storage_composite_rand,False,0.015983112183353437,588,30596,contact_sheets/085_storage_composite_rand.jpg,B,,,,,,
-86,infinigen2.objects.phyllo_plant.plant_phyllo_basal_rand,True,0.0,3138,31220,contact_sheets/086_plant_phyllo_basal_rand.jpg,B,,,,,,
-87,infinigen2.objects.phyllo_plant.plant_phyllo_ascending_rand,True,0.0,1808,25994,contact_sheets/087_plant_phyllo_ascending_rand.jpg,B,,,,,,
-88,infinigen2.objects.leaf.leaf_simple_rand,True,0.0,190,190,contact_sheets/088_leaf_simple_rand.jpg,B,,,,,,
-89,infinigen2.objects.leaf_broadleaf.leaf_broadleaf_rand,True,0.0,190,190,contact_sheets/089_leaf_broadleaf_rand.jpg,B,,,,,,
-90,infinigen2.objects.leaf_ginko.leaf_ginkgo_rand,False,0.13030148185998977,1902,2018,contact_sheets/090_leaf_ginkgo_rand.jpg,B,,,,,,
-91,infinigen2.objects.leaf_maple.leaf_maple_rand,True,0.0,1056,1056,contact_sheets/091_leaf_maple_rand.jpg,B,,,,,,
-92,infinigen2.objects.plant_pot.plant_pot_large_rand,True,0.00014048890137679124,7574,55800,contact_sheets/092_plant_pot_large_rand.jpg,B,,,,,,
-93,infinigen2.objects.plant_pot.plant_pot_small_rand,True,0.00014048890137679124,5768,28472,contact_sheets/093_plant_pot_small_rand.jpg,B,,,,,,
+0,infinigen2.objects.random_primitives.primitive_with_effect_rand,True,0.0,12,16896,contact_sheets/000_primitive_with_effect_rand.jpg,merged(A+B),not_workpiece,,,,no,基础几何形+特效，非工件
+1,infinigen2.objects.ant_landscape.landscape_canyon_rand,True,0.0,498002,498002,contact_sheets/001_landscape_canyon_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+2,infinigen2.objects.ant_landscape.landscape_cliff_rand,True,0.0,498002,498002,contact_sheets/002_landscape_cliff_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+3,infinigen2.objects.ant_landscape.landscape_generalized_rand,True,0.0,498002,498002,contact_sheets/003_landscape_generalized_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+4,infinigen2.objects.ant_landscape.landscape_mesa_rand,True,0.0,498002,498002,contact_sheets/004_landscape_mesa_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+5,infinigen2.objects.ant_landscape.landscape_mountain_rand,True,0.0,498002,498002,contact_sheets/005_landscape_mountain_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+6,infinigen2.objects.ant_landscape.landscape_rand,True,0.0,498002,498002,contact_sheets/006_landscape_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+7,infinigen2.objects.ant_landscape.landscape_river_rand,True,0.0,498002,498002,contact_sheets/007_landscape_river_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+8,infinigen2.objects.ant_landscape.landscape_volcano_rand,True,0.0,498002,498002,contact_sheets/008_landscape_volcano_rand.jpg,merged(A+B),not_workpiece,,,,no,地形
+9,infinigen2.objects.bathroom_hardware.hardware_bathroom_rand,True,0.0,36,1528,contact_sheets/009_hardware_bathroom_rand.jpg,merged(A+B),candidate,卫浴五金,,,yes,门把/挂件类可用；seed018 近似 010，内部构型跨度待源码核对
+10,infinigen2.objects.bathroom_hardware.hardware_hook_rand,True,0.0,36,564,contact_sheets/010_hardware_hook_rand.jpg,merged(A+B),candidate,挂钩,,,yes,钩子类可用；与009部分样本相近
+11,infinigen2.objects.bathroom_hardware.hardware_holder_rand,True,0.0,36,564,contact_sheets/011_hardware_holder_rand.jpg,merged(A+B),candidate,门把,,,yes,普通门把；与009部分样本相近，009/011/012/013 建议合并为门把类（待共识）
+12,infinigen2.objects.bathroom_hardware.hardware_bar_rand,True,0.0,60,940,contact_sheets/012_hardware_bar_rand.jpg,merged(A+B),candidate,门把,,,yes,浴室横拉门把；合并建议同011（待共识）
+13,infinigen2.objects.bathroom_hardware.hardware_ring_rand,True,0.0,1176,1528,contact_sheets/013_hardware_ring_rand.jpg,merged(A+B),candidate,门把,,,yes,带门环圆把；合并建议同011（待共识）
+14,infinigen2.objects.bathtub.bathtub_rand,True,0.0,1176,1176,contact_sheets/014_bathtub_rand.jpg,merged(A+B),candidate,卫浴,,,yes,浴缸可用
+15,infinigen2.objects.bathtub.sink_bathroom_rand,True,0.0,1176,1176,contact_sheets/015_sink_bathroom_rand.jpg,merged(A+B),candidate,卫浴,,,yes,洗手台可用
+16,infinigen2.objects.toilet.toilet_rand,True,0.0,14316,15596,contact_sheets/016_toilet_rand.jpg,merged(A+B),candidate,卫浴,,,yes,马桶可用
+17,infinigen2.objects.boulder.boulder_abstract_rand,True,0.0,4740,173660,contact_sheets/017_boulder_abstract_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+18,infinigen2.objects.boulder.boulder_cauliflower_rand,True,0.0,2714,99666,contact_sheets/018_boulder_cauliflower_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+19,infinigen2.objects.boulder.boulder_crystalline_rand,True,0.0,2444,91056,contact_sheets/019_boulder_crystalline_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+20,infinigen2.objects.boulder.boulder_flatstones_rand,True,0.0,3772,135564,contact_sheets/020_boulder_flatstones_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+21,infinigen2.objects.boulder.boulder_rand,True,0.0,3348,106752,contact_sheets/021_boulder_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+22,infinigen2.objects.boulder.boulder_ridged_rand,True,0.0,3500,126672,contact_sheets/022_boulder_ridged_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+23,infinigen2.objects.boulder.boulder_rock_rand,True,0.0,3500,126672,contact_sheets/023_boulder_rock_rand.jpg,merged(A+B),not_workpiece,,,,no,不规则岩石体
+24,infinigen2.objects.boulder.rock_rand,True,0.0,598,34400,contact_sheets/024_rock_rand.jpg,merged(A+B),not_workpiece,,,,no,岩石，非工件
+25,infinigen2.objects.sofa.sofa_rand,True,0.0,1584,5616,contact_sheets/025_sofa_rand.jpg,merged(A+B),candidate,座椅,,,unsure,可用；布艺是否需喷涂待确认
+26,infinigen2.objects.cushion.cushion_bed_pillow_rand,True,0.0,144,144,contact_sheets/026_cushion_bed_pillow_rand.jpg,merged(A+B),candidate,床品,,,unsure,可用；布艺材质待确认
+27,infinigen2.objects.cushion.cushion_throw_pillow_rand,True,0.0,144,432,contact_sheets/027_cushion_throw_pillow_rand.jpg,merged(A+B),duplicate,床品,,026 cushion_bed_pillow_rand,unsure,抱枕，建议与026合并为枕头类
+28,infinigen2.objects.window.window_rand,True,0.0,304,2548,contact_sheets/028_window_rand.jpg,merged(A+B),candidate,窗,,,yes,窗户类可用
+29,infinigen2.objects.window.window_composite_rand,True,0.0,304,5246,contact_sheets/029_window_composite_rand.jpg,merged(A+B),candidate,窗,,,yes,028+窗帘构型；与028是否合并待共识
+30,infinigen2.objects.window.window_rectangular_composite_rand,True,0.0,304,8742,contact_sheets/030_window_rectangular_composite_rand.jpg,merged(A+B),duplicate,窗,,028 window_rand,yes,矩形窗+窗帘，028子集
+31,infinigen2.objects.window.window_curved_rand,True,0.0,304,616,contact_sheets/031_window_curved_rand.jpg,merged(A+B),duplicate,窗,,028 window_rand,yes,弧形窗，028子集
+32,infinigen2.objects.window.curtain_rand,True,0.0,3000,6692,contact_sheets/032_curtain_rand.jpg,merged(A+B),candidate,窗帘,,,yes,窗帘可用
+33,infinigen2.objects.ceiling_light.light_ceiling_rand,True,0.0,490,490,contact_sheets/033_light_ceiling_rand.jpg,merged(A+B),candidate,灯具,,,yes,吊灯可用
+34,infinigen2.objects.table.table_dining_rand,True,0.0,524,1708,contact_sheets/034_table_dining_rand.jpg,merged(A+B),candidate,桌案,,,yes,餐桌，20种子全矩形
+35,infinigen2.objects.table.table_dining_circular_rand,True,0.0,924,1116,contact_sheets/035_table_dining_circular_rand.jpg,merged(A+B),candidate,桌案,,,yes,圆餐桌，与034为不同桌面构型
+36,infinigen2.objects.desk.desk_rand,False,0.03495176340344773,660,25292,contact_sheets/036_desk_rand.jpg,merged(A+B),candidate,桌案,,,yes,课桌/办公桌，部分带抽屉
+37,infinigen2.objects.table.table_coffee_rand,True,0.003813300793166565,524,10164,contact_sheets/037_table_coffee_rand.jpg,merged(A+B),aggregator_split,桌案,矩形桌(同034)/圆桌(同035)/带抽屉茶几,,yes,跨矩形/圆桌/带抽屉茶几三构型
+38,infinigen2.objects.table.table_coffee_storage_rand,True,0.003813300793166565,840,10164,contact_sheets/038_table_coffee_storage_rand.jpg,merged(A+B),duplicate,桌案,,037 table_coffee_rand,yes,即037中带抽屉茶几构型
+39,infinigen2.objects.table.table_side_rand,False,0.030534351145038167,524,1060,contact_sheets/039_table_side_rand.jpg,merged(A+B),duplicate,桌案,,034 table_dining_rand,yes,矩形桌高度变体，尺寸差不构成新类
+40,infinigen2.objects.table.table_coffee_circular_rand,True,0.0,924,1116,contact_sheets/040_table_coffee_circular_rand.jpg,merged(A+B),duplicate,桌案,,035 table_dining_circular_rand,yes,圆桌矮变体（茶几高度）
+41,infinigen2.objects.table.table_side_circular_rand,True,0.0,924,1116,contact_sheets/041_table_side_circular_rand.jpg,merged(A+B),duplicate,桌案,,035 table_dining_circular_rand,yes,圆桌高变体（边几高度）
+42,infinigen2.objects.table.table_cocktail_rand,True,0.0,524,1708,contact_sheets/042_table_cocktail_rand.jpg,merged(A+B),aggregator_split,桌案,矩形高桌/圆形高桌,,yes,高桌，含矩形与圆形桌面两种构型
+43,infinigen2.objects.table.table_cocktail_circular_rand,True,0.0,924,1116,contact_sheets/043_table_cocktail_circular_rand.jpg,merged(A+B),duplicate,桌案,,042 table_cocktail_rand,yes,042圆形构型
+44,infinigen2.objects.furniture_bases.base_straight_rand,True,0.0,496,608,contact_sheets/044_base_straight_rand.jpg,merged(A+B),candidate,桌腿部件,,,yes,四直腿，独立加工部件
+45,infinigen2.objects.furniture_bases.base_pedestal_rand,True,0.0,416,416,contact_sheets/045_base_pedestal_rand.jpg,merged(A+B),candidate,桌腿部件,,,yes,单柱腿
+46,infinigen2.objects.furniture_bases.base_square_rand,True,0.0,952,1600,contact_sheets/046_base_square_rand.jpg,merged(A+B),candidate,桌腿部件,,,yes,方框腿
+47,infinigen2.objects.chair.chair_office_rand,False,0.12679917751884853,836,5836,contact_sheets/047_chair_office_rand.jpg,merged(A+B),aggregator_split,座椅,四腿办公椅/滚轮办公椅（部分无靠背）,,yes,跨腿型与有无靠背构型
+48,infinigen2.objects.chair.chair_back_rand,True,0.0,180,2232,contact_sheets/048_chair_back_rand.jpg,merged(A+B),candidate,椅子部件,,,yes,椅子靠背，独立部件
+49,infinigen2.objects.chair.chair_dining_rand,False,0.4624203821656051,1128,7960,contact_sheets/049_chair_dining_rand.jpg,merged(A+B),aggregator_split,座椅,直腿餐椅/滚轮餐椅；slat/solid靠背,,yes,跨腿型；靠背形态与047明显不同；已有 slat_back_chair 拆分先例
+50,infinigen2.objects.chair.chair_rand,False,0.5,836,6120,contact_sheets/050_chair_rand.jpg,merged(A+B),aggregator_split,座椅,含各类椅子构型（待源码细分）,,yes,汇总各类椅子
+51,infinigen2.objects.chair.chair_seat_curvy_rand,False,0.040229885057471264,348,348,contact_sheets/051_chair_seat_curvy_rand.jpg,merged(A+B),candidate,椅子部件,,,yes,弧线座壳，座与靠背一体
+52,infinigen2.objects.chair.chair_seat_round_rand,True,0.0,284,284,contact_sheets/052_chair_seat_round_rand.jpg,merged(A+B),candidate,椅子部件,,,yes,圆座无靠背，与051构型不同
+53,infinigen2.objects.chair.chair_base_wheeled_rand,False,0.13228862973760933,4408,5488,contact_sheets/053_chair_base_wheeled_rand.jpg,merged(A+B),candidate,椅子部件,,,yes,滚轮底座，独立部件
+54,infinigen2.objects.flower.flower_rand,False,0.06958438287153652,2672,8352,contact_sheets/054_flower_rand.jpg,merged(A+B),not_workpiece,,,,no,花；假花场景暂不考虑
+55,infinigen2.objects.lamp.lamp_rand,True,0.0001768033946251768,740,5656,contact_sheets/055_lamp_rand.jpg,merged(A+B),candidate,灯具,,,yes,台灯可用
+56,infinigen2.objects.lamp.lamp_ceiling_shade_rand,True,0.0,740,1652,contact_sheets/056_lamp_ceiling_shade_rand.jpg,merged(A+B),candidate,灯具,,,yes,吊灯罩，与033结构不同
+57,infinigen2.objects.lamp.lamp_desk_rand,True,0.0,740,5656,contact_sheets/057_lamp_desk_rand.jpg,merged(A+B),duplicate,灯具,,055 lamp_rand,yes,与055无明显区别
+58,infinigen2.objects.monitor.monitor_rand,True,0.0,370,370,contact_sheets/058_monitor_rand.jpg,merged(A+B),uncertain,家电外壳,,,unsure,显示器；电子产品外壳喷涂任务待确认
+59,infinigen2.objects.monitor.monitor_tv_rand,True,0.0,370,370,contact_sheets/059_monitor_tv_rand.jpg,merged(A+B),duplicate,家电外壳,,058 monitor_rand,unsure,与058仅尺寸差异
+60,infinigen2.objects.lamp.lamp_floor_rand,True,0.0,740,1980,contact_sheets/060_lamp_floor_rand.jpg,merged(A+B),candidate,灯具,,,yes,落地灯可用
+61,infinigen2.objects.bowl.bowl_rand,True,0.007030906694009082,27308,27308,contact_sheets/061_bowl_rand.jpg,merged(A+B),candidate,容器,,,yes,碗可用
+62,infinigen2.objects.vase.vase_rand,True,0.0,3260,6140,contact_sheets/062_vase_rand.jpg,merged(A+B),candidate,容器,,,yes,花瓶可用
+63,infinigen2.objects.vase.cup_rand,True,0.003134796238244514,1276,20476,contact_sheets/063_cup_rand.jpg,merged(A+B),candidate,容器,,,yes,杯可用；已有 cup_body_candidate 固定入口先例
+64,infinigen2.objects.tap.tap_rand,True,0.0,1342,5646,contact_sheets/064_tap_rand.jpg,merged(A+B),candidate,卫浴,,,yes,水龙头可用
+65,infinigen2.objects.sink.sink_rand,True,0.0,5792,5792,contact_sheets/065_sink_rand.jpg,merged(A+B),duplicate,卫浴,,015 sink_bathroom_rand,yes,与015同构型，盆更深；合并待共识
+66,infinigen2.objects.door.door_body_rand,True,0.0,1772,5492,contact_sheets/066_door_body_rand.jpg,merged(A+B),candidate,门板,,,yes,门可用；已有 opaque_panel_door 固定入口先例
+67,infinigen2.objects.door.door_with_handle_rand,False,0.01023778071334214,2092,7296,contact_sheets/067_door_with_handle_rand.jpg,merged(A+B),candidate,门板,,,yes,066+把手；是否与066合并待共识
+68,infinigen2.objects.door.door_composite_rand,False,0.026405451448040886,1140,7296,contact_sheets/068_door_composite_rand.jpg,merged(A+B),duplicate,门板,,067 door_with_handle_rand,yes,与067无明显差别
+69,infinigen2.objects.door.door_double_rand,False,0.012219286657859974,1040,12512,contact_sheets/069_door_double_rand.jpg,merged(A+B),candidate,门板,,,yes,双开门可用
+70,infinigen2.objects.handles.handle_lever_rand,False,0.041019955654102,1228,1804,contact_sheets/070_handle_lever_rand.jpg,merged(A+B),candidate,门把,,,yes,杆式门把可用
+71,infinigen2.objects.handles.handle_bar_pull_rand,True,0.0,180,180,contact_sheets/071_handle_bar_pull_rand.jpg,merged(A+B),candidate,门把,,,yes,竖拉手，与070不同构型
+72,infinigen2.objects.drawer.drawer_rand,True,0.00589622641509434,832,1076,contact_sheets/072_drawer_rand.jpg,merged(A+B),candidate,储物,,,yes,抽屉可用
+73,infinigen2.objects.handles.handle_curved_pull_rand,True,0.0,764,764,contact_sheets/073_handle_curved_pull_rand.jpg,merged(A+B),duplicate,门把,,071 handle_bar_pull_rand,yes,071弯曲形态变体
+74,infinigen2.objects.handles.handle_knob_rand,True,0.0,320,320,contact_sheets/074_handle_knob_rand.jpg,merged(A+B),candidate,门把,,,yes,圆形旋钮，与070/071不同构型
+75,infinigen2.objects.rug.rug_rand,False,0.9366786140979689,2970,5022,contact_sheets/075_rug_rand.jpg,merged(A+B),candidate,软装,,,yes,地毯可用
+76,infinigen2.objects.storage.storage_cell_shelf_rand,True,0.0,588,5748,contact_sheets/076_storage_cell_shelf_rand.jpg,merged(A+B),candidate,储物,,,yes,储物架可用；已有 open_cell_shelf 固定入口先例
+77,infinigen2.objects.storage.storage_cabinet_with_door_rand,False,0.03183411214953271,1588,12580,contact_sheets/077_storage_cabinet_with_door_rand.jpg,merged(A+B),candidate,储物,,,yes,076构型+门，尺寸偏瘦
+78,infinigen2.objects.storage.storage_drawer_door_rand,False,0.028397302904564315,2700,13380,contact_sheets/078_storage_drawer_door_rand.jpg,merged(A+B),candidate,储物,,,yes,带门抽屉柜可用
+79,infinigen2.objects.storage.storage_cabinet_with_base_rand,True,0.0,1084,2884,contact_sheets/079_storage_cabinet_with_base_rand.jpg,merged(A+B),candidate,储物,,,yes,076构型+底座无门；是否独立待共识
+80,infinigen2.objects.sofa.sofa_with_base_rand,True,0.0,1432,7280,contact_sheets/080_sofa_with_base_rand.jpg,merged(A+B),candidate,座椅,,,unsure,025构型+底座；布艺材质待确认
+81,infinigen2.objects.wall_art.wall_art_rand,True,0.0,42,490,contact_sheets/081_wall_art_rand.jpg,merged(A+B),candidate,装饰,,,yes,画框可用
+82,infinigen2.objects.wall_art.mirror_rand,True,0.0,42,522,contact_sheets/082_mirror_rand.jpg,merged(A+B),duplicate,装饰,,081 wall_art_rand,yes,与081无明显差别
+83,infinigen2.scenes.floating_objects.obj_with_postprocessing,False,0.4292682926829268,186,6140,contact_sheets/083_obj_with_postprocessing.jpg,merged(A+B),not_workpiece,,,,no,随机物体+后处理特效汇总
+84,infinigen2.objects.bed.bed_rand,True,0.0,1120,22208,contact_sheets/084_bed_rand.jpg,merged(A+B),candidate,床,,,yes,床可用
+85,infinigen2.objects.storage.storage_composite_rand,False,0.015983112183353437,588,30596,contact_sheets/085_storage_composite_rand.jpg,merged(A+B),aggregator_split,储物,含各种储物柜构型（待源码细分）,,yes,汇总储物柜
+86,infinigen2.objects.phyllo_plant.plant_phyllo_basal_rand,True,0.0,3138,31220,contact_sheets/086_plant_phyllo_basal_rand.jpg,merged(A+B),not_workpiece,,,,no,植物
+87,infinigen2.objects.phyllo_plant.plant_phyllo_ascending_rand,True,0.0,1808,25994,contact_sheets/087_plant_phyllo_ascending_rand.jpg,merged(A+B),not_workpiece,,,,no,植物
+88,infinigen2.objects.leaf.leaf_simple_rand,True,0.0,190,190,contact_sheets/088_leaf_simple_rand.jpg,merged(A+B),not_workpiece,,,,no,叶子
+89,infinigen2.objects.leaf_broadleaf.leaf_broadleaf_rand,True,0.0,190,190,contact_sheets/089_leaf_broadleaf_rand.jpg,merged(A+B),not_workpiece,,,,no,叶子，不可用
+90,infinigen2.objects.leaf_ginko.leaf_ginkgo_rand,False,0.13030148185998977,1902,2018,contact_sheets/090_leaf_ginkgo_rand.jpg,merged(A+B),not_workpiece,,,,no,叶子，不可用
+91,infinigen2.objects.leaf_maple.leaf_maple_rand,True,0.0,1056,1056,contact_sheets/091_leaf_maple_rand.jpg,merged(A+B),not_workpiece,,,,no,叶子，不可用
+92,infinigen2.objects.plant_pot.plant_pot_large_rand,True,0.00014048890137679124,7574,55800,contact_sheets/092_plant_pot_large_rand.jpg,merged(A+B),uncertain,容器,,,unsure,原记录仅'不可用'未给依据；花盆属容器结构，建议共识会复核
+93,infinigen2.objects.plant_pot.plant_pot_small_rand,True,0.00014048890137679124,5768,28472,contact_sheets/093_plant_pot_small_rand.jpg,merged(A+B),uncertain,容器,,,unsure,原记录仅'不可用'未给依据；花盆属容器结构，建议共识会复核
