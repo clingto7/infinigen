@@ -129,6 +129,12 @@ def _hook_geometry(
     hook = pf.nodes.geo.transform(
         hook, translation=pf.nodes.math.combine_xyz(depth, 0, 0)
     )
+    attachment = pf.nodes.geo.store_named_attribute(
+        geometry=attachment, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    hook = pf.nodes.geo.store_named_attribute(
+        geometry=hook, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     return pf.nodes.geo.join_geometry([attachment, hook])
 
 
@@ -148,6 +154,12 @@ def _holder_geometry(
         depth,
         holder_length + extension_length,
         (holder_length - extension_length) / 2.0,
+    )
+    attachment = pf.nodes.geo.store_named_attribute(
+        geometry=attachment, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    rail = pf.nodes.geo.store_named_attribute(
+        geometry=rail, name="spray_part", value=1, domain="FACE", data_type="INT"
     )
     return pf.nodes.geo.join_geometry([attachment, rail])
 
@@ -169,8 +181,15 @@ def _bar_geometry(
         bar_length + extension_length * 2.0,
         bar_length / 2.0,
     )
+    attachment = pf.nodes.geo.store_named_attribute(
+        geometry=attachment, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    # second is transformed from the tagged attachment node, so it inherits part 0
     second = pf.nodes.geo.transform(
         attachment, translation=pf.nodes.math.combine_xyz(0, bar_length, 0)
+    )
+    rail = pf.nodes.geo.store_named_attribute(
+        geometry=rail, name="spray_part", value=1, domain="FACE", data_type="INT"
     )
     return pf.nodes.geo.join_geometry([attachment, rail, second])
 
@@ -186,6 +205,12 @@ def _ring_geometry(
 ) -> pf.ProcNode[pf.MeshObject]:
     attachment = _attachment(square, attachment_radius, attachment_depth, radius, depth)
     ring = _ring(attachment_depth, radius, depth, ring_radius, ring_minor_scale)
+    attachment = pf.nodes.geo.store_named_attribute(
+        geometry=attachment, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    ring = pf.nodes.geo.store_named_attribute(
+        geometry=ring, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     return pf.nodes.geo.join_geometry([attachment, ring])
 
 
@@ -297,6 +322,7 @@ def hardware_hook_rand(
     depth: float | None = None,
     square: bool | None = None,
     hook_length: float | None = None,
+    spray_tags: bool = False,
 ) -> BathroomHardwareResult:
     rng, rng_material, rng_square = rng.spawn(3)
     if material is None:
@@ -313,7 +339,7 @@ def hardware_hook_rand(
         depth = pf.random.uniform(rng, 0.06, 0.1)
     if hook_length is None:
         hook_length = attachment_radius * pf.random.uniform(rng, 2.0, 4.0)
-    return hardware_hook(
+    result = hardware_hook(
         material=material,
         square=square,
         attachment_radius=attachment_radius,
@@ -322,6 +348,9 @@ def hardware_hook_rand(
         depth=depth,
         hook_length=hook_length,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def hardware_holder_rand(
@@ -334,6 +363,7 @@ def hardware_holder_rand(
     square: bool | None = None,
     holder_length: float | None = None,
     extension_length: float | None = None,
+    spray_tags: bool = False,
 ) -> BathroomHardwareResult:
     rng, rng_material, rng_square = rng.spawn(3)
     if material is None:
@@ -352,7 +382,7 @@ def hardware_holder_rand(
         holder_length = pf.random.uniform(rng, 0.15, 0.25)
     if extension_length is None:
         extension_length = attachment_radius * pf.random.uniform(rng, 2.0, 3.0)
-    return hardware_holder(
+    result = hardware_holder(
         material=material,
         square=square,
         attachment_radius=attachment_radius,
@@ -362,6 +392,9 @@ def hardware_holder_rand(
         holder_length=holder_length,
         extension_length=extension_length,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def hardware_bar_rand(
@@ -374,6 +407,7 @@ def hardware_bar_rand(
     square: bool | None = None,
     bar_length: float | None = None,
     extension_length: float | None = None,
+    spray_tags: bool = False,
 ) -> BathroomHardwareResult:
     rng, rng_material, rng_square = rng.spawn(3)
     if material is None:
@@ -392,7 +426,7 @@ def hardware_bar_rand(
         bar_length = pf.random.uniform(rng, 0.4, 0.8)
     if extension_length is None:
         extension_length = attachment_radius * pf.random.uniform(rng, 2.0, 3.0)
-    return hardware_bar(
+    result = hardware_bar(
         material=material,
         square=square,
         attachment_radius=attachment_radius,
@@ -402,6 +436,9 @@ def hardware_bar_rand(
         bar_length=bar_length,
         extension_length=extension_length,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def hardware_ring_rand(
@@ -414,6 +451,7 @@ def hardware_ring_rand(
     square: bool | None = None,
     ring_radius: float | None = None,
     ring_minor_scale: float | None = None,
+    spray_tags: bool = False,
 ) -> BathroomHardwareResult:
     rng, rng_material, rng_square = rng.spawn(3)
     if material is None:
@@ -432,7 +470,7 @@ def hardware_ring_rand(
         ring_radius = attachment_radius * pf.random.log_uniform(rng, 2.0, 6.0)
     if ring_minor_scale is None:
         ring_minor_scale = pf.random.uniform(rng, 0.4, 0.7)
-    return hardware_ring(
+    result = hardware_ring(
         material=material,
         square=square,
         attachment_radius=attachment_radius,
@@ -442,6 +480,9 @@ def hardware_ring_rand(
         ring_radius=ring_radius,
         ring_minor_scale=ring_minor_scale,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def hardware_bathroom_rand(

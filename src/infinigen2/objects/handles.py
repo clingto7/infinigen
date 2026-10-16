@@ -221,6 +221,12 @@ def _handle_lever_geometry(
     lever = pf.nodes.geo.transform(
         geometry=lever, translation=pf.nodes.math.combine_xyz(x=rose_depth)
     )
+    rose = pf.nodes.geo.store_named_attribute(
+        geometry=rose, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    lever = pf.nodes.geo.store_named_attribute(
+        geometry=lever, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     lever_and_rose = pf.nodes.geo.join_geometry([rose, lever])
 
     lock = handle_part_lock(
@@ -232,6 +238,9 @@ def _handle_lever_geometry(
     lock_x = (rose_depth / 2.0) + (button_depth / 2.0) + lever_width + stub_depth
     lock = pf.nodes.geo.transform(
         geometry=lock, translation=pf.nodes.math.combine_xyz(lock_x)
+    )
+    lock = pf.nodes.geo.store_named_attribute(
+        geometry=lock, name="spray_part", value=2, domain="FACE", data_type="INT"
     )
     with_lock = pf.nodes.geo.join_geometry([lever_and_rose, lock])
 
@@ -273,6 +282,15 @@ def _handle_knob_geometry(
         geometry=head,
         translation=pf.nodes.math.combine_xyz(z=base_depth + stem_length),
     )
+    base = pf.nodes.geo.store_named_attribute(
+        geometry=base, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    stem = pf.nodes.geo.store_named_attribute(
+        geometry=stem, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+    head = pf.nodes.geo.store_named_attribute(
+        geometry=head, name="spray_part", value=2, domain="FACE", data_type="INT"
+    )
     geo = pf.nodes.geo.join_geometry([base, stem, head])
     return pf.nodes.geo.transform(geometry=geo, rotation=(0.0, 1.5708, 0.0))
 
@@ -305,6 +323,15 @@ def _handle_bar_pull_geometry(
     post_z = grip_length * 0.5 - grip_radius
     top = _standoff_post(standoff_length, standoff_radius, post_z)
     bottom = _standoff_post(standoff_length, standoff_radius, -post_z)
+    grip = pf.nodes.geo.store_named_attribute(
+        geometry=grip, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    top = pf.nodes.geo.store_named_attribute(
+        geometry=top, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+    bottom = pf.nodes.geo.store_named_attribute(
+        geometry=bottom, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     geo = pf.nodes.geo.join_geometry([grip, top, bottom])
     return pf.nodes.geo.transform(geometry=geo, rotation=(0.0, 0.0, -1.5708))
 
@@ -324,6 +351,9 @@ def _handle_curved_pull_geometry(
         geometry=tube, scale=scale, rotation=(0.0, 0.0, -1.5708)
     )
     tube = pf.nodes.geo.transform(geometry=tube, rotation=(1.5708, 0.0, 0.0))
+    tube = pf.nodes.geo.store_named_attribute(
+        geometry=tube, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
     box = pf.nodes.geo.bound_box(tube)
     return pf.nodes.geo.transform(
         geometry=tube,
@@ -358,7 +388,9 @@ def handle_lever(material: pf.Material | None = None) -> HandleResult:
     return _finish(geo, material)
 
 
-def handle_lever_rand(rng: pf.RNG, material: pf.Material | None = None) -> HandleResult:
+def handle_lever_rand(
+    rng: pf.RNG, material: pf.Material | None = None, spray_tags: bool = False
+) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     rose_height = pf.random.uniform(rng, 0.05, 0.1)
     rose_depth = pf.random.uniform(rng, 0.008, 0.02)
@@ -380,7 +412,10 @@ def handle_lever_rand(rng: pf.RNG, material: pf.Material | None = None) -> Handl
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
-    return _finish(geo, material)
+    result = _finish(geo, material)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def handle_knob(material: pf.Material | None = None) -> HandleResult:
@@ -390,7 +425,9 @@ def handle_knob(material: pf.Material | None = None) -> HandleResult:
     return _finish(geo, material, crease_value=_KNOB_RIM_CREASE)
 
 
-def handle_knob_rand(rng: pf.RNG, material: pf.Material | None = None) -> HandleResult:
+def handle_knob_rand(
+    rng: pf.RNG, material: pf.Material | None = None, spray_tags: bool = False
+) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     stem_radius = pf.random.uniform(rng, 0.004, 0.007)
     head_radius = pf.random.uniform(rng, stem_radius * 1.8, 0.018)
@@ -403,7 +440,10 @@ def handle_knob_rand(rng: pf.RNG, material: pf.Material | None = None) -> Handle
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
-    return _finish(geo, material, crease_value=_KNOB_RIM_CREASE)
+    result = _finish(geo, material, crease_value=_KNOB_RIM_CREASE)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def handle_curved_pull(material: pf.Material | None = None) -> HandleResult:
@@ -414,7 +454,7 @@ def handle_curved_pull(material: pf.Material | None = None) -> HandleResult:
 
 
 def handle_curved_pull_rand(
-    rng: pf.RNG, material: pf.Material | None = None
+    rng: pf.RNG, material: pf.Material | None = None, spray_tags: bool = False
 ) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     geo = _handle_curved_pull_geometry(
@@ -425,7 +465,10 @@ def handle_curved_pull_rand(
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
-    return _finish(geo, material)
+    result = _finish(geo, material)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def handle_bar_pull(material: pf.Material | None = None) -> HandleResult:
@@ -439,6 +482,7 @@ def handle_bar_pull_rand(
     rng: pf.RNG,
     material: pf.Material | None = None,
     grip_length: float | None = None,
+    spray_tags: bool = False,
 ) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     if grip_length is None:
@@ -451,7 +495,10 @@ def handle_bar_pull_rand(
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
-    return _finish(geo, material)
+    result = _finish(geo, material)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def handle_rand(rng: pf.RNG, material: pf.Material | None = None) -> HandleResult:

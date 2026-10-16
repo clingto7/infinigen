@@ -622,6 +622,13 @@ def _lamp_geometry(
         geometry=base_geometry, material=base_material, selection=True
     )
 
+    base = pf.nodes.geo.store_named_attribute(
+        geometry=base, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    transform = pf.nodes.geo.store_named_attribute(
+        geometry=transform, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+
     join = pf.nodes.geo.join_geometry([transform, base])
 
     bound_box = pf.nodes.geo.bound_box(join)
@@ -925,6 +932,7 @@ def lamp_rand(
     profile_resolution: int | None = None,
     base_radius: float | None = None,
     support_shade_overlap: float = _DEFAULT_SUPPORT_SHADE_OVERLAP,
+    spray_tags: bool = False,
 ) -> LampResult:
     rng_parameters, rng_base, rng_stem_mat, rng_shade_mat = rng.spawn(4)
     parameters = _lamp_parameters_rand(
@@ -952,7 +960,7 @@ def lamp_rand(
         stem_material=stem_mat,
         vector=vec,
     )
-    return _assemble_lamp(
+    result = _assemble_lamp(
         parameters,
         base[0],
         base[1],
@@ -960,12 +968,16 @@ def lamp_rand(
         lampshade_material=lampshade_mat,
         metal_material=stem_mat,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def lamp_desk_rand(
     rng: pf.RNG,
     base_radius: float | None = None,
     support_shade_overlap: float = _DEFAULT_SUPPORT_SHADE_OVERLAP,
+    spray_tags: bool = False,
 ) -> LampResult:
     rng_height, rng_lamp = rng.spawn(2)
     height = pf.random.uniform(rng_height, 0.25, 0.4)
@@ -974,12 +986,14 @@ def lamp_desk_rand(
         height=height,
         base_radius=base_radius,
         support_shade_overlap=support_shade_overlap,
+        spray_tags=spray_tags,
     )
 
 
 def lamp_floor_rand(
     rng: pf.RNG,
     support_shade_overlap: float = _DEFAULT_SUPPORT_SHADE_OVERLAP,
+    spray_tags: bool = False,
 ) -> LampResult:
     rng_height, rng_parameters, rng_base, rng_stem_mat, rng_shade_mat = rng.spawn(5)
     height = pf.random.uniform(rng_height, 1.0, 2.0)
@@ -1001,7 +1015,7 @@ def lamp_floor_rand(
         stem_material=stem_mat,
         vector=vec,
     )
-    return _assemble_lamp(
+    result = _assemble_lamp(
         parameters,
         base[0],
         base[1],
@@ -1009,12 +1023,16 @@ def lamp_floor_rand(
         lampshade_material=lampshade_mat,
         metal_material=stem_mat,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def lamp_ceiling_shade_rand(
     rng: pf.RNG,
     energy: float | None = None,
     support_shade_overlap: float = _DEFAULT_SUPPORT_SHADE_OVERLAP,
+    spray_tags: bool = False,
 ) -> LampResult:
     (
         rng_bot_radius,
@@ -1066,6 +1084,8 @@ def lamp_ceiling_shade_rand(
         -light_location[1],
         -light_location[2],
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result
 
 

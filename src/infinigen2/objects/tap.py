@@ -232,6 +232,22 @@ def _tap_geometry(
 ) -> pf.ProcNode[pf.MeshObject]:
     base = _tap_base(base_width, base_length, base_height, base_radius)
     mount = _mount(base_height, spout_radius)
+    base = pf.nodes.geo.store_named_attribute(
+        geometry=base, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    mount = pf.nodes.geo.store_named_attribute(
+        geometry=mount, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+    handle_geometry = pf.nodes.geo.store_named_attribute(
+        geometry=handle_geometry,
+        name="spray_part",
+        value=2,
+        domain="FACE",
+        data_type="INT",
+    )
+    spout = pf.nodes.geo.store_named_attribute(
+        geometry=spout, name="spray_part", value=3, domain="FACE", data_type="INT"
+    )
     body = pf.nodes.geo.join_geometry([base, mount, handle_geometry, spout])
     return pf.nodes.geo.set_material(body, material)
 
@@ -429,13 +445,16 @@ def tap_rand(
     rotation_z: float | None = None,
     hands_length_x: float | None = None,
     hands_length_y: float | None = None,
+    spray_tags: bool = False,
 ) -> TapResult:
     rng_choice, rng_tap = rng.spawn(2)
     producer = pf.control.choice(
         rng_choice,
         [(_standard_tap_rand, 4.0), (_vessel_tap_rand, 1.0)],
     )
-    return producer(
+    if spray_tags:
+        producer = _standard_tap_rand
+    result = producer(
         rng_tap,
         material,
         base_width,
@@ -450,3 +469,6 @@ def tap_rand(
         hands_length_x,
         hands_length_y,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result

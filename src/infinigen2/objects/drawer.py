@@ -4,6 +4,7 @@
 import math
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -104,6 +105,21 @@ def drawer(
     front = _front_panel(
         front_dimensions, front_origin, (0, ring_y, ring_z), front_bevel
     )
+    bottom = pf.nodes.geo.store_named_attribute(
+        geometry=bottom, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    left = pf.nodes.geo.store_named_attribute(
+        geometry=left, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    right = pf.nodes.geo.store_named_attribute(
+        geometry=right, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    back = pf.nodes.geo.store_named_attribute(
+        geometry=back, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    front = pf.nodes.geo.store_named_attribute(
+        geometry=front, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     geo = pf.nodes.geo.join_geometry([bottom, left, right, back, front])
     geo = mesh.crease_sharp(geo, threshold_degrees=30.0)
     geo = pf.nodes.geo.set_material(geo, material=material)
@@ -140,9 +156,14 @@ def drawer_rand(
     front_thickness: float = 0.018,
     opening_fraction: float | None = None,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> DrawerResult:
     """Sample a drawer; frame widths are the left/right/bottom/top board shares an
-    overlay front covers up to a small reveal."""
+    overlay front covers up to a small reveal.
+
+    With `spray_tags`: 0=drawer_box, 1=front_panel, 2=handle (inset/overlay
+    front and handle style stay as instance variation); every face is a spray
+    target."""
     r_size, r_material, r_handle, r_front, r_bevel, r_open = rng.spawn(6)
     r_front_choice, r_front_body = r_front.spawn(2)
     r_bevel_choice, r_bevel_body = r_bevel.spawn(2)
@@ -220,5 +241,17 @@ def drawer_rand(
         ),
         rotation_euler=(math.pi / 2, 0, 0),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            handle,
+            np.full(len(handle.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     pf.ops.object.join(result.mesh, handle)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            result.mesh, True, "spray_target", domain="FACE", overwrite=True
+        )
     return result

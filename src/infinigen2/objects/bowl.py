@@ -4,6 +4,7 @@
 from typing import NamedTuple
 
 import bpy
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -218,7 +219,9 @@ def bowl(
     return BowlResult(mesh=mesh)
 
 
-def bowl_rand(rng: pf.RNG) -> BowlResult:
+def bowl_rand(rng: pf.RNG, spray_tags: bool = False) -> BowlResult:
+    """With `spray_tags`: single part 0 (a one-piece coating candidate); every
+    face is a spray target."""
     (
         rng_diameter,
         rng_decorated_depth,
@@ -266,4 +269,12 @@ def bowl_rand(rng: pf.RNG) -> BowlResult:
         material=material,
     )
     result.mesh.item().name = bowl_rand.__name__
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            result.mesh,
+            np.zeros(len(result.mesh.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result

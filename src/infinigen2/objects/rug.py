@@ -7,6 +7,7 @@
 
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -87,7 +88,10 @@ def rug_rand(
     rng: pf.RNG,
     dimensions: pf.Vector | None = None,
     material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> RugResult:
+    """With `spray_tags`: single part 0 (a one-piece coating candidate); every
+    face is a spray target."""
     rng_dims, rng_corner, rng_radius, rng_material = rng.spawn(4)
     if dimensions is None:
         width = pf.random.clip_gaussian(rng_dims, 2.5, 0.8, 1.5, 4.0)
@@ -112,4 +116,12 @@ def rug_rand(
 
     obj = pf.nodes.to_mesh_object(geo)
     pf.ops.modifier.subdivide_surface(obj, levels=_RUG_SUBDIV_LEVELS, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return RugResult(mesh=obj)

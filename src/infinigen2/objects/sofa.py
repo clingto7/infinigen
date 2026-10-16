@@ -381,6 +381,15 @@ def _sofa_geometry(
         geometry=inner, translation=inner_offset, rotation=(0, 0, 0), scale=(1, 1, 1)
     )
 
+    inner = pf.nodes.geo.store_named_attribute(
+        geometry=inner, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    back_board = pf.nodes.geo.store_named_attribute(
+        geometry=back_board, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+    arms = pf.nodes.geo.store_named_attribute(
+        geometry=arms, name="spray_part", value=2, domain="FACE", data_type="INT"
+    )
     geometry = pf.nodes.geo.join_geometry([inner, back_board, arms])
     geometry = pf.nodes.geo.set_material(geometry, fabric_material)
     geometry = pf.nodes.geo.merge_by_distance(geometry, distance=1e-5)
@@ -499,8 +508,13 @@ def sofa_rand(
     left_arm_thickness: float | None = None,
     right_arm_thickness: float | None = None,
     seat_height: float | None = None,
+    spray_tags: bool = False,
 ) -> SofaResult:
-    """Skirted sofa whose body rests on the floor, seat 16-20 in high."""
+    """Skirted sofa whose body rests on the floor, seat 16-20 in high.
+
+    With `spray_tags`: 0=back/seat cushions + base board, 1=back board, 2=arms
+    (arm type and thickness stay as instance variation); every face is a
+    spray target."""
     rng, rng_fabric, rng_piping, rng_seat, rng_dims, rng_arm = rng.spawn(6)
     if dimensions is None:
         dimensions = sofa_dimensions_rand(rng_dims)
@@ -567,7 +581,7 @@ def sofa_rand(
     inner_width = dimensions[1] - left_inset - right_inset
     seat_cushion_count = max(1, round(inner_width / cushion_target_width))
 
-    return sofa(
+    result = sofa(
         dimensions=(dimensions[0], dimensions[1], back_top),
         arm_dimensions=arm_dimensions,
         left_arm_thickness=left_arm_thickness,
@@ -592,6 +606,9 @@ def sofa_rand(
         body_radius=body_radius,
         arm_slant=arm_slant,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def sofa_with_base_rand(

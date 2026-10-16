@@ -338,6 +338,12 @@ def bathtub_shell(
         + pf.nodes.math.combine_xyz(z=floor_thickness + 0.0035),
     )
     drain = pf.nodes.geo.set_material(drain, metal_material)
+    shell = pf.nodes.geo.store_named_attribute(
+        geometry=shell, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    drain = pf.nodes.geo.store_named_attribute(
+        geometry=drain, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     return pf.nodes.geo.join_geometry([shell, drain])
 
 
@@ -542,6 +548,7 @@ def bathtub_rand(
     hole_radius: float | None = None,
     surface_material: pf.Material | None = None,
     metal_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> BathtubResult:
     (
         rng_dimensions,
@@ -589,7 +596,7 @@ def bathtub_rand(
         )
     if metal_material is None:
         metal_material = _metal_material_rand(rng_metal)
-    return bathtub(
+    result = bathtub(
         width=width,
         size=size,
         depth=depth,
@@ -608,6 +615,9 @@ def bathtub_rand(
         surface_material=surface_material,
         metal_material=metal_material,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def _sink_dimensions_rand(
@@ -685,6 +695,7 @@ def sink_bathroom_rand(
     hole_radius: float | None = None,
     surface_material: pf.Material | None = None,
     metal_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> SinkBathroomResult:
     (
         rng_dimensions,
@@ -722,9 +733,13 @@ def sink_bathroom_rand(
         hole_radius = pf.random.uniform(rng_drain, 0.015, 0.02)
     if surface_material is None:
         surface_material = _surface_material_rand(rng_surface)
+    if spray_tags:
+        surface_material = ceramic.ceramic_rand(
+            rng_surface, pf.nodes.shader.coord().generated
+        )
     if metal_material is None:
         metal_material = _metal_material_rand(rng_metal)
-    return sink_bathroom(
+    result = sink_bathroom(
         width=width,
         size=size,
         depth=depth,
@@ -742,6 +757,9 @@ def sink_bathroom_rand(
         surface_material=surface_material,
         metal_material=metal_material,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 @pf.nodes.node_function

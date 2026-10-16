@@ -218,6 +218,12 @@ def cushion_knife_edge_geometry(
     piping = piping_along_seam(body, seam, piping_radius)
     body = pf.nodes.geo.set_material(body, material)
     piping = pf.nodes.geo.set_material(piping, piping_material)
+    body = pf.nodes.geo.store_named_attribute(
+        geometry=body, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    piping = pf.nodes.geo.store_named_attribute(
+        geometry=piping, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     cushion = pf.nodes.geo.join_geometry([body, piping])
     return _anchored(cushion, size, location, anchor)
 
@@ -279,15 +285,23 @@ def cushion_throw_pillow_rand(
     piping_radius: float | None = None,
     material: pf.Material | None = None,
     fullness: float | None = None,
+    spray_tags: bool = False,
 ) -> CushionResult:
-    """Square throw pillow, 16-24 in (0.40-0.60 m) across."""
+    """Square throw pillow, 16-24 in (0.40-0.60 m) across.
+
+    With `spray_tags`: 0=body, 1=piping; every face is a spray target."""
     rng, rng_pillow = rng.spawn(2)
     if size is None:
         side = pf.random.uniform(rng, 0.4, 0.6)
         thickness = side * pf.random.uniform(rng, 0.25, 0.33)
         depth = side * pf.random.uniform(rng, 0.97, 1.03)
         size = pf.Vector((side, depth, thickness))
-    return _knife_edge_pillow(rng_pillow, size, piping_radius, material, fullness)
+    if spray_tags and piping_radius is None:
+        piping_radius = piping_radius_rand(rng_pillow)
+    result = _knife_edge_pillow(rng_pillow, size, piping_radius, material, fullness)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result
 
 
 def cushion_bed_pillow_rand(
@@ -295,8 +309,12 @@ def cushion_bed_pillow_rand(
     size: pf.Vector | None = None,
     fullness: float | None = None,
     material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> CushionResult:
-    """Sleeping pillow, 19-21 in deep, 26-36 in long (standard to king), 6-9 in loft."""
+    """Sleeping pillow, 19-21 in deep, 26-36 in long (standard to king), 6-9 in loft.
+
+    With `spray_tags`: 0=body, 1=piping (unpipied here, so all 0); every face
+    is a spray target."""
     rng, rng_fabric, rng_pillow = rng.spawn(3)
     if size is None:
         short_side = pf.random.uniform(rng, 0.48, 0.53)
@@ -305,4 +323,7 @@ def cushion_bed_pillow_rand(
         size = pf.Vector((short_side, long_side, loft))
     if material is None:
         material = fabric_general_rand(rng_fabric, pf.nodes.shader.coord().uv)
-    return _knife_edge_pillow(rng_pillow, size, 0.0, material, fullness)
+    result = _knife_edge_pillow(rng_pillow, size, 0.0, material, fullness)
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result

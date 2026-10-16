@@ -1593,6 +1593,12 @@ def toilet(
         tank_cap_extrude=tank_cap_extrude,
         tank_cap_bevel_width=tank_cap_bevel_width,
     )
+    bowl = pf.nodes.geo.store_named_attribute(
+        geometry=bowl, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    tank = pf.nodes.geo.store_named_attribute(
+        geometry=tank, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     geometry = pf.nodes.geo.join_geometry([bowl, tank])
     geometry = pf.nodes.geo.transform(
         geometry, translation=pf.nodes.math.combine_xyz(z=height)
@@ -1615,6 +1621,7 @@ def toilet_rand(
     hardware_on_side: bool | None = None,
     tank_cap_extrude: float | None = None,
     cover_rotation: float | None = None,
+    spray_tags: bool = False,
 ) -> ToiletResult:
     (
         rng_size,
@@ -1645,6 +1652,8 @@ def toilet_rand(
         )
     if has_seat_cut is None:
         has_seat_cut = pf.control.choice(rng_seat_cut, [(True, 1.0), (False, 9.0)])
+    if spray_tags:
+        has_seat_cut = False
     if tank_cap_extrude is None:
         tank_cap_extrude = pf.control.choice(rng_cap, [(0.0, 1.0), (0.0075, 1.0)])
     size_mid = pf.random.uniform(rng_shape, 0.55, 0.7)
@@ -1670,7 +1679,7 @@ def toilet_rand(
         hardware_material = metal_brushed.metal_brushed_linear_rand(
             rng_hardware, vector
         )
-    return toilet(
+    result = toilet(
         material=material,
         seat_material=seat_material,
         hardware_material=hardware_material,
@@ -1712,3 +1721,6 @@ def toilet_rand(
         handle_height_offset=0.025,
         handle_bevel_width=0.0075,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result

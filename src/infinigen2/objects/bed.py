@@ -5,6 +5,7 @@ import math
 from functools import partial
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -79,6 +80,7 @@ def _bed_base_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
     material: pf.Material,
+    spray_tags: bool = False,
 ) -> table.TableResult:
     rng_choice, rng_body = rng.spawn(2)
 
@@ -170,6 +172,8 @@ def _bed_base_rand(
             (storage_base, 1.0),
         ],
     )
+    if spray_tags:
+        base_fn = leg_base
     return base_fn(rng_body, dimensions, material)
 
 
@@ -225,7 +229,12 @@ def bed_mattress_rand(
     return mattress
 
 
-def bed_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> BedResult:
+def bed_rand(
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+) -> BedResult:
+    """With `spray_tags`: the base is pinned to legs, boards to solid, and the
+    footboard removed, so the legend is 0=bed_frame_assembly, 1=mattress; every
+    face is a spray target."""
     (
         r_size,
         r_thick,
@@ -253,6 +262,7 @@ def bed_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> BedResult:
         r_base,
         pf.Vector((dimensions.x, dimensions.y, frame_height - 0.05)),
         material,
+        spray_tags=spray_tags,
     ).mesh
 
     r_finish_choice, r_top_rise = r_finish.spawn(2)
@@ -322,6 +332,8 @@ def bed_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> BedResult:
     board_fn = pf.control.choice(
         r_back_choice, [(solid_board, 1.0), (slatted_board, 1.0)]
     )
+    if spray_tags:
+        board_fn = solid_board
 
     def matching_board(r: pf.RNG, board_dimensions: pf.Vector) -> pf.MeshObject | None:
         return board_fn(r, board_dimensions)
@@ -341,12 +353,14 @@ def bed_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> BedResult:
         ),
     )
     foot_fn = pf.control.choice(r_foot_choice, [(no_board, 2.0), (matching_board, 1.0)])
+    if spray_tags:
+        foot_fn = no_board
     foot = foot_fn(
         r_foot_board,
         pf.Vector((0.05, dimensions.y + 0.08, 0.10 + dimensions.z * 0.75)),
     )
     mattress = bed_mattress_rand(r_mattress, dimensions, 0.05 + dimensions.z * 0.5)
-    return bed(
+    result = bed(
         base,
         head,
         foot,
@@ -356,3 +370,22 @@ def bed_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> BedResult:
         material,
         frame_material,
     )
+    if spray_tags:
+        # frame zeros first, then mattress ones, so the join preserves both tags
+        pf.ops.attr.write_attribute(
+            result.mesh,
+            np.zeros(len(result.mesh.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(
+            result.mattress_child,
+            np.full(len(result.mattress_child.item().data.polygons), 1, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.object.join(result.mesh, result.mattress_child)
+        pf.ops.attr.write_attribute(
+            result.mesh, True, "spray_target", domain="FACE", overwrite=True
+        )
+    return result

@@ -415,7 +415,9 @@ def vase_material_rand(rng: pf.RNG, vec) -> pf.Material:
     return material_func(rng_func, vec)
 
 
-def vase_rand(rng: pf.RNG) -> VaseResult:
+def vase_rand(rng: pf.RNG, spray_tags: bool = False) -> VaseResult:
+    """With `spray_tags`: single part 0 (a one-piece coating candidate); every
+    face is a spray target."""
     rng, rng_radius_choice, rng_radius_val, rng_mat = rng.spawn(4)
     z = pf.random.uniform(rng, 0.17, 0.5)
     x = z * pf.random.uniform(rng, 0.3, 0.6)
@@ -469,6 +471,15 @@ def vase_rand(rng: pf.RNG) -> VaseResult:
     pf.ops.modifier.solidify(obj, thickness=thickness)
     pf.ops.modifier.subdivide_surface(obj, levels=3, _skip_apply=True)
 
+    if spray_tags:
+        # A one-piece coating candidate. The coating task itself still needs review.
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return VaseResult(mesh=obj)
 
 

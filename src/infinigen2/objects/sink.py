@@ -136,8 +136,34 @@ def _sink_geometry(
         individual=False,
     )
 
+    rim = pf.nodes.geo.store_named_attribute(
+        geometry=rim, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    bowl = pf.nodes.geo.store_named_attribute(
+        geometry=bowl, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
+    drain_wall = pf.nodes.geo.store_named_attribute(
+        geometry=drain_wall, name="spray_part", value=2, domain="FACE", data_type="INT"
+    )
+    drain_ring = pf.nodes.geo.store_named_attribute(
+        geometry=drain_ring.mesh,
+        name="spray_part",
+        value=3,
+        domain="FACE",
+        data_type="INT",
+    )
+    bowl_cap = pf.nodes.geo.store_named_attribute(
+        geometry=bowl_cap, name="spray_part", value=4, domain="FACE", data_type="INT"
+    )
+    bowl_lip = pf.nodes.geo.store_named_attribute(
+        geometry=bowl_lip.mesh,
+        name="spray_part",
+        value=5,
+        domain="FACE",
+        data_type="INT",
+    )
     geometry = pf.nodes.geo.join_geometry(
-        [rim, bowl, drain_wall, drain_ring.mesh, bowl_cap, bowl_lip.mesh]
+        [rim, bowl, drain_wall, drain_ring, bowl_cap, bowl_lip]
     )
     geometry = pf.nodes.geo.set_material(geometry=geometry, material=material)
     geometry_offset = pf.nodes.math.combine_xyz((water_tap_margin + margin) / 2.56)
@@ -223,6 +249,7 @@ def sink_rand(
     hole_radius: float | None = None,
     margin: float | None = None,
     water_tap_margin: float | None = None,
+    spray_tags: bool = False,
 ) -> SinkResult:
     (
         rng_material,
@@ -251,7 +278,7 @@ def sink_rand(
         margin = pf.random.uniform(rng_margin, 0.02, 0.05)
     if water_tap_margin is None:
         water_tap_margin = pf.random.uniform(rng_tap_margin, 0.1, 0.12)
-    return sink(
+    result = sink(
         material=material,
         width=width,
         depth=depth,
@@ -262,3 +289,6 @@ def sink_rand(
         margin=margin,
         water_tap_margin=water_tap_margin,
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
+    return result

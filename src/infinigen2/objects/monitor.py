@@ -237,6 +237,7 @@ def monitor_rand(
     material: pf.Material | None = None,
     screen_material: pf.Material | None = None,
     stand_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> MonitorResult:
     """A flat-panel display on a pedestal stand, screen facing +X, resting on z=0."""
     (
@@ -296,14 +297,24 @@ def monitor_rand(
         housing_center_z=housing_center_z,
         material=stand_material,
     )
+    body = pf.nodes.geo.store_named_attribute(
+        geometry=body, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    stand = pf.nodes.geo.store_named_attribute(
+        geometry=stand, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     obj = pf.nodes.to_mesh_object(pf.nodes.geo.join_geometry([body, stand]))
     pf.ops.modifier.subdivide_surface(obj, levels=2, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return MonitorResult(mesh=obj)
 
 
-def monitor_tv_rand(rng: pf.RNG) -> MonitorResult:
+def monitor_tv_rand(rng: pf.RNG, spray_tags: bool = False) -> MonitorResult:
     """A flat-panel TV on a pedestal stand, screen facing +X, resting on z=0."""
     rng_diagonal, rng_dimensions, rng_monitor = rng.spawn(3)
     diagonal = pf.random.clip_gaussian(rng_diagonal, 50.0, 20.0, 24.0, 98.0) * 0.0254
     screen_dimensions = screen_dimensions_rand(rng_dimensions, diagonal=diagonal)
-    return monitor_rand(rng_monitor, screen_dimensions=screen_dimensions)
+    return monitor_rand(
+        rng_monitor, screen_dimensions=screen_dimensions, spray_tags=spray_tags
+    )

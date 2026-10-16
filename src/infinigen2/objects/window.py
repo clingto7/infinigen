@@ -527,7 +527,24 @@ def _curtain_geometry(
         material=curtain_frame_material,
     )
 
-    join_3 = pf.nodes.geo.join_geometry([boolean.mesh, set_material_1])
+    # fabric panels vs rail/frame; flattened to a single curtain id when a window
+    # composite joins the curtain into its own part space
+    fabric_part = pf.nodes.geo.store_named_attribute(
+        geometry=boolean.mesh,
+        name="spray_part",
+        value=0,
+        domain="FACE",
+        data_type="INT",
+    )
+    rail_part = pf.nodes.geo.store_named_attribute(
+        geometry=set_material_1,
+        name="spray_part",
+        value=1,
+        domain="FACE",
+        data_type="INT",
+    )
+
+    join_3 = pf.nodes.geo.join_geometry([fabric_part, rail_part])
 
     # rail circles tessellate at ~11 deg, so 60 catches only the hem's 90 deg corners
     creased = mesh_util.crease_sharp(join_3, threshold_degrees=60.0)
@@ -596,7 +613,10 @@ def curtain_rand(
     dimensions: pf.Vector | None = None,
     material: pf.Material | None = None,
     rail_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> CurtainResult:
+    """With `spray_tags`: 0=fabric panels, 1=rail/frame; every face is a spray
+    target. A window composite flattens the curtain to its own single id."""
     if dimensions is None:
         dimensions = window_dimensions_rand(rng)
     vec = pf.nodes.shader.coord().uv
@@ -634,7 +654,12 @@ def curtain_rand(
         curtain_material=material,
     )
 
-    return CurtainResult(mesh=pf.nodes.to_mesh_object(curtain_geo))
+    curtain_mesh = pf.nodes.to_mesh_object(curtain_geo)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            curtain_mesh, True, "spray_target", domain="FACE"
+        )
+    return CurtainResult(mesh=curtain_mesh)
 
 
 @pf.nodes.node_function
@@ -903,7 +928,19 @@ def _window_geometry(
         a=sashes,
         b=shutter_panels,
     )
-    joined = pf.nodes.geo.join_geometry([outer_frame, primary_grid, details])
+
+    def frame_part(geometry: pf.ProcNode) -> pf.ProcNode:
+        return pf.nodes.geo.store_named_attribute(
+            geometry=geometry,
+            name="spray_part",
+            value=0,
+            domain="FACE",
+            data_type="INT",
+        )
+
+    joined = pf.nodes.geo.join_geometry(
+        [frame_part(outer_frame), frame_part(primary_grid), frame_part(details)]
+    )
     realized = cast(
         pf.ProcNode[pf.MeshObject],
         pf.nodes.geo.realize_instances(joined),
@@ -992,7 +1029,10 @@ def _window_build(
     glass_material: pf.Material | None,
     include_glass_pane: bool,
     include_portal: bool,
+    spray_tags: bool = False,
 ) -> WindowResult:
+    """With `spray_tags`: 0=frame (frame/grid/sashes/shutters), 1=glass pane;
+    frame faces are spray targets, glass faces are not."""
     if frame_material is None:
         frame_material = pf.Material(surface=pf.nodes.shader.principled_bsdf())
     if glass_material is None:
@@ -1022,6 +1062,8 @@ def _window_build(
     )
     frame_obj = pf.nodes.to_mesh_object(res.geometry)
     pf.ops.uv.cube_project(frame_obj, uv_name="UVMap")
+    if spray_tags:
+        pf.ops.attr.write_attribute(frame_obj, True, "spray_target", domain="FACE")
 
     if include_glass_pane:
         pane = _glass_pane(
@@ -1031,7 +1073,18 @@ def _window_build(
             bottom_profile_height=profile.bottom_profile_height,
             material=glass_material,
         )
-        pf.ops.object.join(frame_obj, pf.nodes.to_mesh_object(pane))
+        pane_obj = pf.nodes.to_mesh_object(pane)
+        if spray_tags:
+            pf.ops.attr.write_attribute(
+                pane_obj,
+                np.full(len(pane_obj.item().data.polygons), 1, dtype=np.int32),
+                "spray_part",
+                domain="FACE",
+            )
+            pf.ops.attr.write_attribute(
+                pane_obj, False, "spray_target", domain="FACE"
+            )
+        pf.ops.object.join(frame_obj, pane_obj)
 
     origin_offset = dimensions * 0.5
     pf.ops.object.set_transform(frame_obj, location=origin_offset)
@@ -1113,6 +1166,7 @@ def _window_build_rand(
     glass_material: pf.Material | None,
     include_glass_pane: bool,
     include_portal: bool,
+    spray_tags: bool = False,
 ) -> WindowResult:
     dimensions = profile.dimensions
     detail_scale = min(dimensions.y, dimensions.z, 1.0)
@@ -1185,6 +1239,7 @@ def _window_build_rand(
         glass_material=glass_material,
         include_glass_pane=include_glass_pane,
         include_portal=include_portal,
+        spray_tags=spray_tags,
     )
 
 
@@ -1195,6 +1250,7 @@ def window_from_profile_rand(
     glass_material: pf.Material | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    spray_tags: bool = False,
 ) -> WindowResult:
     rng_param, _rng_dim, rng_frame, rng_glass = rng.spawn(4)
     return _window_build_rand(
@@ -1207,6 +1263,7 @@ def window_from_profile_rand(
         glass_material=glass_material,
         include_glass_pane=include_glass_pane,
         include_portal=include_portal,
+        spray_tags=spray_tags,
     )
 
 
@@ -1217,6 +1274,7 @@ def window_rectangular_rand(
     glass_material: pf.Material | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    spray_tags: bool = False,
 ) -> WindowResult:
     rng_param, rng_dim, rng_frame, rng_glass, rng_shutter = rng.spawn(5)
     if dimensions is None:
@@ -1240,6 +1298,7 @@ def window_rectangular_rand(
         glass_material=glass_material,
         include_glass_pane=include_glass_pane,
         include_portal=include_portal,
+        spray_tags=spray_tags,
     )
 
 
@@ -1250,6 +1309,7 @@ def window_curved_rand(
     glass_material: pf.Material | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    spray_tags: bool = False,
 ) -> WindowResult:
     rng_param, rng_dim, rng_frame, rng_glass, rng_profile = rng.spawn(5)
     if dimensions is None:
@@ -1265,6 +1325,7 @@ def window_curved_rand(
         glass_material=glass_material,
         include_glass_pane=include_glass_pane,
         include_portal=include_portal,
+        spray_tags=spray_tags,
     )
 
 
@@ -1304,6 +1365,20 @@ def _hang_curtain(
     pf.ops.object.join(window_mesh, curtain)
 
 
+def _spray_tag_curtain(curtain: pf.MeshObject) -> None:
+    """Fold a curtain into the window's part space as id 2, all faces sprayed."""
+    pf.ops.attr.write_attribute(
+        curtain,
+        np.full(len(curtain.item().data.polygons), 2, dtype=np.int32),
+        "spray_part",
+        domain="FACE",
+        overwrite=True,
+    )
+    pf.ops.attr.write_attribute(
+        curtain, True, "spray_target", domain="FACE", overwrite=True
+    )
+
+
 def window_rectangular_composite_rand(
     rng: pf.RNG,
     dimensions: pf.Vector | None = None,
@@ -1312,7 +1387,10 @@ def window_rectangular_composite_rand(
     curtain: pf.MeshObject | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    spray_tags: bool = False,
 ) -> WindowResult:
+    """With `spray_tags`: 0=frame, 1=glass, 2=curtain when present. Frame and
+    curtain faces are spray targets, glass faces are not."""
     rng_streams = rng.spawn(5)
     if dimensions is None:
         dimensions = window_dimensions_rand(rng_streams[1])
@@ -1324,16 +1402,23 @@ def window_rectangular_composite_rand(
         glass_material=glass_material,
         include_glass_pane=include_glass_pane,
         include_portal=include_portal,
+        spray_tags=spray_tags,
     )
     if curtain is not None:
+        if spray_tags:
+            _spray_tag_curtain(curtain)
         _hang_curtain(result.mesh, curtain, dimensions)
         return result
 
     rng_curtain_choice, rng_curtain_build = rng_streams[4].spawn(2)
 
     def hang_new_curtain() -> None:
-        curtain = curtain_rand(rng_curtain_build, dimensions=dimensions)
-        _hang_curtain(result.mesh, curtain.mesh, dimensions)
+        curtain_obj = curtain_rand(
+            rng_curtain_build, dimensions=dimensions, spray_tags=spray_tags
+        ).mesh
+        if spray_tags:
+            _spray_tag_curtain(curtain_obj)
+        _hang_curtain(result.mesh, curtain_obj, dimensions)
 
     curtain_fn = pf.control.choice(
         rng_curtain_choice,
@@ -1342,6 +1427,8 @@ def window_rectangular_composite_rand(
             (lambda: None, 2.0),
         ],
     )
+    if spray_tags:
+        curtain_fn = lambda: None
     curtain_fn()
     return result
 

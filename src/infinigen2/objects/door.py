@@ -8,6 +8,7 @@
 
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -226,9 +227,12 @@ def door_with_handle_rand(
     material: pf.Material | None = None,
     inner_material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> DoorResult:
     """`inner_material` overrides the recessed panels alone, so a caller can put glass
-    in a door whose frame keeps `material`. Left None the panels follow the frame."""
+    in a door whose frame keeps `material`. Left None the panels follow the frame.
+
+    With `spray_tags`: 0=frame, 1=panel, 2=handle; every face is a spray target."""
     rng, rng_door, rng_handle, rng_place = rng.spawn(4)
     if dimensions is None:
         width = pf.random.uniform(rng, 0.7, 0.95)
@@ -244,6 +248,7 @@ def door_with_handle_rand(
         dimensions=dimensions,
         frame_material=material,
         panel_material=inner_material,
+        spray_tags=spray_tags,
     ).mesh
 
     if handle is None:
@@ -259,7 +264,19 @@ def door_with_handle_rand(
             dimensions.z * handle_z_frac,
         ),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            handle,
+            np.full(len(handle.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     pf.ops.object.join(door, handle)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            door, True, "spray_target", domain="FACE", overwrite=True
+        )
     return DoorResult(mesh=door)
 
 
@@ -269,8 +286,12 @@ def door_double_rand(
     material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
     inner_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> DoorResult:
-    """Mirror one sampled door; dimensions specify the full pair's slab bounds."""
+    """Mirror one sampled door; dimensions specify the full pair's slab bounds.
+
+    With `spray_tags`: the mirror duplicates the leaf's tags, so the legend is
+    per-leaf 0=frame, 1=panel, 2=handle; every face is a spray target."""
     if dimensions is None:
         rng, rng_dimensions = rng.spawn(2)
         width = pf.random.uniform(rng_dimensions, 1.4, 1.9)
@@ -286,10 +307,15 @@ def door_double_rand(
         material=material,
         handle=handle,
         inner_material=inner_material,
+        spray_tags=spray_tags,
     ).mesh
     pf.ops.mesh.transform(door, location=(0.0, -leaf_width, 0.0))
     pf.ops.modifier.mirror(door, use_axis=(False, True, False))
     pf.ops.mesh.transform(door, location=(0.0, leaf_width, 0.0))
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            door, True, "spray_target", domain="FACE", overwrite=True
+        )
     return DoorResult(mesh=door)
 
 
@@ -299,7 +325,10 @@ def door_composite_rand(
     material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
     inner_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> DoorResult:
+    """With `spray_tags`: the body is pinned to the standard panel door so the
+    legend is 0=frame, 1=panel, 2=handle; every face is a spray target."""
     rng, rng_body, rng_handle, rng_place = rng.spawn(4)
     if dimensions is None:
         width = pf.random.uniform(rng, 0.7, 0.95)
@@ -316,6 +345,7 @@ def door_composite_rand(
             dimensions=dimensions,
             frame_material=material,
             panel_material=inner_material,
+            spray_tags=spray_tags,
         )
 
     def window_body() -> window.WindowResult:
@@ -333,6 +363,8 @@ def door_composite_rand(
             (window_body, 1.0),
         ],
     )
+    if spray_tags:
+        body_func = standard_body
     door = body_func().mesh
     if handle is None:
         handle = handles.handle_rand(rng_handle).mesh
@@ -347,7 +379,19 @@ def door_composite_rand(
             dimensions.z * handle_z_frac,
         ),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            handle,
+            np.full(len(handle.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     pf.ops.object.join(door, handle)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            door, True, "spray_target", domain="FACE", overwrite=True
+        )
     return DoorResult(mesh=door)
 
 

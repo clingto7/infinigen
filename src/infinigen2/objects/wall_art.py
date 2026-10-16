@@ -120,6 +120,17 @@ def art_frame(
     join_geometries = pf.nodes.func.switch(
         switch=join_geometries_1_switch, b=set_material_1
     )
+
+    set_material = pf.nodes.geo.store_named_attribute(
+        geometry=set_material, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    join_geometries = pf.nodes.geo.store_named_attribute(
+        geometry=join_geometries,
+        name="spray_part",
+        value=1,
+        domain="FACE",
+        data_type="INT",
+    )
     join = pf.nodes.geo.join_geometry([set_material, join_geometries])
 
     set_shade_smooth = pf.nodes.geo.set_shade_smooth(geometry=join, shade_smooth=False)
@@ -173,6 +184,12 @@ def art_frame_swept(
         geometry=swept, material=frame_material, selection=True
     )
 
+    panel = pf.nodes.geo.store_named_attribute(
+        geometry=panel, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    frame = pf.nodes.geo.store_named_attribute(
+        geometry=frame, name="spray_part", value=1, domain="FACE", data_type="INT"
+    )
     join = pf.nodes.geo.join_geometry([panel, frame])
     set_shade_smooth = pf.nodes.geo.set_shade_smooth(geometry=join, shade_smooth=False)
     return pf.nodes.geo.transform(
@@ -211,7 +228,10 @@ def wall_art_rand(
     dimensions: pf.Vector | None = None,
     panel_material: pf.Material | None = None,
     frame_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> WallArtResult:
+    """With `spray_tags`: 0=panel, 1=frame (both frame styles tag the same
+    way); every face is a spray target."""
     (
         r_dims,
         r_frame_w,
@@ -279,10 +299,16 @@ def wall_art_rand(
     obj = pf.nodes.to_mesh_object(geo)
     pf.ops.attr.write_attribute(obj, 1.0, "crease_edge", domain="EDGE")
     pf.ops.modifier.subdivide_surface(obj, levels=4, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return WallArtResult(mesh=obj)
 
 
-def mirror_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> WallArtResult:
+def mirror_rand(
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+) -> WallArtResult:
+    """With `spray_tags`: 0=panel (the mirror surface), 1=frame; every face is
+    a spray target."""
     r_mat, r_art = rng.spawn(2)
     vec = pf.nodes.shader.geometry().position
     material = mirror_surface_material_rand(r_mat, vec)
@@ -290,4 +316,5 @@ def mirror_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> WallArtResu
         r_art,
         dimensions=dimensions,
         panel_material=material,
+        spray_tags=spray_tags,
     )

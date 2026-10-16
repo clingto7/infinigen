@@ -7,6 +7,7 @@
 import math
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -15,6 +16,7 @@ from infinigen2.objects.door import (
     door_composite_rand,
     door_double_rand,
     door_with_handle,
+    door_with_handle_rand,
 )
 from infinigen2.shaders.functionality_lists import (
     cabinet_material_rand,
@@ -102,6 +104,7 @@ def _storage_drawers_rand(
     row_divider_width: float,
     col_divider_width: float,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     side = min(frame_thickness, col_divider_width * 0.5)
     row = min(frame_thickness, row_divider_width * 0.5)
@@ -114,9 +117,25 @@ def _storage_drawers_rand(
         handle=handle,
     ).mesh
     copies = [drawers.clone() for _ in slots[1:]]
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            drawers,
+            np.full(len(drawers.item().data.polygons), 7, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     pf.ops.object.set_transform(drawers, location=slots[0][0])
     for index, copy in enumerate(copies, start=1):
         pf.ops.object.set_transform(copy, location=slots[index][0])
+        if spray_tags:
+            pf.ops.attr.write_attribute(
+                copy,
+                np.full(len(copy.item().data.polygons), 7, dtype=np.int32),
+                "spray_part",
+                domain="FACE",
+                overwrite=True,
+            )
         pf.ops.object.join(drawers, copy)
     return drawers
 
@@ -782,8 +801,10 @@ def storage_cabinet_with_base(
 
 
 def storage_cabinet_with_base_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
 ) -> StorageResult:
+    """With `spray_tags`: 0-3 carcass (frame/back/horizontal/vertical dividers),
+    4=base; every face is a spray target."""
     rng, rng_shelves, rng_mat, rng_base_sel, rng_base = rng.spawn(5)
     if dimensions is None:
         depth = pf.random.uniform(rng, 0.25, 0.35)
@@ -798,6 +819,12 @@ def storage_cabinet_with_base_rand(
         rng_shelves,
         dimensions=pf.Vector((dimensions.x, dimensions.y, dimensions.z - base_height)),
         frame_material=frame_material,
+        spray_tags=spray_tags,
+        **(
+            {"n_spaces_y": 3, "n_spaces_z": 3, "back_width": 0.02}
+            if spray_tags
+            else {}
+        ),
     ).mesh
     pf.ops.object.set_transform(carcass, location=(0.0, 0.0, base_height))
     base_fn = pf.control.choice(
@@ -820,7 +847,18 @@ def storage_cabinet_with_base_rand(
         location=(dimensions.x * 0.5, dimensions.y * 0.5, 0.0),
         rotation_euler=(0.0, 0.0, math.pi / 2),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            base,
+            np.full(len(base.item().data.polygons), 4, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
     pf.ops.object.join(carcass, base)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            carcass, True, "spray_target", domain="FACE", overwrite=True
+        )
     return StorageResult(mesh=carcass)
 
 
@@ -1100,8 +1138,13 @@ def storage_cabinet_with_door_rand(
     dimensions: pf.Vector | None = None,
     frame_material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
-    """`frame_material` covers carcass and door front when given."""
+    """`frame_material` covers carcass and door front when given.
+
+    With `spray_tags`: 0=outer frame, 1=back, 2=horizontal dividers, 3=vertical
+    dividers, 4=door frame, 5=door panel, 6=door handle; the door is pinned to a
+    single leaf and every face is a spray target."""
     rng, rng_shelves, rng_front, rng_mat, rng_front_mat, rng_handle = rng.spawn(6)
     if dimensions is None:
         depth = pf.random.uniform(rng, 0.25, 0.35)
@@ -1140,6 +1183,12 @@ def storage_cabinet_with_door_rand(
         rng_shelves,
         dimensions=shelf_dimensions,
         frame_material=frame_material,
+        spray_tags=spray_tags,
+        **(
+            {"n_spaces_y": 3, "n_spaces_z": 3, "back_width": 0.02}
+            if spray_tags
+            else {}
+        ),
     )
     rng_handle, rng_handle_choice = rng_handle.spawn(2)
     handle_options = [
@@ -1155,17 +1204,46 @@ def storage_cabinet_with_door_rand(
     front_func = pf.control.choice(
         rng_front_choice, [(door_composite_rand, 2.0), (door_double_rand, 1.0)]
     )
-    door_result = front_func(
-        rng_front,
-        dimensions=pf.Vector((thickness, dimensions.y, dimensions.z)),
-        material=front_material,
-        inner_material=inner_material,
-        handle=handle,
-    )
+    front_dimensions = pf.Vector((thickness, dimensions.y, dimensions.z))
+    if spray_tags:
+        door_result = door_with_handle_rand(
+            rng_front,
+            dimensions=front_dimensions,
+            material=front_material,
+            handle=handle,
+            spray_tags=True,
+        )
+    else:
+        door_result = front_func(
+            rng_front,
+            dimensions=front_dimensions,
+            material=front_material,
+            inner_material=inner_material,
+            handle=handle,
+        )
+    if spray_tags:
+        door_parts = np.array(
+            [
+                d.value
+                for d in door_result.mesh.item().data.attributes["spray_part"].data
+            ],
+            dtype=np.int32,
+        ) + np.int32(4)
+        pf.ops.attr.write_attribute(
+            door_result.mesh,
+            door_parts,
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     pf.ops.object.set_transform(
         door_result.mesh, location=(dimensions.x - thickness, 0.0, 0.0)
     )
     pf.ops.object.join(carcass_result.mesh, door_result.mesh)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            carcass_result.mesh, True, "spray_target", domain="FACE", overwrite=True
+        )
     return StorageResult(mesh=carcass_result.mesh)
 
 
@@ -1244,8 +1322,12 @@ def storage_drawer_door_rand(
     frame_material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
     drawer_fraction: float | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
-    """Drawer storage over a door cabinet, with drawers in the top `drawer_fraction`."""
+    """Drawer storage over a door cabinet, with drawers in the top `drawer_fraction`.
+
+    With `spray_tags`: 0-3 carcass (both sections), 4-6 door, 7=drawers; every
+    face is a spray target."""
     (
         rng_size,
         rng_material,
@@ -1276,6 +1358,7 @@ def storage_drawer_door_rand(
         pf.Vector((dimensions.x, dimensions.y, door_height)),
         frame_material,
         handle.clone(),
+        spray_tags=spray_tags,
     ).mesh
     top_dimensions = pf.Vector(
         (dimensions.x - 0.018, dimensions.y, dimensions.z - door_height)
@@ -1294,13 +1377,33 @@ def storage_drawer_door_rand(
     n_rows = params.n_spaces_z
     back = params.back_width
     top = storage_cell_shelf_rand(
-        rng_shelf, top_dimensions, 1, n_rows, frame_material, back, board, board, board
+        rng_shelf,
+        top_dimensions,
+        1,
+        n_rows,
+        frame_material,
+        back,
+        board,
+        board,
+        board,
+        spray_tags=spray_tags,
     ).mesh
     slots = storage_cell_bounds(top_dimensions, 1, n_rows, board, board, board, back)
     drawers = _storage_drawers_rand(
-        rng_drawers, slots, frame_material, board, board, board, handle
+        rng_drawers,
+        slots,
+        frame_material,
+        board,
+        board,
+        board,
+        handle,
+        spray_tags=spray_tags,
     )
     pf.ops.object.join(top, drawers)
     pf.ops.object.set_transform(top, location=(0.0, 0.0, door_height))
     pf.ops.object.join(cabinet, top)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            cabinet, True, "spray_target", domain="FACE", overwrite=True
+        )
     return StorageResult(mesh=cabinet)

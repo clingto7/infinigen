@@ -132,6 +132,17 @@ def _ceiling_light_geometry(
         geometry=join_3, material=frame_material, selection=True
     )
 
+    set_material = pf.nodes.geo.store_named_attribute(
+        geometry=set_material, name="spray_part", value=0, domain="FACE", data_type="INT"
+    )
+    set_material_1 = pf.nodes.geo.store_named_attribute(
+        geometry=set_material_1,
+        name="spray_part",
+        value=1,
+        domain="FACE",
+        data_type="INT",
+    )
+
     join = pf.nodes.geo.join_geometry([set_material, set_material_1])
 
     bound_box = pf.nodes.geo.bound_box(join)
@@ -206,6 +217,7 @@ def light_ceiling_rand(
     shadow_soft_size: float | None = None,
     temperature: float | None = None,
     turned_on: bool = True,
+    spray_tags: bool = False,
 ) -> CeilingLightResult:
     radius = pf.random.clip_gaussian(rng, 0.12, 0.04, 0.1, 0.25)
     thickness = pf.random.uniform(rng, 0.005, 0.05)
@@ -250,4 +262,6 @@ def light_ceiling_rand(
         )
         pf.ops.object.set_transform(light, location=(0.0, 0.0, -0.03))
 
+    if spray_tags:
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return CeilingLightResult(mesh=obj, light=light)

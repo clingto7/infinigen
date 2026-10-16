@@ -8,6 +8,7 @@
 import math
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -759,9 +760,13 @@ def base_straight_rand(
     leg_inset_range: tuple[float, float] | None = None,
     leg_placement_top_scale: float = 0.8,
     close_edges: bool = False,
+    spray_tags: bool = False,
 ) -> TableResult:
     """4-leg base with optional stretchers. leg_placement_bottom_scale > 1 splays
-    the legs outward; pass 1.0 for an upright base to sit under a carcass."""
+    the legs outward; pass 1.0 for an upright base to sit under a carcass.
+
+    With `spray_tags`: stretchers are pinned off and the whole base is one
+    part 0; every face is a spray target."""
     rng_parameters, rng_dims, rng_mat, rng_inset, rng_stretcher = rng.spawn(5)
     if dimensions is None:
         dimensions = table_dimensions_rand(rng_dims)
@@ -778,6 +783,8 @@ def base_straight_rand(
     stretcher_increment = pf.control.choice(
         rng_stretcher, [(0, 1.0), (1, 1.0), (2, 1.0)]
     )
+    if spray_tags:
+        stretcher_increment = 0
     stretcher_relative_pos = pf.random.uniform(rng_parameters, 0.2, 0.6)
     geo = base_four_leg(
         dimensions=dimensions,
@@ -796,6 +803,14 @@ def base_straight_rand(
         obj, surface=material.surface, displacement=material.displacement
     )
     pf.ops.modifier.subdivide_surface(obj, levels=1, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return TableResult(mesh=obj)
 
 
@@ -846,10 +861,13 @@ def base_pedestal_rand(
     material: pf.Material | None = None,
     top_radius_range: tuple[float, float] | None = None,
     bottom_radius_range: tuple[float, float] | None = None,
+    spray_tags: bool = False,
 ) -> TableResult:
     """Rotationally symmetric pedestal spanning z in [0, dimensions.z]: a
     low-flare silhouette with random concavity and a bulged/waisted upper
-    column. Radius ranges default from the footprint; callers override them."""
+    column. Radius ranges default from the footprint; callers override them.
+
+    With `spray_tags`: single part 0; every face is a spray target."""
     rng, rng_dims, rng_mat, rng_profile = rng.spawn(4)
     if dimensions is None:
         dimensions = table_dimensions_rand(rng_dims)
@@ -872,6 +890,14 @@ def base_pedestal_rand(
         obj, surface=material.surface, displacement=material.displacement
     )
     pf.ops.modifier.subdivide_surface(obj, levels=3, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return TableResult(mesh=obj)
 
 
@@ -907,8 +933,12 @@ def base_square_rand(
     leg_diameter_range: tuple[float, float] = (0.03, 0.14),
     leg_placement_top_scale: float = 0.8,
     close_edges: bool = False,
+    spray_tags: bool = False,
 ) -> TableResult:
-    """2 box-frame legs. leg_placement_bottom_scale > 1 splays the frames outward."""
+    """2 box-frame legs. leg_placement_bottom_scale > 1 splays the frames outward.
+
+    With `spray_tags`: single part 0 (the bottom-connector fork stays as
+    instance variation); every face is a spray target."""
     rng_parameters, rng_dims, rng_mat, rng_connector = rng.spawn(4)
     if dimensions is None:
         dimensions = table_dimensions_rand(rng_dims)
@@ -934,6 +964,14 @@ def base_square_rand(
         obj, surface=material.surface, displacement=material.displacement
     )
     pf.ops.modifier.subdivide_surface(obj, levels=1, _skip_apply=True)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            obj,
+            np.zeros(len(obj.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+        )
+        pf.ops.attr.write_attribute(obj, True, "spray_target", domain="FACE")
     return TableResult(mesh=obj)
 
 
