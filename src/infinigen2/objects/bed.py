@@ -81,6 +81,7 @@ def _bed_base_rand(
     dimensions: pf.Vector,
     material: pf.Material,
     spray_tags: bool = False,
+    base_style: str | None = None,
 ) -> table.TableResult:
     rng_choice, rng_body = rng.spawn(2)
 
@@ -173,7 +174,10 @@ def _bed_base_rand(
         ],
     )
     if spray_tags:
-        base_fn = leg_base
+        if base_style == "storage":
+            base_fn = storage_base
+        else:
+            base_fn = leg_base
     return base_fn(rng_body, dimensions, material)
 
 
@@ -234,6 +238,7 @@ def bed_rand(
     dimensions: pf.Vector | None = None,
     spray_tags: bool = False,
     headboard_style: str | None = None,
+    base_style: str | None = None,
 ) -> BedResult:
     """With `spray_tags`: the base is pinned to legs, boards to solid, and the
     footboard removed, so the legend is 0=bed_frame_assembly, 1=mattress; every
@@ -266,6 +271,7 @@ def bed_rand(
         pf.Vector((dimensions.x, dimensions.y, frame_height - 0.05)),
         material,
         spray_tags=spray_tags,
+        base_style=base_style,
     ).mesh
 
     r_finish_choice, r_top_rise = r_finish.spawn(2)

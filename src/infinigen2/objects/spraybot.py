@@ -305,6 +305,30 @@ def _storage_coffee_table(rng: pf.RNG):
     return table.table_coffee_storage_rand(rng, spray_tags=True)
 
 
+def _storage_bed(rng: pf.RNG):
+    return bed.bed_rand(rng, spray_tags=True, base_style="storage")
+
+
+def _top_arched_window(rng: pf.RNG):
+    return window.window_curved_rand(
+        rng,
+        include_glass_pane=False,
+        include_portal=False,
+        profile_style="top_rounded",
+        spray_tags=True,
+    )
+
+
+def _double_arched_window(rng: pf.RNG):
+    return window.window_curved_rand(
+        rng,
+        include_glass_pane=False,
+        include_portal=False,
+        profile_style="double_rounded",
+        spray_tags=True,
+    )
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -330,6 +354,9 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "drawer_cabinet": _drawer_cabinet,
     "wide_door_cabinet": _wide_door_cabinet,
     "storage_coffee_table": _storage_coffee_table,
+    "storage_bed": _storage_bed,
+    "window_top_arched": _top_arched_window,
+    "window_double_arched": _double_arched_window,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -369,6 +396,9 @@ LEGENDS.update(
             0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
             3: "vertical_divider", 8: "base",
         },
+        "storage_bed": {0: "storage_bed_frame", 1: "mattress"},
+        "window_top_arched": {0: "arched_frame"},
+        "window_double_arched": {0: "double_arched_frame"},
     }
 )
 

@@ -1311,12 +1311,20 @@ def window_curved_rand(
     glass_material: pf.Material | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    profile_style: str | None = None,
     spray_tags: bool = False,
 ) -> WindowResult:
     rng_param, rng_dim, rng_frame, rng_glass, rng_profile = rng.spawn(5)
     if dimensions is None:
         dimensions = window_dimensions_rand(rng_dim)
-    profile = rounded_profile_rand(rng_profile, dimensions)
+    if profile_style == "top_rounded":
+        profile = top_rounded_profile_rand(rng_profile, dimensions)
+    elif profile_style == "double_rounded":
+        profile = double_rounded_profile_rand(rng_profile, dimensions)
+    elif profile_style is None:
+        profile = rounded_profile_rand(rng_profile, dimensions)
+    else:
+        raise ValueError(f"Unknown profile_style: {profile_style}")
     return _window_build_rand(
         rng_param,
         rng_frame,
