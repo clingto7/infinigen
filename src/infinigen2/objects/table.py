@@ -301,12 +301,14 @@ def table_side_rand(rng: pf.RNG) -> TableResult:
     return table_dining_rand(rng_table, dimensions, top_thickness=top_thickness)
 
 
-def _table_coffee_legged_rand(rng: pf.RNG) -> TableResult:
+def _table_coffee_legged_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
     """Low rectangular coffee table on legs."""
     rng, rng_dims, rng_table = rng.spawn(3)
     dimensions = table_coffee_dimensions_rand(rng_dims)
     top_thickness = pf.random.uniform(rng, 0.02, 0.04)
-    return table_dining_rand(rng_table, dimensions, top_thickness=top_thickness)
+    return table_dining_rand(
+        rng_table, dimensions, top_thickness=top_thickness, spray_tags=spray_tags
+    )
 
 
 def table_coffee_storage_rand(rng: pf.RNG) -> TableResult:
@@ -315,7 +317,9 @@ def table_coffee_storage_rand(rng: pf.RNG) -> TableResult:
     return TableResult(mesh=result.mesh)
 
 
-def table_coffee_circular_rand(rng: pf.RNG) -> TableResult:
+def table_coffee_circular_rand(
+    rng: pf.RNG, spray_tags: bool = False
+) -> TableResult:
     """Round coffee table, 30-42 in (0.76-1.07 m) across and 16-19 in high."""
     rng, rng_table = rng.spawn(2)
     return table_dining_circular_rand(
@@ -323,6 +327,7 @@ def table_coffee_circular_rand(rng: pf.RNG) -> TableResult:
         diameter=pf.random.uniform(rng, 0.76, 1.07),
         height=pf.random.uniform(rng, 0.4, 0.48),
         top_thickness=pf.random.uniform(rng, 0.02, 0.05),
+        spray_tags=spray_tags,
     )
 
 

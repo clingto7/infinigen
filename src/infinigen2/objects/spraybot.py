@@ -257,6 +257,28 @@ def _round_dining_table(rng: pf.RNG):
     return table.table_dining_circular_rand(rng, spray_tags=True)
 
 
+def _legged_slatted_headboard_bed(rng: pf.RNG):
+    return bed.bed_rand(rng, spray_tags=True, headboard_style="slat")
+
+
+def _rectangular_coffee_table(rng: pf.RNG):
+    return table._table_coffee_legged_rand(rng, spray_tags=True)
+
+
+def _round_coffee_table(rng: pf.RNG):
+    return table.table_coffee_circular_rand(rng, spray_tags=True)
+
+
+def _rectangular_louver_window(rng: pf.RNG):
+    return window.window_rectangular_rand(
+        rng,
+        include_glass_pane=False,
+        include_portal=False,
+        shutter=True,
+        spray_tags=True,
+    )
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -275,6 +297,10 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "wheeled_dining_chair": _wheeled_dining_chair,
     "rectangular_dining_table": _rectangular_dining_table,
     "round_dining_table": _round_dining_table,
+    "legged_slatted_headboard_bed": _legged_slatted_headboard_bed,
+    "rectangular_coffee_table": _rectangular_coffee_table,
+    "round_coffee_table": _round_coffee_table,
+    "window_rectangular_louver": _rectangular_louver_window,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -298,6 +324,10 @@ LEGENDS.update(
         "wheeled_dining_chair": {0: "seat", 1: "slat_back", 2: "wheeled_base"},
         "rectangular_dining_table": {0: "tabletop", 1: "base"},
         "round_dining_table": {0: "tabletop", 1: "base"},
+        "legged_slatted_headboard_bed": {0: "bed_frame", 1: "mattress"},
+        "rectangular_coffee_table": {0: "tabletop", 1: "base"},
+        "round_coffee_table": {0: "tabletop", 1: "base"},
+        "window_rectangular_louver": {0: "frame_and_louver"},
     }
 )
 

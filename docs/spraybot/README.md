@@ -56,6 +56,11 @@ The second validated batch extends this set with
 `round_dining_table`. Their review artifacts live under the corresponding
 `outputs_scratch/second-batch-*` validation directory.
 
+The third validated batch adds `rectangular_coffee_table`,
+`round_coffee_table`, `legged_slatted_headboard_bed`, and
+`window_rectangular_louver`. The slatted bed is retained with an explicit
+near-half target-area boundary recorded in its manual review.
+
 The fork owns mesh generation and generation-side structure data: `spray_part`,
 `spray_target`, and optional category-specific priors. Spraybot owns trajectory
 rules, PaintDS output, and training-format conversion. The two repositories are

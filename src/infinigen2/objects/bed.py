@@ -230,7 +230,10 @@ def bed_mattress_rand(
 
 
 def bed_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+    rng: pf.RNG,
+    dimensions: pf.Vector | None = None,
+    spray_tags: bool = False,
+    headboard_style: str | None = None,
 ) -> BedResult:
     """With `spray_tags`: the base is pinned to legs, boards to solid, and the
     footboard removed, so the legend is 0=bed_frame_assembly, 1=mattress; every
@@ -333,7 +336,12 @@ def bed_rand(
         r_back_choice, [(solid_board, 1.0), (slatted_board, 1.0)]
     )
     if spray_tags:
-        board_fn = solid_board
+        board_fn = {
+            "solid": solid_board,
+            "slat": slatted_board,
+        }.get(headboard_style or "solid")
+        if board_fn is None:
+            raise ValueError(f"Unknown headboard_style: {headboard_style}")
 
     def matching_board(r: pf.RNG, board_dimensions: pf.Vector) -> pf.MeshObject | None:
         return board_fn(r, board_dimensions)
