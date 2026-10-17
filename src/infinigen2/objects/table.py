@@ -169,14 +169,17 @@ def _assemble_table(
             overwrite=True,
         )
         pf.ops.attr.write_attribute(top, True, "spray_target", domain="FACE", overwrite=True)
-        pf.ops.attr.write_attribute(
-            base,
-            np.ones(len(base.item().data.polygons), dtype=np.int32),
-            "spray_part",
-            domain="FACE",
-            overwrite=True,
-        )
-        pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
+        base_attr = base.item().data.attributes.get("spray_part")
+        if base_attr is None:
+            pf.ops.attr.write_attribute(
+                base,
+                np.ones(len(base.item().data.polygons), dtype=np.int32),
+                "spray_part",
+                domain="FACE",
+                overwrite=True,
+            )
+        if base.item().data.attributes.get("spray_target") is None:
+            pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(top, base)
     pf.ops.modifier.subdivide_surface(top, levels=3, _skip_apply=True)
     return TableResult(mesh=top)

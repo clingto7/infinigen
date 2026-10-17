@@ -361,6 +361,16 @@ def _double_window_panel_door(rng: pf.RNG):
     return door.door_double_rand(rng, body_style="window", spray_tags=True)
 
 
+def _side_storage_desk(rng: pf.RNG):
+    return desk.desk_with_side_storage_rand(rng, spray_tags=True)
+
+
+def _thin_drawer_desk(rng: pf.RNG):
+    # The accepted merged family uses the tabletop-plus-thin-storage variant;
+    # the integrated tabletop variant remains an internal source function.
+    return desk.desk_with_top_storage_rand(rng, spray_tags=True)
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -397,6 +407,8 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "round_high_table": _round_high_table,
     "window_panel_door": _window_panel_door,
     "double_window_panel_door": _double_window_panel_door,
+    "side_storage_desk": _side_storage_desk,
+    "thin_drawer_desk": _thin_drawer_desk,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -447,6 +459,8 @@ LEGENDS.update(
         "round_high_table": {0: "tabletop", 1: "base"},
         "window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
         "double_window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
+        "side_storage_desk": {0: "tabletop", 1: "side_storage"},
+        "thin_drawer_desk": {0: "tabletop", 1: "thin_storage", 2: "desk_base"},
     }
 )
 

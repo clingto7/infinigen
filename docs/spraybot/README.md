@@ -76,6 +76,10 @@ The seventh validated batch adds `window_panel_door` and
 `double_window_panel_door`. Their glass faces are explicitly non-target; the
 manual reviews record the resulting low target-area boundary cases.
 
+The final batch adds `side_storage_desk` and `thin_drawer_desk`, completing all
+34 categories in the adopted baseline. The thin-drawer family uses the fixed
+tabletop-plus-open-storage representative selected during review.
+
 The fork owns mesh generation and generation-side structure data: `spray_part`,
 `spray_target`, and optional category-specific priors. Spraybot owns trajectory
 rules, PaintDS output, and training-format conversion. The two repositories are

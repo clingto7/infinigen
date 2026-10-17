@@ -5,6 +5,7 @@
 
 from typing import NamedTuple
 
+import numpy as np
 import procfunc as pf
 
 from infinigen2.objects import furniture_bases, storage, table
@@ -48,6 +49,7 @@ def _side_cell_shelf_base_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
     top_height: float,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     (
         rng_frame,
@@ -80,6 +82,8 @@ def _side_cell_shelf_base_rand(
         col_divider_width=col_divider_width,
         back_width=back_width,
         desired_slot_aspect=pf.random.uniform(rng_aspect, 2.0, 10.0),
+        front_style="open" if spray_tags else None,
+        spray_tags=spray_tags,
     ).mesh
     right = left.clone()
     pf.ops.object.set_transform(
@@ -91,6 +95,15 @@ def _side_cell_shelf_base_rand(
         location=(-dimensions.x / 2, dimensions.y / 2 - cabinet_width, 0.0),
     )
     pf.ops.object.join(left, right)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            left,
+            np.ones(len(left.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(left, True, "spray_target", domain="FACE", overwrite=True)
     return left
 
 
@@ -100,11 +113,13 @@ def _thin_cell_shelf_rand(
     cabinet_height: float,
     bottom_height: float,
     frame_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     rng_frame, rng_row, rng_col, rng_back, rng_storage, rng_aspect = rng.spawn(6)
     result = storage.storage_composite_rand(
         rng_storage,
         dimensions=pf.Vector((dimensions.x, dimensions.y, cabinet_height)),
+        n_spaces_y=3,
         n_spaces_z=1,
         frame_thickness=pf.random.uniform(rng_frame, 0.012, 0.018),
         row_divider_width=pf.random.uniform(rng_row, 0.010, 0.016),
@@ -112,11 +127,22 @@ def _thin_cell_shelf_rand(
         back_width=pf.random.uniform(rng_back, 0.012, 0.018),
         frame_material=frame_material,
         desired_slot_aspect=pf.random.uniform(rng_aspect, 2.0, 10.0),
+        front_style="open" if spray_tags else None,
+        spray_tags=spray_tags,
     ).mesh
     pf.ops.object.set_transform(
         result,
         location=(-dimensions.x / 2, -dimensions.y / 2, bottom_height),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            result,
+            np.ones(len(result.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(result, True, "spray_target", domain="FACE", overwrite=True)
     return result
 
 
@@ -148,17 +174,19 @@ def _tabletop_surface_rand(
 def _side_storage_tabletop_surface_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     rng_top, rng_top_shape, rng_base, rng_table = rng.spawn(4)
     top_thickness = pf.random.uniform(rng_top, 0.025, 0.055)
     top_height = dimensions.z - top_thickness
-    base = _side_cell_shelf_base_rand(rng_base, dimensions, top_height)
+    base = _side_cell_shelf_base_rand(rng_base, dimensions, top_height, spray_tags=spray_tags)
     result = table.table_dining_rand(
         rng_table,
         dimensions=dimensions,
         base=base,
         top_thickness=top_thickness,
         top_support_loop_offset=_desktop_support_loop_offset_rand(rng_top_shape),
+        spray_tags=spray_tags,
     )
     return result.mesh
 
@@ -190,6 +218,7 @@ def _integrated_storage_surface_rand(
 def _tabletop_storage_surface_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     (
         rng_top,
@@ -207,12 +236,22 @@ def _tabletop_storage_surface_rand(
         rng_base,
         dimensions=pf.Vector((dimensions.x, dimensions.y, base_height)),
         close_edges=True,
+        spray_tags=spray_tags,
     ).mesh
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            base,
+            np.full(len(base.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
     cabinet = _thin_cell_shelf_rand(
         rng_cabinet,
         dimensions,
         cabinet_height=cabinet_height,
         bottom_height=base_height,
+        spray_tags=spray_tags,
     )
     pf.ops.object.join(base, cabinet)
     result = table.table_dining_rand(
@@ -221,6 +260,7 @@ def _tabletop_storage_surface_rand(
         base=base,
         top_thickness=top_thickness,
         top_support_loop_offset=_desktop_support_loop_offset_rand(rng_top_shape),
+        spray_tags=spray_tags,
     )
     return result.mesh
 
@@ -248,23 +288,23 @@ def desk_integrated_storage_rand(
 
 
 def desk_with_top_storage_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
 ) -> DeskResult:
     rng_dimensions, rng_surface = rng.spawn(2)
     if dimensions is None:
         dimensions = desk_dimensions_rand(rng_dimensions)
-    mesh = _tabletop_storage_surface_rand(rng_surface, dimensions)
+    mesh = _tabletop_storage_surface_rand(rng_surface, dimensions, spray_tags=spray_tags)
     mesh.item().name = "desk"
     return DeskResult(mesh)
 
 
 def desk_with_side_storage_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
 ) -> DeskResult:
     rng_dimensions, rng_surface = rng.spawn(2)
     if dimensions is None:
         dimensions = desk_dimensions_rand(rng_dimensions)
-    mesh = _side_storage_tabletop_surface_rand(rng_surface, dimensions)
+    mesh = _side_storage_tabletop_surface_rand(rng_surface, dimensions, spray_tags=spray_tags)
     mesh.item().name = "desk"
     return DeskResult(mesh)
 
