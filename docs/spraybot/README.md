@@ -69,6 +69,9 @@ and manual-review workflow.
 The fifth validated batch adds `storage_bed`, `window_top_arched`, and
 `window_double_arched`, with fixed storage-base and curved-profile branches.
 
+The sixth validated batch adds the four office-chair/stool variants and the two
+high-table variants, all with fixed seat/topology and base branches.
+
 The fork owns mesh generation and generation-side structure data: `spray_part`,
 `spray_target`, and optional category-specific priors. Spraybot owns trajectory
 rules, PaintDS output, and training-format conversion. The two repositories are

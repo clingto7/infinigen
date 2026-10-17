@@ -367,7 +367,7 @@ def _table_cocktail_pedestal_rand(rng: pf.RNG, dimensions: pf.Vector) -> TableRe
     )
 
 
-def table_cocktail_circular_rand(rng: pf.RNG) -> TableResult:
+def table_cocktail_circular_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
     """Circular cocktail/bar table, usually with a wide pedestal base."""
     rng_dims, rng_thickness, rng_base_choice, rng_base, rng_table = rng.spawn(5)
     diameter = pf.random.uniform(rng_dims, 0.5, 0.8)
@@ -387,10 +387,11 @@ def table_cocktail_circular_rand(rng: pf.RNG) -> TableResult:
         height=height,
         base=base,
         top_thickness=top_thickness,
+        spray_tags=spray_tags,
     )
 
 
-def _table_cocktail_square_rand(rng: pf.RNG) -> TableResult:
+def _table_cocktail_square_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
     rng_dims, rng_thickness, rng_base_choice, rng_base, rng_table = rng.spawn(5)
     size = pf.random.uniform(rng_dims, 0.5, 0.8)
     height = pf.random.uniform(rng_dims, 1.0, 1.1)
@@ -409,6 +410,7 @@ def _table_cocktail_square_rand(rng: pf.RNG) -> TableResult:
         dimensions=(size, size, height),
         base=base,
         top_thickness=top_thickness,
+        spray_tags=spray_tags,
     )
 
 

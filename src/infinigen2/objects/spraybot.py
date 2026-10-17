@@ -329,6 +329,30 @@ def _double_arched_window(rng: pf.RNG):
     )
 
 
+def _shell_four_leg_chair(rng: pf.RNG):
+    return chair.chair_office_rand(rng, seat_style="curvy", base_style="straight", spray_tags=True)
+
+
+def _shell_wheeled_chair(rng: pf.RNG):
+    return chair.chair_office_rand(rng, seat_style="curvy", base_style="wheeled", spray_tags=True)
+
+
+def _round_four_leg_stool(rng: pf.RNG):
+    return chair.chair_office_rand(rng, seat_style="round", base_style="straight", spray_tags=True)
+
+
+def _round_wheeled_stool(rng: pf.RNG):
+    return chair.chair_office_rand(rng, seat_style="round", base_style="wheeled", spray_tags=True)
+
+
+def _rectangular_high_table(rng: pf.RNG):
+    return table._table_cocktail_square_rand(rng, spray_tags=True)
+
+
+def _round_high_table(rng: pf.RNG):
+    return table.table_cocktail_circular_rand(rng, spray_tags=True)
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -357,6 +381,12 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "storage_bed": _storage_bed,
     "window_top_arched": _top_arched_window,
     "window_double_arched": _double_arched_window,
+    "shell_four_leg_chair": _shell_four_leg_chair,
+    "shell_wheeled_chair": _shell_wheeled_chair,
+    "round_four_leg_stool": _round_four_leg_stool,
+    "round_wheeled_stool": _round_wheeled_stool,
+    "rectangular_high_table": _rectangular_high_table,
+    "round_high_table": _round_high_table,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -399,6 +429,12 @@ LEGENDS.update(
         "storage_bed": {0: "storage_bed_frame", 1: "mattress"},
         "window_top_arched": {0: "arched_frame"},
         "window_double_arched": {0: "double_arched_frame"},
+        "shell_four_leg_chair": {0: "curvy_shell_seat", 1: "straight_base"},
+        "shell_wheeled_chair": {0: "curvy_shell_seat", 1: "wheeled_base"},
+        "round_four_leg_stool": {0: "round_seat", 1: "straight_base"},
+        "round_wheeled_stool": {0: "round_seat", 1: "wheeled_base"},
+        "rectangular_high_table": {0: "tabletop", 1: "base"},
+        "round_high_table": {0: "tabletop", 1: "base"},
     }
 )
 

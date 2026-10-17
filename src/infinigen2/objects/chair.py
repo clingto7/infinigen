@@ -2214,6 +2214,9 @@ def chair_office_rand(
     dimensions: pf.Vector | None = None,
     seat_material: pf.Material | None = None,
     base_material: pf.Material | None = None,
+    seat_style: str | None = None,
+    base_style: str | None = None,
+    spray_tags: bool = False,
 ) -> ChairResult:
     (
         rng,
@@ -2228,13 +2231,20 @@ def chair_office_rand(
     if dimensions is None:
         dimensions = chair_office_dimensions_rand(rng_dims)
 
-    top_fn = pf.control.choice(
-        rng_top_sel,
-        [
-            (chair_seat_curvy_rand, 1.5),
-            (chair_seat_round_rand, 0.33),
-        ],
-    )
+    if seat_style == "curvy":
+        top_fn = chair_seat_curvy_rand
+    elif seat_style == "round":
+        top_fn = chair_seat_round_rand
+    elif seat_style is None:
+        top_fn = pf.control.choice(
+            rng_top_sel,
+            [
+                (chair_seat_curvy_rand, 1.5),
+                (chair_seat_round_rand, 0.33),
+            ],
+        )
+    else:
+        raise ValueError(f"Unknown seat_style: {seat_style}")
     leg_spread = pf.random.uniform(rng, 0.5, 0.7)
     leg_inset_fraction = pf.random.uniform(rng, 0.05, 0.10)
     leg_scale = (1.0 - 2.0 * leg_inset_fraction) / 2.0**0.5
@@ -2259,15 +2269,33 @@ def chair_office_rand(
 
     vec = pf.nodes.shader.coord().uv
     if seat_material is None:
-        seat_material = furniture_surface_material_rand(rng_seat_mat, vec)
+        seat_material = furniture_material_rand(rng_seat_mat, vec) if spray_tags else furniture_surface_material_rand(rng_seat_mat, vec)
     if base_material is None:
         base_material = furniture_material_rand(rng_base_mat, vec)
 
     top = top_fn(rng=rng_top, dimensions=dimensions, material=seat_material).mesh
 
-    base_fn = _office_chair_base_rand(rng_base_sel, wheeled_fn)
+    if base_style == "straight":
+        base_fn = _chair_straight_base_rand
+    elif base_style == "wheeled":
+        base_fn = wheeled_fn
+    elif base_style is None:
+        base_fn = _office_chair_base_rand(rng_base_sel, wheeled_fn)
+    else:
+        raise ValueError(f"Unknown base_style: {base_style}")
     base = base_fn(rng_base, base_dimensions, base_material).mesh
 
     # join keeps only the target's stack, so the seat's _CHAIR_SUBDIV covers the base too
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            top, np.zeros(len(top.item().data.polygons), dtype=np.int32),
+            "spray_part", domain="FACE", overwrite=True
+        )
+        pf.ops.attr.write_attribute(
+            base, np.ones(len(base.item().data.polygons), dtype=np.int32),
+            "spray_part", domain="FACE", overwrite=True
+        )
+        pf.ops.attr.write_attribute(top, True, "spray_target", domain="FACE", overwrite=True)
+        pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(top, base)
     return ChairResult(mesh=top)
