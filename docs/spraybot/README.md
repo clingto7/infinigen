@@ -49,6 +49,13 @@ The first workflow pilot covers `slat_back_chair`, `straight_leg_desk`,
 checks, contact-sheet review, manual category review, and a downstream Spraybot
 read test before the same pattern is applied to the rest of the baseline.
 
+The second validated batch extends this set with
+`storage_cabinet_single_door`, `storage_drawer_cabinet`,
+`storage_shelf_on_base`, `door_double`, `solid_back_chair`,
+`wheeled_dining_chair`, `rectangular_dining_table`, and
+`round_dining_table`. Their review artifacts live under the corresponding
+`outputs_scratch/second-batch-*` validation directory.
+
 The fork owns mesh generation and generation-side structure data: `spray_part`,
 `spray_target`, and optional category-specific priors. Spraybot owns trajectory
 rules, PaintDS output, and training-format conversion. The two repositories are

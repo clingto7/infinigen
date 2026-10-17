@@ -35,6 +35,7 @@ from infinigen2.objects import (
     sink,
     sofa,
     storage,
+    table,
     tap,
     toilet,
     vase,
@@ -236,6 +237,26 @@ def _rectangular_window_frame(rng: pf.RNG):
     )
 
 
+def _solid_back_chair(rng: pf.RNG):
+    return chair.chair_dining_rand(
+        rng, back_style="solid", base_style="straight", spray_tags=True
+    )
+
+
+def _wheeled_dining_chair(rng: pf.RNG):
+    return chair.chair_dining_rand(
+        rng, back_style="slat", base_style="wheeled", spray_tags=True
+    )
+
+
+def _rectangular_dining_table(rng: pf.RNG):
+    return table.table_dining_rand(rng, spray_tags=True)
+
+
+def _round_dining_table(rng: pf.RNG):
+    return table.table_dining_circular_rand(rng, spray_tags=True)
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -250,6 +271,10 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "straight_leg_desk": _straight_leg_desk,
     "legged_solid_headboard_bed": _legged_solid_headboard_bed,
     "window_rectangular_frame": _rectangular_window_frame,
+    "solid_back_chair": _solid_back_chair,
+    "wheeled_dining_chair": _wheeled_dining_chair,
+    "rectangular_dining_table": _rectangular_dining_table,
+    "round_dining_table": _round_dining_table,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -269,6 +294,10 @@ LEGENDS.update(
         "straight_leg_desk": {0: "tabletop", 1: "straight_base"},
         "legged_solid_headboard_bed": {0: "bed_frame", 1: "mattress"},
         "window_rectangular_frame": {0: "frame"},
+        "solid_back_chair": {0: "seat", 1: "solid_back", 2: "straight_base"},
+        "wheeled_dining_chair": {0: "seat", 1: "slat_back", 2: "wheeled_base"},
+        "rectangular_dining_table": {0: "tabletop", 1: "base"},
+        "round_dining_table": {0: "tabletop", 1: "base"},
     }
 )
 
