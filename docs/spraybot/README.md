@@ -34,3 +34,40 @@
 4. 方案确定后在本 fork 逐类实现生成器；每完成一类就做少量种子的几何、尺度、结构信息、类内多样性与基本喷涂空间检查，通过后才累计类别数。服务器只承担后续大规模生成。
 
 当前尚无经审计的 80 类清单，也没有证明现成 Infinigen 已覆盖 80 类。
+
+## Current furniture baseline
+
+The active baseline is the 34-category furniture and door/window matrix in
+[`adopted-workpiece-categories.csv`](adopted-workpiece-categories.csv). The old
+40-entry registry remains available as historical/internal code, but only
+accepted categories that pass the current validation gates are exposed for
+Spraybot production.
+
+The first workflow pilot covers `slat_back_chair`, `straight_leg_desk`,
+`open_cell_shelf`, `legged_solid_headboard_bed`, `door_with_handle`, and
+`window_rectangular_frame`. Each pilot category must pass 20-seed automated
+checks, contact-sheet review, manual category review, and a downstream Spraybot
+read test before the same pattern is applied to the rest of the baseline.
+
+The fork owns mesh generation and generation-side structure data: `spray_part`,
+`spray_target`, and optional category-specific priors. Spraybot owns trajectory
+rules, PaintDS output, and training-format conversion. The two repositories are
+connected through exported compatibility data rather than Python imports.
+
+### Standard validation workflow
+
+For an accepted category, run the 20-seed screen and create contact sheets:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/spraybot_validate.py \
+  outputs_scratch/<category>-validate --category <category_id> --seeds 20
+PYTHONPATH=src .venv/bin/python scripts/spraybot_contact_sheets.py \
+  outputs_scratch/<category>-validate
+```
+
+Then copy [`manual-review-template.md`](manual-review-template.md) into the
+validation directory and record the category decision. A category is formally
+usable only after generation, automatic checks, contact-sheet review, manual
+review, and compatibility export all pass. Use
+`scripts/spraybot_compare_batches.py` to compare same-seed batches when a
+reproducibility check is needed.

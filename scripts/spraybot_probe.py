@@ -53,14 +53,21 @@ def main() -> None:
     if set(np.unique(tri_part)) != set(result.part_legend):
         raise RuntimeError(f"Part labels differ from legend: {np.unique(tri_part)}")
 
+    structure_priors = getattr(result, "structure_priors", None)
+
     args.outdir.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(
-        args.outdir / "mesh.npz",
-        vertices=vertices,
-        faces=faces,
-        spray_part=tri_part,
-        spray_target=tri_target,
-    )
+    payload = {
+        "vertices": vertices,
+        "faces": faces,
+        # Spraybot's existing Infinigen adapter calls the per-triangle
+        # semantic label `part_id`; keep the fork-native name as well.
+        "part_id": tri_part,
+        "spray_part": tri_part,
+        "spray_target": tri_target,
+    }
+    if structure_priors is not None:
+        payload["structure_priors"] = np.array(structure_priors, dtype=object)
+    np.savez_compressed(args.outdir / "mesh.npz", **payload)
     bbox_min = vertices.min(axis=0)
     bbox_max = vertices.max(axis=0)
     summary = {
@@ -78,6 +85,7 @@ def main() -> None:
         "target_triangle_fraction": float(np.mean(tri_target)),
         "target_status": "candidate_only_not_reachability_checked",
         "removed_degenerate_faces": result.removed_degenerate_faces,
+        "structure_priors": structure_priors,
         "surface_area": float(triangle_areas.sum()),
     }
     if args.check_modifiers:

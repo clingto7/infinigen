@@ -7,6 +7,8 @@
 
 import math
 
+import numpy as np
+
 import procfunc as pf
 from procfunc.nodes import types as t
 
@@ -148,6 +150,7 @@ def _assemble_table(
     top_height: float,
     top_material: pf.Material,
     leg_material: pf.Material,
+    spray_tags: bool = False,
 ) -> TableResult:
     top = pf.nodes.geo.transform(top, translation=(0, 0, top_height))
     top = pf.nodes.to_mesh_object(top)
@@ -157,6 +160,23 @@ def _assemble_table(
     pf.ops.object.set_material(
         base, surface=leg_material.surface, displacement=leg_material.displacement
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            top,
+            np.zeros(len(top.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(top, True, "spray_target", domain="FACE", overwrite=True)
+        pf.ops.attr.write_attribute(
+            base,
+            np.ones(len(base.item().data.polygons), dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(top, base)
     pf.ops.modifier.subdivide_surface(top, levels=3, _skip_apply=True)
     return TableResult(mesh=top)
@@ -170,6 +190,7 @@ def table_dining_rand(
     top_support_loop_offset: pf.Vector | None = None,
     top_material: pf.Material | None = None,
     leg_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> TableResult:
     rng, rng_dims, rng_top_mat, rng_leg_mat, rng_base_choice, rng_base = rng.spawn(6)
     if dimensions is None:
@@ -186,7 +207,11 @@ def table_dining_rand(
 
     vec = pf.nodes.shader.coord().uv
     if top_material is None:
-        top_material = table_top_material_rand(rng_top_mat, vec)
+        top_material = (
+            furniture_material_rand(rng_top_mat, vec)
+            if spray_tags
+            else table_top_material_rand(rng_top_mat, vec)
+        )
     if leg_material is None:
         leg_material = furniture_material_rand(rng_leg_mat, vec)
 
@@ -216,7 +241,7 @@ def table_dining_rand(
         base_fn = pf.control.choice(rng_base_choice, base_options)
         res = base_fn(rng=rng_base, dimensions=(x, y, top_height))
         base = res.mesh
-    return _assemble_table(top, base, top_height, top_material, leg_material)
+    return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
 
 
 def table_dining_circular_rand(
@@ -227,6 +252,7 @@ def table_dining_circular_rand(
     top_thickness: float | None = None,
     top_material: pf.Material | None = None,
     leg_material: pf.Material | None = None,
+    spray_tags: bool = False,
 ) -> TableResult:
     """Circular dining table sized for four chairs."""
     (
@@ -246,7 +272,11 @@ def table_dining_circular_rand(
         top_thickness = pf.random.uniform(rng_thickness, 0.03, 0.08)
     vec = pf.nodes.shader.coord().uv
     if top_material is None:
-        top_material = table_top_material_rand(rng_top_mat, vec)
+        top_material = (
+            furniture_material_rand(rng_top_mat, vec)
+            if spray_tags
+            else table_top_material_rand(rng_top_mat, vec)
+        )
     if leg_material is None:
         leg_material = furniture_material_rand(rng_leg_mat, vec)
     top_height = height - top_thickness
@@ -260,7 +290,7 @@ def table_dining_circular_rand(
         )
         base = base_fn(rng_base, (diameter, diameter, top_height)).mesh
     top = _table_top_circular(diameter=diameter, thickness=top_thickness)
-    return _assemble_table(top, base, top_height, top_material, leg_material)
+    return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
 
 
 def table_side_rand(rng: pf.RNG) -> TableResult:

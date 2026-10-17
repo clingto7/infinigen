@@ -221,6 +221,7 @@ def main() -> None:
         "elapsed_sec": round(time.monotonic() - started, 3),
         "metrics": metrics,
         "part_legend": legend,
+        "structure_priors": getattr(result, "structure_priors", None),
         "spray_checks": spray_checks,
         "env": env,
         "artifacts": ["model.blend", "view_0.png", "view_1.png"],

@@ -257,7 +257,7 @@ def bed_rand(
         5
     )
     material = furniture_material_rand(r_hard, pf.nodes.shader.coord().uv)
-    frame_material = _frame_material_rand(r_upholstery, material)
+    frame_material = material if spray_tags else _frame_material_rand(r_upholstery, material)
     base = _bed_base_rand(
         r_base,
         pf.Vector((dimensions.x, dimensions.y, frame_height - 0.05)),
@@ -371,21 +371,27 @@ def bed_rand(
         frame_material,
     )
     if spray_tags:
-        # frame zeros first, then mattress ones, so the join preserves both tags
+        # Frame is the paintable hard surface; the fabric mattress remains present
+        # in the complete workpiece but is explicitly outside the spray target.
         pf.ops.attr.write_attribute(
             result.mesh,
             np.zeros(len(result.mesh.item().data.polygons), dtype=np.int32),
             "spray_part",
             domain="FACE",
+            overwrite=True,
         )
         pf.ops.attr.write_attribute(
             result.mattress_child,
             np.full(len(result.mattress_child.item().data.polygons), 1, dtype=np.int32),
             "spray_part",
             domain="FACE",
+            overwrite=True,
         )
-        pf.ops.object.join(result.mesh, result.mattress_child)
         pf.ops.attr.write_attribute(
             result.mesh, True, "spray_target", domain="FACE", overwrite=True
         )
+        pf.ops.attr.write_attribute(
+            result.mattress_child, False, "spray_target", domain="FACE", overwrite=True
+        )
+        pf.ops.object.join(result.mesh, result.mattress_child)
     return result

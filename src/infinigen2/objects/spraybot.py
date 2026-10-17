@@ -24,6 +24,7 @@ from infinigen2.objects import (
     ceiling_light,
     chair,
     cushion,
+    desk,
     door,
     drawer,
     furniture_bases,
@@ -59,7 +60,7 @@ def _open_cell_shelf(rng: pf.RNG):
     )
 
 
-BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
+LEGACY_BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     # seating / storage precedents
     "slat_back_chair": _slat_back_chair,
     "open_cell_shelf": _open_cell_shelf,
@@ -136,7 +137,7 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     ),
 }
 
-LEGENDS: dict[str, dict[int, str]] = {
+LEGACY_LEGENDS: dict[str, dict[int, str]] = {
     "slat_back_chair": {0: "seat", 1: "slat_back", 2: "straight_base"},
     "open_cell_shelf": {
         0: "outer_frame",
@@ -214,6 +215,63 @@ LEGENDS: dict[str, dict[int, str]] = {
     "table_base_square": {0: "base"},
 }
 
+def _straight_leg_desk(rng: pf.RNG):
+    return desk.desk_tabletop_rand(rng, spray_tags=True)
+
+
+def _legged_solid_headboard_bed(rng: pf.RNG):
+    # bed_rand(spray_tags=True) pins the base to legs, the headboard to solid,
+    # and removes the footboard branch. It also keeps the mattress as a
+    # non-target part of the complete workpiece.
+    return bed.bed_rand(rng, spray_tags=True)
+
+
+def _rectangular_window_frame(rng: pf.RNG):
+    return window.window_rectangular_rand(
+        rng,
+        include_glass_pane=False,
+        include_portal=False,
+        shutter=False,
+        spray_tags=True,
+    )
+
+
+# Only accepted furniture/door/window workpieces are formally exposed. The
+# legacy registry remains available inside this module for historical probes
+# and future migration, but is not part of CATEGORY_IDS.
+BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
+    "slat_back_chair": LEGACY_BUILDERS["slat_back_chair"],
+    "open_cell_shelf": LEGACY_BUILDERS["open_cell_shelf"],
+    "storage_cabinet_single_door": LEGACY_BUILDERS["storage_cabinet_single_door"],
+    "storage_drawer_cabinet": LEGACY_BUILDERS["storage_drawer_cabinet"],
+    "storage_shelf_on_base": LEGACY_BUILDERS["storage_shelf_on_base"],
+    "door_with_handle": LEGACY_BUILDERS["door_with_handle"],
+    "door_double": LEGACY_BUILDERS["door_double"],
+    "straight_leg_desk": _straight_leg_desk,
+    "legged_solid_headboard_bed": _legged_solid_headboard_bed,
+    "window_rectangular_frame": _rectangular_window_frame,
+}
+
+LEGENDS: dict[str, dict[int, str]] = {
+    category: LEGACY_LEGENDS[category]
+    for category in (
+        "slat_back_chair",
+        "open_cell_shelf",
+        "storage_cabinet_single_door",
+        "storage_drawer_cabinet",
+        "storage_shelf_on_base",
+        "door_with_handle",
+        "door_double",
+    )
+}
+LEGENDS.update(
+    {
+        "straight_leg_desk": {0: "tabletop", 1: "straight_base"},
+        "legged_solid_headboard_bed": {0: "bed_frame", 1: "mattress"},
+        "window_rectangular_frame": {0: "frame"},
+    }
+)
+
 CATEGORY_IDS = tuple(BUILDERS)
 
 assert set(BUILDERS) == set(LEGENDS), "builder/legend registry mismatch"
@@ -224,6 +282,7 @@ class WorkpieceResult(NamedTuple):
     category_id: str
     part_legend: dict[int, str]
     removed_degenerate_faces: int
+    structure_priors: dict[str, object] | None = None
 
 
 def _remove_degenerate_faces(mesh: pf.MeshObject) -> int:
@@ -255,9 +314,8 @@ def generate_workpiece(category_id: str, rng: pf.RNG) -> WorkpieceResult:
     mesh_object = getattr(result, "mesh", None)
     if mesh_object is None:
         raise TypeError(f"Builder for {category_id} returned no mesh field")
-    removed = (
-        _remove_degenerate_faces(mesh_object)
-        if category_id == "slat_back_chair"
-        else 0
-    )
-    return WorkpieceResult(mesh_object, category_id, LEGENDS[category_id], removed)
+    # Every formally exposed workpiece must reach downstream tessellation with
+    # non-degenerate triangles. The old registry only needed this for the
+    # chair precedent; furniture assemblies can produce the same artifact.
+    removed = _remove_degenerate_faces(mesh_object)
+    return WorkpieceResult(mesh_object, category_id, LEGENDS[category_id], removed, None)

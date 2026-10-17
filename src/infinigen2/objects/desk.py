@@ -123,6 +123,7 @@ def _thin_cell_shelf_rand(
 def _tabletop_surface_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     rng_top, rng_top_shape, rng_base, rng_table = rng.spawn(4)
     top_thickness = pf.random.uniform(rng_top, 0.025, 0.055)
@@ -131,6 +132,7 @@ def _tabletop_surface_rand(
         rng_base,
         dimensions=pf.Vector((dimensions.x, dimensions.y, top_height)),
         close_edges=True,
+        spray_tags=spray_tags,
     ).mesh
     result = table.table_dining_rand(
         rng_table,
@@ -138,6 +140,7 @@ def _tabletop_surface_rand(
         base=base,
         top_thickness=top_thickness,
         top_support_loop_offset=_desktop_support_loop_offset_rand(rng_top_shape),
+        spray_tags=spray_tags,
     )
     return result.mesh
 
@@ -222,11 +225,13 @@ def _tabletop_storage_surface_rand(
     return result.mesh
 
 
-def desk_tabletop_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> DeskResult:
+def desk_tabletop_rand(
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+) -> DeskResult:
     rng_dimensions, rng_surface = rng.spawn(2)
     if dimensions is None:
         dimensions = desk_dimensions_rand(rng_dimensions)
-    mesh = _tabletop_surface_rand(rng_surface, dimensions)
+    mesh = _tabletop_surface_rand(rng_surface, dimensions, spray_tags=spray_tags)
     mesh.item().name = "desk"
     return DeskResult(mesh)
 

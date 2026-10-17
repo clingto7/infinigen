@@ -116,3 +116,6 @@ usd/
 docs/source/api/infinigen2*.rst
 docs/source/api/modules.rst
 docs/source/api/
+
+# Local CodeGraph index (machine-generated, not a project artifact)
+.codegraph/

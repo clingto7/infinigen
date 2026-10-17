@@ -1274,20 +1274,22 @@ def window_rectangular_rand(
     glass_material: pf.Material | None = None,
     include_glass_pane: bool = True,
     include_portal: bool = True,
+    shutter: bool | None = None,
     spray_tags: bool = False,
 ) -> WindowResult:
     rng_param, rng_dim, rng_frame, rng_glass, rng_shutter = rng.spawn(5)
     if dimensions is None:
         dimensions = window_dimensions_rand(rng_dim)
-    shutter_fn = pf.control.choice(
-        rng_shutter,
-        [
-            (lambda: True, 0.2),
-            (lambda: False, 0.8),
-        ],
-    )
+    if shutter is None:
+        shutter_fn = pf.control.choice(
+            rng_shutter,
+            [
+                (lambda: True, 0.2),
+                (lambda: False, 0.8),
+            ],
+        )
+        shutter = shutter_fn()
     profile = rectangular_profile(dimensions)
-    shutter = shutter_fn()
     return _window_build_rand(
         rng_param,
         rng_frame,
