@@ -193,6 +193,7 @@ def table_dining_rand(
     top_support_loop_offset: pf.Vector | None = None,
     top_material: pf.Material | None = None,
     leg_material: pf.Material | None = None,
+    base_style: str | None = None,
     spray_tags: bool = False,
 ) -> TableResult:
     rng, rng_dims, rng_top_mat, rng_leg_mat, rng_base_choice, rng_base = rng.spawn(6)
@@ -236,12 +237,24 @@ def table_dining_rand(
     )
 
     if base is None:
-        base_options = [
-            (_table_straight_base_rand, 2.0),
-            (_table_pedestal_rand, 1.0),
-            (_table_square_base_rand, 0.6),
-        ]
-        base_fn = pf.control.choice(rng_base_choice, base_options)
+        base_options = {
+            "four_leg": _table_straight_base_rand,
+            "pedestal": _table_pedestal_rand,
+            "frame": _table_square_base_rand,
+        }
+        if base_style is None:
+            base_fn = pf.control.choice(
+                rng_base_choice,
+                [
+                    (_table_straight_base_rand, 2.0),
+                    (_table_pedestal_rand, 1.0),
+                    (_table_square_base_rand, 0.6),
+                ],
+            )
+        else:
+            if base_style not in base_options:
+                raise ValueError(f"unknown table base_style: {base_style}")
+            base_fn = base_options[base_style]
         res = base_fn(rng=rng_base, dimensions=(x, y, top_height))
         base = res.mesh
     return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
@@ -255,6 +268,7 @@ def table_dining_circular_rand(
     top_thickness: float | None = None,
     top_material: pf.Material | None = None,
     leg_material: pf.Material | None = None,
+    base_style: str | None = None,
     spray_tags: bool = False,
 ) -> TableResult:
     """Circular dining table sized for four chairs."""
@@ -284,13 +298,22 @@ def table_dining_circular_rand(
         leg_material = furniture_material_rand(rng_leg_mat, vec)
     top_height = height - top_thickness
     if base is None:
-        base_fn = pf.control.choice(
-            rng_base_choice,
-            [
-                (_table_circular_straight_base_rand, 1.0),
-                (_table_pedestal_rand, 1.0),
-            ],
-        )
+        base_options = {
+            "four_leg": _table_circular_straight_base_rand,
+            "pedestal": _table_pedestal_rand,
+        }
+        if base_style is None:
+            base_fn = pf.control.choice(
+                rng_base_choice,
+                [
+                    (_table_circular_straight_base_rand, 1.0),
+                    (_table_pedestal_rand, 1.0),
+                ],
+            )
+        else:
+            if base_style not in base_options:
+                raise ValueError(f"unknown circular table base_style: {base_style}")
+            base_fn = base_options[base_style]
         base = base_fn(rng_base, (diameter, diameter, top_height)).mesh
     top = _table_top_circular(diameter=diameter, thickness=top_thickness)
     return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
@@ -304,13 +327,19 @@ def table_side_rand(rng: pf.RNG) -> TableResult:
     return table_dining_rand(rng_table, dimensions, top_thickness=top_thickness)
 
 
-def _table_coffee_legged_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
+def _table_coffee_legged_rand(
+    rng: pf.RNG, base_style: str | None = None, spray_tags: bool = False
+) -> TableResult:
     """Low rectangular coffee table on legs."""
     rng, rng_dims, rng_table = rng.spawn(3)
     dimensions = table_coffee_dimensions_rand(rng_dims)
     top_thickness = pf.random.uniform(rng, 0.02, 0.04)
     return table_dining_rand(
-        rng_table, dimensions, top_thickness=top_thickness, spray_tags=spray_tags
+        rng_table,
+        dimensions,
+        top_thickness=top_thickness,
+        base_style=base_style,
+        spray_tags=spray_tags,
     )
 
 
@@ -321,7 +350,7 @@ def table_coffee_storage_rand(rng: pf.RNG, spray_tags: bool = False) -> TableRes
 
 
 def table_coffee_circular_rand(
-    rng: pf.RNG, spray_tags: bool = False
+    rng: pf.RNG, base_style: str | None = None, spray_tags: bool = False
 ) -> TableResult:
     """Round coffee table, 30-42 in (0.76-1.07 m) across and 16-19 in high."""
     rng, rng_table = rng.spawn(2)
@@ -330,6 +359,7 @@ def table_coffee_circular_rand(
         diameter=pf.random.uniform(rng, 0.76, 1.07),
         height=pf.random.uniform(rng, 0.4, 0.48),
         top_thickness=pf.random.uniform(rng, 0.02, 0.05),
+        base_style=base_style,
         spray_tags=spray_tags,
     )
 
@@ -370,19 +400,30 @@ def _table_cocktail_pedestal_rand(rng: pf.RNG, dimensions: pf.Vector) -> TableRe
     )
 
 
-def table_cocktail_circular_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
+def table_cocktail_circular_rand(
+    rng: pf.RNG, base_style: str | None = None, spray_tags: bool = False
+) -> TableResult:
     """Circular cocktail/bar table, usually with a wide pedestal base."""
     rng_dims, rng_thickness, rng_base_choice, rng_base, rng_table = rng.spawn(5)
     diameter = pf.random.uniform(rng_dims, 0.5, 0.8)
     height = pf.random.uniform(rng_dims, 1.0, 1.1)
     top_thickness = pf.random.uniform(rng_thickness, 0.03, 0.08)
-    base_fn = pf.control.choice(
-        rng_base_choice,
-        [
-            (_table_cocktail_pedestal_rand, 2.0),
-            (_table_circular_straight_base_rand, 1.0),
-        ],
-    )
+    base_options = {
+        "pedestal": _table_cocktail_pedestal_rand,
+        "four_leg": _table_circular_straight_base_rand,
+    }
+    if base_style is None:
+        base_fn = pf.control.choice(
+            rng_base_choice,
+            [
+                (_table_cocktail_pedestal_rand, 2.0),
+                (_table_circular_straight_base_rand, 1.0),
+            ],
+        )
+    else:
+        if base_style not in base_options:
+            raise ValueError(f"unknown circular high table base_style: {base_style}")
+        base_fn = base_options[base_style]
     base = base_fn(rng_base, (diameter, diameter, height - top_thickness)).mesh
     return table_dining_circular_rand(
         rng_table,
@@ -390,29 +431,43 @@ def table_cocktail_circular_rand(rng: pf.RNG, spray_tags: bool = False) -> Table
         height=height,
         base=base,
         top_thickness=top_thickness,
+        base_style=base_style,
         spray_tags=spray_tags,
     )
 
 
-def _table_cocktail_square_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
+def _table_cocktail_square_rand(
+    rng: pf.RNG, base_style: str | None = None, spray_tags: bool = False
+) -> TableResult:
     rng_dims, rng_thickness, rng_base_choice, rng_base, rng_table = rng.spawn(5)
     size = pf.random.uniform(rng_dims, 0.5, 0.8)
     height = pf.random.uniform(rng_dims, 1.0, 1.1)
     top_thickness = pf.random.uniform(rng_thickness, 0.03, 0.08)
-    base_fn = pf.control.choice(
-        rng_base_choice,
-        [
-            (_table_cocktail_pedestal_rand, 2.0),
-            (_table_straight_base_rand, 1.0),
-            (_table_square_base_rand, 1.0),
-        ],
-    )
+    base_options = {
+        "pedestal": _table_cocktail_pedestal_rand,
+        "four_leg": _table_straight_base_rand,
+        "frame": _table_square_base_rand,
+    }
+    if base_style is None:
+        base_fn = pf.control.choice(
+            rng_base_choice,
+            [
+                (_table_cocktail_pedestal_rand, 2.0),
+                (_table_straight_base_rand, 1.0),
+                (_table_square_base_rand, 1.0),
+            ],
+        )
+    else:
+        if base_style not in base_options:
+            raise ValueError(f"unknown rectangular high table base_style: {base_style}")
+        base_fn = base_options[base_style]
     base = base_fn(rng_base, (size, size, height - top_thickness)).mesh
     return table_dining_rand(
         rng_table,
         dimensions=(size, size, height),
         base=base,
         top_thickness=top_thickness,
+        base_style=base_style,
         spray_tags=spray_tags,
     )
 

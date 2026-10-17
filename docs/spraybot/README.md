@@ -37,7 +37,7 @@
 
 ## Current furniture baseline
 
-The active baseline is the 34-category furniture and door/window matrix in
+The active baseline is the 43-category furniture and door/window matrix in
 [`adopted-workpiece-categories.csv`](adopted-workpiece-categories.csv). The old
 40-entry registry remains available as historical/internal code, but only
 accepted categories that pass the current validation gates are exposed for
@@ -52,12 +52,14 @@ read test before the same pattern is applied to the rest of the baseline.
 The second validated batch extends this set with
 `storage_cabinet_single_door`, `storage_drawer_cabinet`,
 `storage_shelf_on_base`, `door_double`, `solid_back_chair`,
-`wheeled_dining_chair`, `rectangular_dining_table`, and
-`round_dining_table`. Their review artifacts live under the corresponding
+`wheeled_dining_chair`, the five fixed dining-table base variants, and their
+review artifacts live under the corresponding
 `outputs_scratch/second-batch-*` validation directory.
 
-The third validated batch adds `rectangular_coffee_table`,
-`round_coffee_table`, `legged_slatted_headboard_bed`, and
+The third validated batch originally added the coffee-table families. The
+table families were later split by fixed base construction into four-leg,
+pedestal, and frame variants where supported; each split variant has its own
+validation directory. The same batch also adds `legged_slatted_headboard_bed` and
 `window_rectangular_louver`. The slatted bed is retained with an explicit
 near-half target-area boundary recorded in its manual review.
 
@@ -69,15 +71,17 @@ and manual-review workflow.
 The fifth validated batch adds `storage_bed`, `window_top_arched`, and
 `window_double_arched`, with fixed storage-base and curved-profile branches.
 
-The sixth validated batch adds the four office-chair/stool variants and the two
-high-table variants, all with fixed seat/topology and base branches.
+The sixth validated batch originally added the four office-chair/stool variants
+and the two high-table families. The high-table families are now represented by
+five fixed-base variants (`rectangular_high_table_{four_leg,pedestal,frame}` and
+`round_high_table_{four_leg,pedestal}`).
 
 The seventh validated batch adds `window_panel_door` and
 `double_window_panel_door`. Their glass faces are explicitly non-target; the
 manual reviews record the resulting low target-area boundary cases.
 
-The final batch adds `side_storage_desk` and `thin_drawer_desk`, completing all
-34 categories in the adopted baseline. The thin-drawer family uses the fixed
+The final batch adds `side_storage_desk` and `thin_drawer_desk`; the subsequent
+table split completes all 43 categories in the adopted baseline. The thin-drawer family uses the fixed
 tabletop-plus-open-storage representative selected during review.
 
 The fork owns mesh generation and generation-side structure data: `spray_part`,

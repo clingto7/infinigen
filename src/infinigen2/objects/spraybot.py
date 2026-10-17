@@ -249,24 +249,48 @@ def _wheeled_dining_chair(rng: pf.RNG):
     )
 
 
-def _rectangular_dining_table(rng: pf.RNG):
-    return table.table_dining_rand(rng, spray_tags=True)
+def _rectangular_dining_table_four_leg(rng: pf.RNG):
+    return table.table_dining_rand(rng, base_style="four_leg", spray_tags=True)
 
 
-def _round_dining_table(rng: pf.RNG):
-    return table.table_dining_circular_rand(rng, spray_tags=True)
+def _rectangular_dining_table_pedestal(rng: pf.RNG):
+    return table.table_dining_rand(rng, base_style="pedestal", spray_tags=True)
+
+
+def _rectangular_dining_table_frame(rng: pf.RNG):
+    return table.table_dining_rand(rng, base_style="frame", spray_tags=True)
+
+
+def _round_dining_table_four_leg(rng: pf.RNG):
+    return table.table_dining_circular_rand(rng, base_style="four_leg", spray_tags=True)
+
+
+def _round_dining_table_pedestal(rng: pf.RNG):
+    return table.table_dining_circular_rand(rng, base_style="pedestal", spray_tags=True)
 
 
 def _legged_slatted_headboard_bed(rng: pf.RNG):
     return bed.bed_rand(rng, spray_tags=True, headboard_style="slat")
 
 
-def _rectangular_coffee_table(rng: pf.RNG):
-    return table._table_coffee_legged_rand(rng, spray_tags=True)
+def _rectangular_coffee_table_four_leg(rng: pf.RNG):
+    return table._table_coffee_legged_rand(rng, base_style="four_leg", spray_tags=True)
 
 
-def _round_coffee_table(rng: pf.RNG):
-    return table.table_coffee_circular_rand(rng, spray_tags=True)
+def _rectangular_coffee_table_pedestal(rng: pf.RNG):
+    return table._table_coffee_legged_rand(rng, base_style="pedestal", spray_tags=True)
+
+
+def _rectangular_coffee_table_frame(rng: pf.RNG):
+    return table._table_coffee_legged_rand(rng, base_style="frame", spray_tags=True)
+
+
+def _round_coffee_table_four_leg(rng: pf.RNG):
+    return table.table_coffee_circular_rand(rng, base_style="four_leg", spray_tags=True)
+
+
+def _round_coffee_table_pedestal(rng: pf.RNG):
+    return table.table_coffee_circular_rand(rng, base_style="pedestal", spray_tags=True)
 
 
 def _rectangular_louver_window(rng: pf.RNG):
@@ -345,12 +369,24 @@ def _round_wheeled_stool(rng: pf.RNG):
     return chair.chair_office_rand(rng, seat_style="round", base_style="wheeled", spray_tags=True)
 
 
-def _rectangular_high_table(rng: pf.RNG):
-    return table._table_cocktail_square_rand(rng, spray_tags=True)
+def _rectangular_high_table_four_leg(rng: pf.RNG):
+    return table._table_cocktail_square_rand(rng, base_style="four_leg", spray_tags=True)
 
 
-def _round_high_table(rng: pf.RNG):
-    return table.table_cocktail_circular_rand(rng, spray_tags=True)
+def _rectangular_high_table_pedestal(rng: pf.RNG):
+    return table._table_cocktail_square_rand(rng, base_style="pedestal", spray_tags=True)
+
+
+def _rectangular_high_table_frame(rng: pf.RNG):
+    return table._table_cocktail_square_rand(rng, base_style="frame", spray_tags=True)
+
+
+def _round_high_table_four_leg(rng: pf.RNG):
+    return table.table_cocktail_circular_rand(rng, base_style="four_leg", spray_tags=True)
+
+
+def _round_high_table_pedestal(rng: pf.RNG):
+    return table.table_cocktail_circular_rand(rng, base_style="pedestal", spray_tags=True)
 
 
 def _window_panel_door(rng: pf.RNG):
@@ -387,11 +423,17 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "window_rectangular_frame": _rectangular_window_frame,
     "solid_back_chair": _solid_back_chair,
     "wheeled_dining_chair": _wheeled_dining_chair,
-    "rectangular_dining_table": _rectangular_dining_table,
-    "round_dining_table": _round_dining_table,
+    "rectangular_dining_table_four_leg": _rectangular_dining_table_four_leg,
+    "rectangular_dining_table_pedestal": _rectangular_dining_table_pedestal,
+    "rectangular_dining_table_frame": _rectangular_dining_table_frame,
+    "round_dining_table_four_leg": _round_dining_table_four_leg,
+    "round_dining_table_pedestal": _round_dining_table_pedestal,
     "legged_slatted_headboard_bed": _legged_slatted_headboard_bed,
-    "rectangular_coffee_table": _rectangular_coffee_table,
-    "round_coffee_table": _round_coffee_table,
+    "rectangular_coffee_table_four_leg": _rectangular_coffee_table_four_leg,
+    "rectangular_coffee_table_pedestal": _rectangular_coffee_table_pedestal,
+    "rectangular_coffee_table_frame": _rectangular_coffee_table_frame,
+    "round_coffee_table_four_leg": _round_coffee_table_four_leg,
+    "round_coffee_table_pedestal": _round_coffee_table_pedestal,
     "window_rectangular_louver": _rectangular_louver_window,
     "drawer_cabinet": _drawer_cabinet,
     "wide_door_cabinet": _wide_door_cabinet,
@@ -403,8 +445,11 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "shell_wheeled_chair": _shell_wheeled_chair,
     "round_four_leg_stool": _round_four_leg_stool,
     "round_wheeled_stool": _round_wheeled_stool,
-    "rectangular_high_table": _rectangular_high_table,
-    "round_high_table": _round_high_table,
+    "rectangular_high_table_four_leg": _rectangular_high_table_four_leg,
+    "rectangular_high_table_pedestal": _rectangular_high_table_pedestal,
+    "rectangular_high_table_frame": _rectangular_high_table_frame,
+    "round_high_table_four_leg": _round_high_table_four_leg,
+    "round_high_table_pedestal": _round_high_table_pedestal,
     "window_panel_door": _window_panel_door,
     "double_window_panel_door": _double_window_panel_door,
     "side_storage_desk": _side_storage_desk,
@@ -430,11 +475,17 @@ LEGENDS.update(
         "window_rectangular_frame": {0: "frame"},
         "solid_back_chair": {0: "seat", 1: "solid_back", 2: "straight_base"},
         "wheeled_dining_chair": {0: "seat", 1: "slat_back", 2: "wheeled_base"},
-        "rectangular_dining_table": {0: "tabletop", 1: "base"},
-        "round_dining_table": {0: "tabletop", 1: "base"},
+        "rectangular_dining_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "rectangular_dining_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
+        "rectangular_dining_table_frame": {0: "tabletop", 1: "frame_base"},
+        "round_dining_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "round_dining_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
         "legged_slatted_headboard_bed": {0: "bed_frame", 1: "mattress"},
-        "rectangular_coffee_table": {0: "tabletop", 1: "base"},
-        "round_coffee_table": {0: "tabletop", 1: "base"},
+        "rectangular_coffee_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "rectangular_coffee_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
+        "rectangular_coffee_table_frame": {0: "tabletop", 1: "frame_base"},
+        "round_coffee_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "round_coffee_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
         "window_rectangular_louver": {0: "frame_and_louver"},
         "drawer_cabinet": {
             0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
@@ -455,8 +506,11 @@ LEGENDS.update(
         "shell_wheeled_chair": {0: "curvy_shell_seat", 1: "wheeled_base"},
         "round_four_leg_stool": {0: "round_seat", 1: "straight_base"},
         "round_wheeled_stool": {0: "round_seat", 1: "wheeled_base"},
-        "rectangular_high_table": {0: "tabletop", 1: "base"},
-        "round_high_table": {0: "tabletop", 1: "base"},
+        "rectangular_high_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "rectangular_high_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
+        "rectangular_high_table_frame": {0: "tabletop", 1: "frame_base"},
+        "round_high_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
+        "round_high_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
         "window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
         "double_window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
         "side_storage_desk": {0: "tabletop", 1: "side_storage"},
