@@ -39,6 +39,9 @@ __all__ = [
     "table_dimensions_rand",
     "table_dining_circular_rand",
     "table_dining_rand",
+    "table_rectangular_rand",
+    "table_round_rand",
+    "table_square_rand",
     "table_side_circular_rand",
     "table_side_dimensions_rand",
     "table_side_rand",
@@ -317,6 +320,60 @@ def table_dining_circular_rand(
         base = base_fn(rng_base, (diameter, diameter, top_height)).mesh
     top = _table_top_circular(diameter=diameter, thickness=top_thickness)
     return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
+
+
+def table_rectangular_rand(
+    rng: pf.RNG, base_style: str, spray_tags: bool = False
+) -> TableResult:
+    """General rectangular work table with a variable height profile.
+
+    Dining and coffee tables share the same rectangular workpiece family; their
+    former size/height ranges are treated as within-category variation here.
+    """
+    rng, rng_dims, rng_thickness, rng_table = rng.spawn(4)
+    dimensions = (
+        pf.random.uniform(rng_dims, 0.6, 1.5),
+        pf.random.uniform(rng_dims, 0.9, 1.8),
+        pf.random.uniform(rng_dims, 0.3, 0.85),
+    )
+    return table_dining_rand(
+        rng_table,
+        dimensions=dimensions,
+        top_thickness=pf.random.uniform(rng_thickness, 0.02, 0.08),
+        base_style=base_style,
+        spray_tags=spray_tags,
+    )
+
+
+def table_square_rand(
+    rng: pf.RNG, base_style: str, spray_tags: bool = False
+) -> TableResult:
+    """General square work table with a variable height profile."""
+    rng, rng_dims, rng_thickness, rng_table = rng.spawn(4)
+    size = pf.random.uniform(rng_dims, 0.5, 0.95)
+    height = pf.random.uniform(rng_dims, 0.4, 1.1)
+    return table_dining_rand(
+        rng_table,
+        dimensions=(size, size, height),
+        top_thickness=pf.random.uniform(rng_thickness, 0.02, 0.08),
+        base_style=base_style,
+        spray_tags=spray_tags,
+    )
+
+
+def table_round_rand(
+    rng: pf.RNG, base_style: str, spray_tags: bool = False
+) -> TableResult:
+    """General round work table with a variable height profile."""
+    rng, rng_dims, rng_thickness, rng_table = rng.spawn(4)
+    return table_dining_circular_rand(
+        rng_table,
+        diameter=pf.random.uniform(rng_dims, 0.5, 1.5),
+        height=pf.random.uniform(rng_dims, 0.3, 1.1),
+        top_thickness=pf.random.uniform(rng_thickness, 0.02, 0.08),
+        base_style=base_style,
+        spray_tags=spray_tags,
+    )
 
 
 def table_side_rand(rng: pf.RNG) -> TableResult:
