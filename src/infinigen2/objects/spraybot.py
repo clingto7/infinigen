@@ -353,6 +353,14 @@ def _round_high_table(rng: pf.RNG):
     return table.table_cocktail_circular_rand(rng, spray_tags=True)
 
 
+def _window_panel_door(rng: pf.RNG):
+    return door.door_composite_rand(rng, body_style="window", spray_tags=True)
+
+
+def _double_window_panel_door(rng: pf.RNG):
+    return door.door_double_rand(rng, body_style="window", spray_tags=True)
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -387,6 +395,8 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "round_wheeled_stool": _round_wheeled_stool,
     "rectangular_high_table": _rectangular_high_table,
     "round_high_table": _round_high_table,
+    "window_panel_door": _window_panel_door,
+    "double_window_panel_door": _double_window_panel_door,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -435,6 +445,8 @@ LEGENDS.update(
         "round_wheeled_stool": {0: "round_seat", 1: "wheeled_base"},
         "rectangular_high_table": {0: "tabletop", 1: "base"},
         "round_high_table": {0: "tabletop", 1: "base"},
+        "window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
+        "double_window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
     }
 )
 

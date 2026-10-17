@@ -272,8 +272,20 @@ def door_with_handle_rand(
             domain="FACE",
             overwrite=True,
         )
+        pf.ops.attr.write_attribute(handle, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(door, handle)
-    if spray_tags:
+    if spray_tags and body_style == "window":
+        parts = np.array(
+            [d.value for d in door.item().data.attributes["spray_part"].data],
+            dtype=np.int32,
+        )
+        target_attr = door.item().data.attributes.get("spray_target")
+        if target_attr is None:
+            pf.ops.attr.write_attribute(door, True, "spray_target", domain="FACE")
+            target_attr = door.item().data.attributes["spray_target"]
+        for index, part in enumerate(parts):
+            target_attr.data[index].value = bool(part != 1)
+    if spray_tags and body_style != "window":
         pf.ops.attr.write_attribute(
             door, True, "spray_target", domain="FACE", overwrite=True
         )
@@ -287,6 +299,7 @@ def door_double_rand(
     handle: pf.MeshObject | None = None,
     inner_material: pf.Material | None = None,
     spray_tags: bool = False,
+    body_style: str | None = None,
 ) -> DoorResult:
     """Mirror one sampled door; dimensions specify the full pair's slab bounds.
 
@@ -307,12 +320,24 @@ def door_double_rand(
         material=material,
         handle=handle,
         inner_material=inner_material,
+        body_style=body_style,
         spray_tags=spray_tags,
     ).mesh
     pf.ops.mesh.transform(door, location=(0.0, -leaf_width, 0.0))
     pf.ops.modifier.mirror(door, use_axis=(False, True, False))
     pf.ops.mesh.transform(door, location=(0.0, leaf_width, 0.0))
-    if spray_tags:
+    if spray_tags and body_style == "window":
+        parts = np.array(
+            [d.value for d in door.item().data.attributes["spray_part"].data],
+            dtype=np.int32,
+        )
+        target_attr = door.item().data.attributes.get("spray_target")
+        if target_attr is None:
+            pf.ops.attr.write_attribute(door, True, "spray_target", domain="FACE")
+            target_attr = door.item().data.attributes["spray_target"]
+        for index, part in enumerate(parts):
+            target_attr.data[index].value = bool(part != 1)
+    if spray_tags and body_style != "window":
         pf.ops.attr.write_attribute(
             door, True, "spray_target", domain="FACE", overwrite=True
         )
@@ -326,6 +351,7 @@ def door_composite_rand(
     handle: pf.MeshObject | None = None,
     inner_material: pf.Material | None = None,
     spray_tags: bool = False,
+    body_style: str | None = None,
 ) -> DoorResult:
     """With `spray_tags`: the body is pinned to the standard panel door so the
     legend is 0=frame, 1=panel, 2=handle; every face is a spray target."""
@@ -354,17 +380,26 @@ def door_composite_rand(
             dimensions=dimensions,
             frame_material=material,
             include_portal=False,
+            shutter=False,
+            spray_tags=spray_tags,
         )
 
-    body_func = pf.control.choice(
-        rng,
-        [
-            (standard_body, 3.0),
-            (window_body, 1.0),
-        ],
-    )
-    if spray_tags:
+    if body_style == "standard":
         body_func = standard_body
+    elif body_style == "window":
+        body_func = window_body
+    elif body_style is None and not spray_tags:
+        body_func = pf.control.choice(
+            rng,
+            [
+                (standard_body, 3.0),
+                (window_body, 1.0),
+            ],
+        )
+    elif spray_tags:
+        body_func = standard_body
+    else:
+        raise ValueError(f"Unknown body_style: {body_style}")
     door = body_func().mesh
     if handle is None:
         handle = handles.handle_rand(rng_handle).mesh
@@ -387,11 +422,21 @@ def door_composite_rand(
             domain="FACE",
             overwrite=True,
         )
+        pf.ops.attr.write_attribute(handle, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(door, handle)
-    if spray_tags:
-        pf.ops.attr.write_attribute(
-            door, True, "spray_target", domain="FACE", overwrite=True
+    if spray_tags and body_style == "window":
+        parts = np.array(
+            [d.value for d in door.item().data.attributes["spray_part"].data],
+            dtype=np.int32,
         )
+        target_attr = door.item().data.attributes.get("spray_target")
+        if target_attr is None:
+            pf.ops.attr.write_attribute(door, True, "spray_target", domain="FACE")
+            target_attr = door.item().data.attributes["spray_target"]
+        for index, part in enumerate(parts):
+            target_attr.data[index].value = bool(part != 1)
+    elif spray_tags:
+        pf.ops.attr.write_attribute(door, True, "spray_target", domain="FACE", overwrite=True)
     return DoorResult(mesh=door)
 
 
