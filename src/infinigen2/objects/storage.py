@@ -137,6 +137,8 @@ def _storage_drawers_rand(
                 overwrite=True,
             )
         pf.ops.object.join(drawers, copy)
+    if spray_tags:
+        pf.ops.attr.write_attribute(drawers, True, "spray_target", domain="FACE", overwrite=True)
     return drawers
 
 
@@ -657,6 +659,7 @@ def _storage_doors_rand(
     dimensions: pf.Vector,
     material: pf.Material,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> pf.MeshObject:
     rng_door_choice, rng_door, rng_style, rng_handle = rng.spawn(4)
 
@@ -670,12 +673,18 @@ def _storage_doors_rand(
             rng_style, [(bar_pull, 1.0), (handles.handle_knob_rand, 1.0)]
         )
         handle = handle_fn(rng_handle).mesh
+    if spray_tags:
+        return door_with_handle_rand(
+            rng_door,
+            dimensions=dimensions,
+            material=material,
+            handle=handle,
+            spray_tags=True,
+        ).mesh
     door_fn = pf.control.choice(
         rng_door_choice, [(door_composite_rand, 2.0), (door_double_rand, 1.0)]
     )
-    return door_fn(
-        rng_door, dimensions=dimensions, material=material, handle=handle
-    ).mesh
+    return door_fn(rng_door, dimensions=dimensions, material=material, handle=handle).mesh
 
 
 def storage_composite_rand(
@@ -690,6 +699,8 @@ def storage_composite_rand(
     col_divider_width: float | None = None,
     desired_slot_aspect: float | None = None,
     handle: pf.MeshObject | None = None,
+    front_style: str | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
     """Sample one open, drawer, single-door or double-door cabinet treatment.
 
@@ -721,6 +732,7 @@ def storage_composite_rand(
         params.frame_thickness,
         params.row_divider_width,
         params.col_divider_width,
+        spray_tags=spray_tags,
     ).mesh
     slots = storage_cell_bounds(
         pf.Vector((carcass_depth, params.dimensions.y, params.dimensions.z)),
@@ -744,6 +756,7 @@ def storage_composite_rand(
             params.row_divider_width,
             params.col_divider_width,
             handle,
+            spray_tags=spray_tags,
         )
 
     def door_front(r: pf.RNG) -> pf.MeshObject | None:
@@ -752,17 +765,37 @@ def storage_composite_rand(
             pf.Vector((front_thickness, params.dimensions.y, params.dimensions.z)),
             params.material,
             handle,
+            spray_tags=spray_tags,
         )
         pf.ops.object.set_transform(front, location=(carcass_depth, 0, 0))
         return front
 
-    front_fn = pf.control.choice(
-        rng_choice,
-        [(open_front, 1.0), (drawer_front, 3.0), (door_front, 2.0)],
-    )
+    if front_style == "drawer":
+        front_fn = drawer_front
+    elif front_style == "door":
+        front_fn = door_front
+    elif front_style == "open":
+        front_fn = open_front
+    elif front_style is None and not spray_tags:
+        front_fn = pf.control.choice(
+            rng_choice,
+            [(open_front, 1.0), (drawer_front, 3.0), (door_front, 2.0)],
+        )
+    else:
+        raise ValueError(f"front_style is required for tagged storage: {front_style}")
     front = front_fn(rng_front)
+    if spray_tags and front is not None and front_style == "door":
+        door_parts = np.array(
+            [d.value for d in front.item().data.attributes["spray_part"].data],
+            dtype=np.int32,
+        ) + np.int32(4)
+        pf.ops.attr.write_attribute(
+            front, door_parts, "spray_part", domain="FACE", overwrite=True
+        )
     if front is not None:
         pf.ops.object.join(carcass, front)
+    if spray_tags:
+        pf.ops.attr.write_attribute(carcass, True, "spray_target", domain="FACE", overwrite=True)
     return StorageResult(mesh=carcass)
 
 
@@ -999,6 +1032,8 @@ def storage_with_legs_rand(
     leg_height: float | None = None,
     close_edges: bool = False,
     desired_slot_aspect: float | None = None,
+    front_style: str | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
     """Cell shelf raised on a stable compositional base."""
     rng, rng_body, rng_legs = rng.spawn(3)
@@ -1012,16 +1047,27 @@ def storage_with_legs_rand(
     body_result = storage_composite_rand(
         rng_body,
         dimensions=body_dimensions,
-        n_spaces_y=n_spaces_y,
-        n_spaces_z=n_spaces_z,
+        n_spaces_y=3 if spray_tags else n_spaces_y,
+        n_spaces_z=3 if spray_tags else n_spaces_z,
         frame_material=frame_material,
-        back_width=back_width,
+        back_width=0.02 if spray_tags else back_width,
         desired_slot_aspect=desired_slot_aspect,
+        front_style=front_style,
+        spray_tags=spray_tags,
     )
     pf.ops.mesh.transform(body_result.mesh, location=(0.0, 0.0, leg_height))
     legs = storage_legs_stable_rand(
         rng_legs, dimensions, leg_height, close_edges=close_edges
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            legs,
+            np.full(len(legs.item().data.polygons), 8, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(legs, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(body_result.mesh, legs)
     return StorageResult(mesh=body_result.mesh)
 
@@ -1077,7 +1123,7 @@ def storage_bench_rand(
 
 
 def storage_table_coffee_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None
+    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
 ) -> StorageResult:
     """Coffee table whose body is a cell shelf."""
     rng_dimensions, rng_leg_height, rng_storage = rng.spawn(3)
@@ -1088,8 +1134,12 @@ def storage_table_coffee_rand(
     return storage_with_legs_rand(
         rng_storage,
         dimensions=dimensions,
+        n_spaces_y=3 if spray_tags else None,
         n_spaces_z=1,
+        back_width=0.02 if spray_tags else None,
         leg_height=dimensions[2] * pf.random.uniform(rng_leg_height, 0.3, 0.7),
+        front_style="open" if spray_tags else None,
+        spray_tags=spray_tags,
     )
 
 

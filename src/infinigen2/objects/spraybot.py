@@ -279,6 +279,32 @@ def _rectangular_louver_window(rng: pf.RNG):
     )
 
 
+def _drawer_cabinet(rng: pf.RNG):
+    return storage.storage_composite_rand(
+        rng,
+        n_spaces_y=3,
+        n_spaces_z=3,
+        back_width=0.02,
+        front_style="drawer",
+        spray_tags=True,
+    )
+
+
+def _wide_door_cabinet(rng: pf.RNG):
+    return storage.storage_composite_rand(
+        rng,
+        n_spaces_y=3,
+        n_spaces_z=3,
+        back_width=0.02,
+        front_style="door",
+        spray_tags=True,
+    )
+
+
+def _storage_coffee_table(rng: pf.RNG):
+    return table.table_coffee_storage_rand(rng, spray_tags=True)
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
@@ -301,6 +327,9 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
     "rectangular_coffee_table": _rectangular_coffee_table,
     "round_coffee_table": _round_coffee_table,
     "window_rectangular_louver": _rectangular_louver_window,
+    "drawer_cabinet": _drawer_cabinet,
+    "wide_door_cabinet": _wide_door_cabinet,
+    "storage_coffee_table": _storage_coffee_table,
 }
 
 LEGENDS: dict[str, dict[int, str]] = {
@@ -328,6 +357,18 @@ LEGENDS.update(
         "rectangular_coffee_table": {0: "tabletop", 1: "base"},
         "round_coffee_table": {0: "tabletop", 1: "base"},
         "window_rectangular_louver": {0: "frame_and_louver"},
+        "drawer_cabinet": {
+            0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
+            3: "vertical_divider", 7: "drawers",
+        },
+        "wide_door_cabinet": {
+            0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
+            3: "vertical_divider", 4: "door_frame", 5: "door_panel", 6: "door_handle",
+        },
+        "storage_coffee_table": {
+            0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
+            3: "vertical_divider", 8: "base",
+        },
     }
 )
 

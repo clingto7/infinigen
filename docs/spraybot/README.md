@@ -61,6 +61,11 @@ The third validated batch adds `rectangular_coffee_table`,
 `window_rectangular_louver`. The slatted bed is retained with an explicit
 near-half target-area boundary recorded in its manual review.
 
+The fourth validated batch adds the first composite storage categories:
+`drawer_cabinet`, `wide_door_cabinet`, and `storage_coffee_table`. Their fixed
+grid layouts and component target propagation are covered by the same 20-seed
+and manual-review workflow.
+
 The fork owns mesh generation and generation-side structure data: `spray_part`,
 `spray_target`, and optional category-specific priors. Spraybot owns trajectory
 rules, PaintDS output, and training-format conversion. The two repositories are

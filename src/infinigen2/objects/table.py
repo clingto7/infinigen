@@ -311,8 +311,8 @@ def _table_coffee_legged_rand(rng: pf.RNG, spray_tags: bool = False) -> TableRes
     )
 
 
-def table_coffee_storage_rand(rng: pf.RNG) -> TableResult:
-    result = storage.storage_table_coffee_rand(rng)
+def table_coffee_storage_rand(rng: pf.RNG, spray_tags: bool = False) -> TableResult:
+    result = storage.storage_table_coffee_rand(rng, spray_tags=spray_tags)
     mesh.center_footprint(result.mesh)
     return TableResult(mesh=result.mesh)
 
