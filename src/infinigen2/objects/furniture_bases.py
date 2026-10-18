@@ -761,12 +761,16 @@ def base_straight_rand(
     leg_placement_top_scale: float = 0.8,
     close_edges: bool = False,
     spray_tags: bool = False,
+    stretcher_increment: int | None = None,
+    stretcher_relative_pos: float | None = None,
 ) -> TableResult:
     """4-leg base with optional stretchers. leg_placement_bottom_scale > 1 splays
     the legs outward; pass 1.0 for an upright base to sit under a carcass.
 
     With `spray_tags`: stretchers are pinned off and the whole base is one
-    part 0; every face is a spray target."""
+    part 0; every face is a spray target. An explicit ``stretcher_increment``
+    is applied after that draw, so a caller can keep a footrest. Defaults leave
+    the random stream unchanged."""
     rng_parameters, rng_dims, rng_mat, rng_inset, rng_stretcher = rng.spawn(5)
     if dimensions is None:
         dimensions = table_dimensions_rand(rng_dims)
@@ -780,12 +784,18 @@ def base_straight_rand(
     leg_inset = 0.0
     if leg_inset_range is not None and not close_edges:
         leg_inset = pf.random.uniform(rng_inset, *leg_inset_range)
-    stretcher_increment = pf.control.choice(
+    sampled_increment = pf.control.choice(
         rng_stretcher, [(0, 1.0), (1, 1.0), (2, 1.0)]
     )
     if spray_tags:
-        stretcher_increment = 0
-    stretcher_relative_pos = pf.random.uniform(rng_parameters, 0.2, 0.6)
+        sampled_increment = 0
+    if stretcher_increment is not None:
+        sampled_increment = stretcher_increment
+    sampled_relative = pf.random.uniform(rng_parameters, 0.2, 0.6)
+    if stretcher_relative_pos is not None:
+        sampled_relative = stretcher_relative_pos
+    stretcher_increment = sampled_increment
+    stretcher_relative_pos = sampled_relative
     geo = base_four_leg(
         dimensions=dimensions,
         leg_diameter=leg_diameter,

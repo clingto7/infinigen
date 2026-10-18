@@ -174,7 +174,13 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if args.generator.startswith("spraybot:"):
+    if args.generator.startswith("workpiece:"):
+        from infinigen2.workpieces import generate
+
+        result = generate(
+            args.generator.removeprefix("workpiece:"), np.random.default_rng(args.seed)
+        )
+    elif args.generator.startswith("spraybot:"):
         from infinigen2.objects.spraybot import generate_workpiece
 
         result = generate_workpiece(

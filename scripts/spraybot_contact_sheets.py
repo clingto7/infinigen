@@ -22,7 +22,7 @@ def main() -> None:
     width, height, columns = 192, 192, 4
     cell_width, cell_height = width * 2 + 12, height + 42
     for index, name in enumerate(info["generators"]):
-        short = name.removeprefix("spraybot:").rsplit(".", 1)[-1]
+        short = name.removeprefix("spraybot:").removeprefix("workpiece:").rsplit(".", 1)[-1]
         seeds = info["seeds"]
         rows = (len(seeds) + columns - 1) // columns
         sheet = Image.new("RGB", (columns * cell_width, rows * cell_height + 34), "#f4f5f7")

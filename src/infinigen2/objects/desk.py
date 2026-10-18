@@ -50,6 +50,8 @@ def _side_cell_shelf_base_rand(
     dimensions: pf.Vector,
     top_height: float,
     spray_tags: bool = False,
+    front_style: str | None = None,
+    shared_parts: bool = False,
 ) -> pf.MeshObject:
     (
         rng_frame,
@@ -82,7 +84,7 @@ def _side_cell_shelf_base_rand(
         col_divider_width=col_divider_width,
         back_width=back_width,
         desired_slot_aspect=pf.random.uniform(rng_aspect, 2.0, 10.0),
-        front_style="open" if spray_tags else None,
+        front_style=front_style if front_style is not None else ("open" if spray_tags else None),
         spray_tags=spray_tags,
     ).mesh
     right = left.clone()
@@ -95,7 +97,11 @@ def _side_cell_shelf_base_rand(
         location=(-dimensions.x / 2, dimensions.y / 2 - cabinet_width, 0.0),
     )
     pf.ops.object.join(left, right)
-    if spray_tags:
+    if shared_parts:
+        from infinigen2.util import spray
+
+        spray.remap_spray_part(left, spray.REMOTE_STORAGE_PARTS)
+    elif spray_tags:
         pf.ops.attr.write_attribute(
             left,
             np.ones(len(left.item().data.polygons), dtype=np.int32),
@@ -150,7 +156,10 @@ def _tabletop_surface_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
     spray_tags: bool = False,
+    shared_parts: bool = False,
 ) -> pf.MeshObject:
+    from infinigen2.util import spray
+
     rng_top, rng_top_shape, rng_base, rng_table = rng.spawn(4)
     top_thickness = pf.random.uniform(rng_top, 0.025, 0.055)
     top_height = dimensions.z - top_thickness
@@ -167,6 +176,8 @@ def _tabletop_surface_rand(
         top_thickness=top_thickness,
         top_support_loop_offset=_desktop_support_loop_offset_rand(rng_top_shape),
         spray_tags=spray_tags,
+        top_part=spray.part_id("top") if shared_parts else None,
+        base_part=spray.part_id("leg_base") if shared_parts else None,
     )
     return result.mesh
 
@@ -175,11 +186,22 @@ def _side_storage_tabletop_surface_rand(
     rng: pf.RNG,
     dimensions: pf.Vector,
     spray_tags: bool = False,
+    front_style: str | None = None,
+    shared_parts: bool = False,
 ) -> pf.MeshObject:
+    from infinigen2.util import spray
+
     rng_top, rng_top_shape, rng_base, rng_table = rng.spawn(4)
     top_thickness = pf.random.uniform(rng_top, 0.025, 0.055)
     top_height = dimensions.z - top_thickness
-    base = _side_cell_shelf_base_rand(rng_base, dimensions, top_height, spray_tags=spray_tags)
+    base = _side_cell_shelf_base_rand(
+        rng_base,
+        dimensions,
+        top_height,
+        spray_tags=spray_tags,
+        front_style=front_style,
+        shared_parts=shared_parts,
+    )
     result = table.table_dining_rand(
         rng_table,
         dimensions=dimensions,
@@ -187,6 +209,7 @@ def _side_storage_tabletop_surface_rand(
         top_thickness=top_thickness,
         top_support_loop_offset=_desktop_support_loop_offset_rand(rng_top_shape),
         spray_tags=spray_tags,
+        top_part=spray.part_id("top") if shared_parts else None,
     )
     return result.mesh
 
@@ -266,12 +289,17 @@ def _tabletop_storage_surface_rand(
 
 
 def desk_tabletop_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+    rng: pf.RNG,
+    dimensions: pf.Vector | None = None,
+    spray_tags: bool = False,
+    shared_parts: bool = False,
 ) -> DeskResult:
     rng_dimensions, rng_surface = rng.spawn(2)
     if dimensions is None:
         dimensions = desk_dimensions_rand(rng_dimensions)
-    mesh = _tabletop_surface_rand(rng_surface, dimensions, spray_tags=spray_tags)
+    mesh = _tabletop_surface_rand(
+        rng_surface, dimensions, spray_tags=spray_tags, shared_parts=shared_parts
+    )
     mesh.item().name = "desk"
     return DeskResult(mesh)
 
@@ -299,12 +327,22 @@ def desk_with_top_storage_rand(
 
 
 def desk_with_side_storage_rand(
-    rng: pf.RNG, dimensions: pf.Vector | None = None, spray_tags: bool = False
+    rng: pf.RNG,
+    dimensions: pf.Vector | None = None,
+    spray_tags: bool = False,
+    front_style: str | None = None,
+    shared_parts: bool = False,
 ) -> DeskResult:
     rng_dimensions, rng_surface = rng.spawn(2)
     if dimensions is None:
         dimensions = desk_dimensions_rand(rng_dimensions)
-    mesh = _side_storage_tabletop_surface_rand(rng_surface, dimensions, spray_tags=spray_tags)
+    mesh = _side_storage_tabletop_surface_rand(
+        rng_surface,
+        dimensions,
+        spray_tags=spray_tags,
+        front_style=front_style,
+        shared_parts=shared_parts,
+    )
     mesh.item().name = "desk"
     return DeskResult(mesh)
 

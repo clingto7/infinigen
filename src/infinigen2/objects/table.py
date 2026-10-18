@@ -154,6 +154,8 @@ def _assemble_table(
     top_material: pf.Material,
     leg_material: pf.Material,
     spray_tags: bool = False,
+    top_part: int | None = None,
+    base_part: int | None = None,
 ) -> TableResult:
     top = pf.nodes.geo.transform(top, translation=(0, 0, top_height))
     top = pf.nodes.to_mesh_object(top)
@@ -166,14 +168,22 @@ def _assemble_table(
     if spray_tags:
         pf.ops.attr.write_attribute(
             top,
-            np.zeros(len(top.item().data.polygons), dtype=np.int32),
+            np.full(len(top.item().data.polygons), 0 if top_part is None else top_part, dtype=np.int32),
             "spray_part",
             domain="FACE",
             overwrite=True,
         )
         pf.ops.attr.write_attribute(top, True, "spray_target", domain="FACE", overwrite=True)
         base_attr = base.item().data.attributes.get("spray_part")
-        if base_attr is None:
+        if base_part is not None:
+            pf.ops.attr.write_attribute(
+                base,
+                np.full(len(base.item().data.polygons), base_part, dtype=np.int32),
+                "spray_part",
+                domain="FACE",
+                overwrite=True,
+            )
+        elif base_attr is None:
             pf.ops.attr.write_attribute(
                 base,
                 np.ones(len(base.item().data.polygons), dtype=np.int32),
@@ -198,6 +208,8 @@ def table_dining_rand(
     leg_material: pf.Material | None = None,
     base_style: str | None = None,
     spray_tags: bool = False,
+    top_part: int | None = None,
+    base_part: int | None = None,
 ) -> TableResult:
     rng, rng_dims, rng_top_mat, rng_leg_mat, rng_base_choice, rng_base = rng.spawn(6)
     if dimensions is None:
@@ -260,7 +272,16 @@ def table_dining_rand(
             base_fn = base_options[base_style]
         res = base_fn(rng=rng_base, dimensions=(x, y, top_height))
         base = res.mesh
-    return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
+    return _assemble_table(
+        top,
+        base,
+        top_height,
+        top_material,
+        leg_material,
+        spray_tags,
+        top_part=top_part,
+        base_part=base_part,
+    )
 
 
 def table_dining_circular_rand(

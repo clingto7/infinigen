@@ -36,7 +36,7 @@ CORE_RUN_KEYS = ("manifest_sha256", "generators", "seeds", "timeout_sec")
 
 
 def _short_name(name: str) -> str:
-    return name.removeprefix("spraybot:").rsplit(".", 1)[-1]
+    return name.removeprefix("spraybot:").removeprefix("workpiece:").rsplit(".", 1)[-1]
 
 
 def _object_entries() -> list[str]:
@@ -285,11 +285,15 @@ def main() -> None:
     object_names = _object_entries()
     if args.category:
         from infinigen2.objects.spraybot import CATEGORY_IDS
+        from infinigen2.workpieces import CATEGORY_IDS as WORKPIECE_IDS
 
         names = []
         for category in args.category:
             if category in CATEGORY_IDS:
                 names.append(f"spraybot:{category}")
+                continue
+            if category in WORKPIECE_IDS:
+                names.append(f"workpiece:{category}")
                 continue
             matches = [
                 name for name in object_names

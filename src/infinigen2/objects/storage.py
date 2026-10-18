@@ -1034,8 +1034,13 @@ def storage_with_legs_rand(
     desired_slot_aspect: float | None = None,
     front_style: str | None = None,
     spray_tags: bool = False,
+    lock_grid: bool = True,
 ) -> StorageResult:
-    """Cell shelf raised on a stable compositional base."""
+    """Cell shelf raised on a stable compositional base.
+
+    ``lock_grid`` keeps the tagged 3 by 3 pin used by existing callers. Pass
+    False to keep an explicit row count, such as a one-row storage bench.
+    """
     rng, rng_body, rng_legs = rng.spawn(3)
     if dimensions is None:
         dimensions = storage_dimensions_rand(rng)
@@ -1044,13 +1049,14 @@ def storage_with_legs_rand(
     body_dimensions = pf.Vector(
         (dimensions[0], dimensions[1], dimensions[2] - leg_height)
     )
+    pinned = spray_tags and lock_grid
     body_result = storage_composite_rand(
         rng_body,
         dimensions=body_dimensions,
-        n_spaces_y=3 if spray_tags else n_spaces_y,
-        n_spaces_z=3 if spray_tags else n_spaces_z,
+        n_spaces_y=3 if pinned else n_spaces_y,
+        n_spaces_z=3 if pinned else n_spaces_z,
         frame_material=frame_material,
-        back_width=0.02 if spray_tags else back_width,
+        back_width=0.02 if pinned else back_width,
         desired_slot_aspect=desired_slot_aspect,
         front_style=front_style,
         spray_tags=spray_tags,
@@ -1103,6 +1109,8 @@ def storage_rand(
 def storage_bench_rand(
     rng: pf.RNG,
     dimensions: pf.Vector | None = None,
+    front_style: str | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
     """Outward-facing storage bench at dining-seat height."""
     if dimensions is None:
@@ -1119,6 +1127,9 @@ def storage_bench_rand(
         n_spaces_z=1,
         leg_height=dimensions[2] * pf.random.uniform(rng, 0.15, 0.35),
         close_edges=True,
+        front_style=front_style,
+        spray_tags=spray_tags,
+        lock_grid=front_style is None,
     )
 
 
@@ -1329,8 +1340,13 @@ def storage_sink_base_rand(
     dimensions: pf.Vector | None = None,
     frame_material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
+    spray_tags: bool = False,
 ) -> StorageResult:
-    """Open-topped, shelfless door cabinet so a basin can drop in from above."""
+    """Open-topped, shelfless door cabinet so a basin can drop in from above.
+
+    With ``spray_tags``: 0=carcass, 4=door frame, 5=door panel, 6=handle.
+    The default path still samples single or double doors.
+    """
     rng_board, rng_size, rng_material, rng_handle, rng_door = rng.spawn(5)
     if dimensions is None:
         dimensions = pf.Vector(
@@ -1360,9 +1376,22 @@ def storage_sink_base_rand(
         pf.Vector((0.018, dimensions.y, dimensions.z)),
         frame_material,
         handle,
+        spray_tags=spray_tags,
     )
+    if spray_tags:
+        door_parts = np.array(
+            [d.value for d in door.item().data.attributes["spray_part"].data],
+            dtype=np.int32,
+        ) + np.int32(4)
+        pf.ops.attr.write_attribute(
+            door, door_parts, "spray_part", domain="FACE", overwrite=True
+        )
     pf.ops.object.set_transform(door, location=(depth, 0.0, 0.0))
     pf.ops.object.join(carcass, door)
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            carcass, True, "spray_target", domain="FACE", overwrite=True
+        )
     return StorageResult(mesh=carcass)
 
 

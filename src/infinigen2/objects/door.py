@@ -274,18 +274,7 @@ def door_with_handle_rand(
         )
         pf.ops.attr.write_attribute(handle, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(door, handle)
-    if spray_tags and body_style == "window":
-        parts = np.array(
-            [d.value for d in door.item().data.attributes["spray_part"].data],
-            dtype=np.int32,
-        )
-        target_attr = door.item().data.attributes.get("spray_target")
-        if target_attr is None:
-            pf.ops.attr.write_attribute(door, True, "spray_target", domain="FACE")
-            target_attr = door.item().data.attributes["spray_target"]
-        for index, part in enumerate(parts):
-            target_attr.data[index].value = bool(part != 1)
-    if spray_tags and body_style != "window":
+    if spray_tags:
         pf.ops.attr.write_attribute(
             door, True, "spray_target", domain="FACE", overwrite=True
         )
@@ -352,9 +341,15 @@ def door_composite_rand(
     inner_material: pf.Material | None = None,
     spray_tags: bool = False,
     body_style: str | None = None,
+    shutter: bool | None = None,
+    include_glass_pane: bool = True,
 ) -> DoorResult:
     """With `spray_tags`: the body is pinned to the standard panel door so the
-    legend is 0=frame, 1=panel, 2=handle; every face is a spray target."""
+    legend is 0=frame, 1=panel, 2=handle; every face is a spray target.
+
+    ``body_style="glass_grid"`` selects the window leaf. ``shutter`` and
+    ``include_glass_pane`` apply only to that leaf. Defaults keep the previous
+    panel-or-window draw and a glass pane without louvers."""
     rng, rng_body, rng_handle, rng_place = rng.spawn(4)
     if dimensions is None:
         width = pf.random.uniform(rng, 0.7, 0.95)
@@ -380,13 +375,14 @@ def door_composite_rand(
             dimensions=dimensions,
             frame_material=material,
             include_portal=False,
-            shutter=False,
+            include_glass_pane=include_glass_pane,
+            shutter=False if shutter is None else shutter,
             spray_tags=spray_tags,
         )
 
-    if body_style == "standard":
+    if body_style in ("standard", "panel"):
         body_func = standard_body
-    elif body_style == "window":
+    elif body_style in ("window", "glass_grid"):
         body_func = window_body
     elif body_style is None and not spray_tags:
         body_func = pf.control.choice(
@@ -424,7 +420,7 @@ def door_composite_rand(
         )
         pf.ops.attr.write_attribute(handle, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(door, handle)
-    if spray_tags and body_style == "window":
+    if spray_tags and body_style in ("window", "glass_grid"):
         parts = np.array(
             [d.value for d in door.item().data.attributes["spray_part"].data],
             dtype=np.int32,
@@ -445,10 +441,17 @@ def door_glass_from_profile_rand(
     profile: window.WindowProfile,
     material: pf.Material | None = None,
     handle: pf.MeshObject | None = None,
+    include_glass_pane: bool = True,
+    spray_tags: bool = False,
 ) -> DoorResult:
     rng, rng_body, rng_handle = rng.spawn(3)
     door = window.window_from_profile_rand(
-        rng_body, profile, frame_material=material, include_portal=False
+        rng_body,
+        profile,
+        frame_material=material,
+        include_portal=False,
+        include_glass_pane=include_glass_pane,
+        spray_tags=spray_tags,
     ).mesh
     if handle is None:
         handle = handles.handle_rand(rng_handle).mesh
@@ -463,5 +466,14 @@ def door_glass_from_profile_rand(
             profile.dimensions.z * handle_z_frac,
         ),
     )
+    if spray_tags:
+        pf.ops.attr.write_attribute(
+            handle,
+            np.full(len(handle.item().data.polygons), 2, dtype=np.int32),
+            "spray_part",
+            domain="FACE",
+            overwrite=True,
+        )
+        pf.ops.attr.write_attribute(handle, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(door, handle)
     return DoorResult(mesh=door)

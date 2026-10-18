@@ -11,7 +11,9 @@ from pathlib import Path
 import bpy
 import numpy as np
 
-from infinigen2.objects.spraybot import generate_workpiece
+from infinigen2.objects.spraybot import CATEGORY_IDS, generate_workpiece
+from infinigen2.workpieces import CATEGORY_IDS as WORKPIECE_IDS
+from infinigen2.workpieces import generate as generate_expansion
 
 
 def main() -> None:
@@ -22,7 +24,13 @@ def main() -> None:
     parser.add_argument("--check-modifiers", action="store_true")
     args = parser.parse_args()
 
-    result = generate_workpiece(args.category, np.random.default_rng(args.seed))
+    rng = np.random.default_rng(args.seed)
+    if args.category in CATEGORY_IDS:
+        result = generate_workpiece(args.category, rng)
+    elif args.category in WORKPIECE_IDS:
+        result = generate_expansion(args.category, rng)
+    else:
+        raise SystemExit(f"unknown category: {args.category}")
     obj = result.mesh.item()
     mesh = obj.data
     part_attr = mesh.attributes.get("spray_part")

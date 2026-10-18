@@ -2088,9 +2088,16 @@ def chair_bench_dimensions_rand(rng: pf.RNG) -> pf.Vector:
     )
 
 
-def chair_bench_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairResult:
+def chair_bench_rand(
+    rng: pf.RNG,
+    dimensions: pf.Vector | None = None,
+    spray_tags: bool = False,
+) -> ChairResult:
     """Backed bench: a bezier-outline seat pan several seats wide, on a base
-    chosen for stability under a long span rather than a chair's single seat."""
+    chosen for stability under a long span rather than a chair's single seat.
+
+    With `spray_tags`: hard seat and back, no front dip, and parts 0=seat,
+    1=back, 4=leg base. The default path still samples the same stream."""
     (
         rng,
         rng_dims,
@@ -2118,11 +2125,11 @@ def chair_bench_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairR
     seat_material_fn = pf.control.choice(
         rng_seat_sel, [(material1, 2.0), (fabric, 1.0)]
     )
-    seat_material = seat_material_fn()
+    seat_material = material1() if spray_tags else seat_material_fn()
     backrest_material_fn = pf.control.choice(
         rng_backrest_sel, [(material1, 2.0), (fabric, 1.0)]
     )
-    backrest_material = backrest_material_fn()
+    backrest_material = material1() if spray_tags else backrest_material_fn()
     leg_material_fn = pf.control.choice(
         rng_leg_sel, [(material1, 1.0), (material2, 1.0)]
     )
@@ -2136,6 +2143,8 @@ def chair_bench_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairR
     back_bow = pf.random.uniform(rng, 0.0, 0.25) * dimensions[0]
     dip_active = pf.control.choice(rng_dip_sel, [(0.0, 0.5), (1.0, 0.5)])
     front_dip = dip_active * pf.random.uniform(rng_dip, 0.0, 0.15) * dimensions[0]
+    if spray_tags:
+        front_dip = 0.0
     thickness = pf.random.clip_gaussian(rng, 0.06, 0.04, 0.02, 0.2)
 
     back_height = pf.random.uniform(rng, 0.35, 0.55)
@@ -2166,6 +2175,7 @@ def chair_bench_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairR
         back_sink=back_sink,
         slant=slant,
         back_bend=bend_frac * 0.15 * back_height * -1.0,
+        spray_tags=spray_tags,
     )
 
     # a long span needs its legs near the ends, so spread further than a chair does
@@ -2182,6 +2192,12 @@ def chair_bench_rand(rng: pf.RNG, dimensions: pf.Vector | None = None) -> ChairR
         close_edges=True,
     ).mesh
 
+    if spray_tags:
+        from infinigen2.util import spray
+
+        spray.write_spray_part(base, "leg_base")
+        pf.ops.attr.write_attribute(seat, True, "spray_target", domain="FACE", overwrite=True)
+        pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
     pf.ops.object.join(seat, base)
     return ChairResult(mesh=seat)
 
