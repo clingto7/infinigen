@@ -155,6 +155,15 @@ LEGACY_LEGENDS: dict[str, dict[int, str]] = {
         5: "door_panel",
         6: "door_handle",
     },
+    "wide_door_cabinet": {
+        0: "outer_frame",
+        1: "back_panel",
+        2: "horizontal_divider",
+        3: "vertical_divider",
+        4: "door_frame",
+        5: "door_panel",
+        6: "door_handle",
+    },
     "storage_drawer_cabinet": {
         0: "outer_frame",
         1: "back_panel",
@@ -439,44 +448,169 @@ def _thin_drawer_desk(rng: pf.RNG):
     return desk.desk_with_top_storage_rand(rng, spray_tags=True)
 
 
+def _storage_composite_cabinet(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_drawer_cabinet, {
+                0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
+                3: "vertical_divider", 7: "drawer",
+            }),
+            (_wide_door_cabinet, LEGACY_LEGENDS["wide_door_cabinet"]),
+        ],
+    )
+
+
+class _VariantBuild(NamedTuple):
+    """A merged interface result with the legend for its selected structure."""
+
+    mesh: pf.MeshObject
+    part_legend: dict[int, str]
+
+
+def _choose_variant(rng: pf.RNG, choices: list[tuple[Callable, dict[int, str]]]):
+    rng_choice, rng_build = rng.spawn(2)
+    builder, legend = pf.control.choice(
+        rng_choice, [(choice, 1.0) for choice in choices]
+    )
+    result = builder(rng_build)
+    return _VariantBuild(result.mesh, legend)
+
+
+def _dining_chair(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (LEGACY_BUILDERS["slat_back_chair"], {0: "seat", 1: "slat_back", 2: "straight_base"}),
+            (_solid_back_chair, {0: "seat", 1: "solid_back", 2: "straight_base"}),
+            (_wheeled_dining_chair, {0: "seat", 1: "slat_back", 2: "wheeled_base"}),
+        ],
+    )
+
+
+def _shell_chair(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_shell_four_leg_chair, {0: "curvy_shell_seat", 1: "straight_base"}),
+            (_shell_wheeled_chair, {0: "curvy_shell_seat", 1: "wheeled_base"}),
+        ],
+    )
+
+
+def _round_stool(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_round_four_leg_stool, {0: "round_seat", 1: "straight_base"}),
+            (_round_wheeled_stool, {0: "round_seat", 1: "wheeled_base"}),
+        ],
+    )
+
+
+def _table_with_base(rng: pf.RNG, base_style: str):
+    builders = {
+        "four_leg": [
+            _rectangular_table_four_leg,
+            _square_table_four_leg,
+            _round_table_four_leg,
+        ],
+        "pedestal": [
+            _rectangular_table_pedestal,
+            _square_table_pedestal,
+            _round_table_pedestal,
+        ],
+        "frame": [_rectangular_table_frame, _square_table_frame],
+    }
+    legend = {0: "tabletop", 1: f"{base_style}_base"}
+    return _choose_variant(rng, [(builder, legend) for builder in builders[base_style]])
+
+
+def _four_leg_table(rng: pf.RNG):
+    return _table_with_base(rng, "four_leg")
+
+
+def _pedestal_table(rng: pf.RNG):
+    return _table_with_base(rng, "pedestal")
+
+
+def _frame_table(rng: pf.RNG):
+    return _table_with_base(rng, "frame")
+
+
+def _legged_bed(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_legged_solid_headboard_bed, {0: "bed_frame", 1: "mattress"}),
+            (_legged_slatted_headboard_bed, {0: "bed_frame", 1: "mattress"}),
+        ],
+    )
+
+
+def _single_door(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (LEGACY_BUILDERS["door_with_handle"], {0: "frame", 1: "panel", 2: "handle"}),
+            (_window_panel_door, {0: "frame", 1: "glass", 2: "handle"}),
+        ],
+    )
+
+
+def _double_door(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (LEGACY_BUILDERS["door_double"], {0: "frame", 1: "panel", 2: "handle"}),
+            (_double_window_panel_door, {0: "frame", 1: "glass", 2: "handle"}),
+        ],
+    )
+
+
+def _rectangular_window(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_rectangular_window_frame, {0: "frame"}),
+            (_rectangular_louver_window, {0: "frame_and_louver"}),
+        ],
+    )
+
+
+def _curved_window(rng: pf.RNG):
+    return _choose_variant(
+        rng,
+        [
+            (_top_arched_window, {0: "arched_frame"}),
+            (_double_arched_window, {0: "double_arched_frame"}),
+        ],
+    )
+
+
 # Only accepted furniture/door/window workpieces are formally exposed. The
 # legacy registry remains available inside this module for historical probes
 # and future migration, but is not part of CATEGORY_IDS.
 BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
-    "slat_back_chair": LEGACY_BUILDERS["slat_back_chair"],
+    "dining_chair": _dining_chair,
     "open_cell_shelf": LEGACY_BUILDERS["open_cell_shelf"],
     "storage_cabinet_single_door": LEGACY_BUILDERS["storage_cabinet_single_door"],
     "storage_drawer_cabinet": LEGACY_BUILDERS["storage_drawer_cabinet"],
     "storage_shelf_on_base": LEGACY_BUILDERS["storage_shelf_on_base"],
-    "door_with_handle": LEGACY_BUILDERS["door_with_handle"],
-    "door_double": LEGACY_BUILDERS["door_double"],
+    "single_door": _single_door,
+    "double_door": _double_door,
     "straight_leg_desk": _straight_leg_desk,
-    "legged_solid_headboard_bed": _legged_solid_headboard_bed,
-    "window_rectangular_frame": _rectangular_window_frame,
-    "solid_back_chair": _solid_back_chair,
-    "wheeled_dining_chair": _wheeled_dining_chair,
-    "rectangular_table_four_leg": _rectangular_table_four_leg,
-    "rectangular_table_pedestal": _rectangular_table_pedestal,
-    "rectangular_table_frame": _rectangular_table_frame,
-    "square_table_four_leg": _square_table_four_leg,
-    "square_table_pedestal": _square_table_pedestal,
-    "square_table_frame": _square_table_frame,
-    "round_table_four_leg": _round_table_four_leg,
-    "round_table_pedestal": _round_table_pedestal,
-    "legged_slatted_headboard_bed": _legged_slatted_headboard_bed,
-    "window_rectangular_louver": _rectangular_louver_window,
-    "drawer_cabinet": _drawer_cabinet,
-    "wide_door_cabinet": _wide_door_cabinet,
+    "legged_bed": _legged_bed,
+    "rectangular_window": _rectangular_window,
+    "curved_window": _curved_window,
+    "four_leg_table": _four_leg_table,
+    "pedestal_table": _pedestal_table,
+    "frame_table": _frame_table,
+    "storage_composite_cabinet": _storage_composite_cabinet,
     "storage_coffee_table": _storage_coffee_table,
     "storage_bed": _storage_bed,
-    "window_top_arched": _top_arched_window,
-    "window_double_arched": _double_arched_window,
-    "shell_four_leg_chair": _shell_four_leg_chair,
-    "shell_wheeled_chair": _shell_wheeled_chair,
-    "round_four_leg_stool": _round_four_leg_stool,
-    "round_wheeled_stool": _round_wheeled_stool,
-    "window_panel_door": _window_panel_door,
-    "double_window_panel_door": _double_window_panel_door,
+    "shell_chair": _shell_chair,
+    "round_stool": _round_stool,
     "side_storage_desk": _side_storage_desk,
     "thin_drawer_desk": _thin_drawer_desk,
 }
@@ -484,57 +618,88 @@ BUILDERS: dict[str, Callable[[pf.RNG], object]] = {
 LEGENDS: dict[str, dict[int, str]] = {
     category: LEGACY_LEGENDS[category]
     for category in (
-        "slat_back_chair",
         "open_cell_shelf",
         "storage_cabinet_single_door",
         "storage_drawer_cabinet",
         "storage_shelf_on_base",
-        "door_with_handle",
-        "door_double",
     )
 }
 LEGENDS.update(
     {
+        "dining_chair": {0: "seat", 1: "back", 2: "base"},
+        "single_door": {0: "frame", 1: "panel_or_glass", 2: "handle"},
+        "double_door": {0: "frame", 1: "panel_or_glass", 2: "handle"},
         "straight_leg_desk": {0: "tabletop", 1: "straight_base"},
-        "legged_solid_headboard_bed": {0: "bed_frame", 1: "mattress"},
-        "window_rectangular_frame": {0: "frame"},
-        "solid_back_chair": {0: "seat", 1: "solid_back", 2: "straight_base"},
-        "wheeled_dining_chair": {0: "seat", 1: "slat_back", 2: "wheeled_base"},
-        "rectangular_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
-        "rectangular_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
-        "rectangular_table_frame": {0: "tabletop", 1: "frame_base"},
-        "square_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
-        "square_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
-        "square_table_frame": {0: "tabletop", 1: "frame_base"},
-        "round_table_four_leg": {0: "tabletop", 1: "four_leg_base"},
-        "round_table_pedestal": {0: "tabletop", 1: "pedestal_base"},
-        "legged_slatted_headboard_bed": {0: "bed_frame", 1: "mattress"},
-        "window_rectangular_louver": {0: "frame_and_louver"},
-        "drawer_cabinet": {
+        "legged_bed": {0: "bed_frame", 1: "mattress"},
+        "rectangular_window": {0: "frame"},
+        "curved_window": {0: "frame"},
+        "four_leg_table": {0: "tabletop", 1: "four_leg_base"},
+        "pedestal_table": {0: "tabletop", 1: "pedestal_base"},
+        "frame_table": {0: "tabletop", 1: "frame_base"},
+        "storage_composite_cabinet": {
             0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
-            3: "vertical_divider", 7: "drawers",
-        },
-        "wide_door_cabinet": {
-            0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
-            3: "vertical_divider", 4: "door_frame", 5: "door_panel", 6: "door_handle",
+            3: "vertical_divider", 4: "door_frame", 5: "door_panel",
+            6: "door_handle", 7: "drawer",
         },
         "storage_coffee_table": {
             0: "outer_frame", 1: "back_panel", 2: "horizontal_divider",
             3: "vertical_divider", 8: "base",
         },
         "storage_bed": {0: "storage_bed_frame", 1: "mattress"},
-        "window_top_arched": {0: "arched_frame"},
-        "window_double_arched": {0: "double_arched_frame"},
-        "shell_four_leg_chair": {0: "curvy_shell_seat", 1: "straight_base"},
-        "shell_wheeled_chair": {0: "curvy_shell_seat", 1: "wheeled_base"},
-        "round_four_leg_stool": {0: "round_seat", 1: "straight_base"},
-        "round_wheeled_stool": {0: "round_seat", 1: "wheeled_base"},
-        "window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
-        "double_window_panel_door": {0: "frame", 1: "glass", 2: "handle"},
+        "shell_chair": {0: "curvy_shell_seat", 1: "base"},
+        "round_stool": {0: "round_seat", 1: "base"},
         "side_storage_desk": {0: "tabletop", 1: "side_storage"},
         "thin_drawer_desk": {0: "tabletop", 1: "thin_storage", 2: "desk_base"},
     }
 )
+
+# Old category ids remain accepted by generate_workpiece for existing scripts,
+# but CATEGORY_IDS exposes only the merged production interfaces.
+ALIASES = {
+    "slat_back_chair": "dining_chair",
+    "solid_back_chair": "dining_chair",
+    "wheeled_dining_chair": "dining_chair",
+    "shell_four_leg_chair": "shell_chair",
+    "shell_wheeled_chair": "shell_chair",
+    "round_four_leg_stool": "round_stool",
+    "round_wheeled_stool": "round_stool",
+    "rectangular_table_four_leg": "four_leg_table",
+    "square_table_four_leg": "four_leg_table",
+    "round_table_four_leg": "four_leg_table",
+    "rectangular_table_pedestal": "pedestal_table",
+    "square_table_pedestal": "pedestal_table",
+    "round_table_pedestal": "pedestal_table",
+    "rectangular_table_frame": "frame_table",
+    "square_table_frame": "frame_table",
+    "legged_solid_headboard_bed": "legged_bed",
+    "legged_slatted_headboard_bed": "legged_bed",
+    "window_rectangular_frame": "rectangular_window",
+    "window_rectangular_louver": "rectangular_window",
+    "window_top_arched": "curved_window",
+    "window_double_arched": "curved_window",
+    "door_with_handle": "single_door",
+    "window_panel_door": "single_door",
+    "door_double": "double_door",
+    "double_door_with_handle": "double_door",
+    "double_window_panel_door": "double_door",
+    "drawer_cabinet": "storage_composite_cabinet",
+    "wide_door_cabinet": "storage_composite_cabinet",
+}
+
+MERGED_FROM = {
+    "dining_chair": ("slat_back_chair", "solid_back_chair", "wheeled_dining_chair"),
+    "shell_chair": ("shell_four_leg_chair", "shell_wheeled_chair"),
+    "round_stool": ("round_four_leg_stool", "round_wheeled_stool"),
+    "four_leg_table": ("rectangular_table_four_leg", "square_table_four_leg", "round_table_four_leg"),
+    "pedestal_table": ("rectangular_table_pedestal", "square_table_pedestal", "round_table_pedestal"),
+    "frame_table": ("rectangular_table_frame", "square_table_frame"),
+    "legged_bed": ("legged_solid_headboard_bed", "legged_slatted_headboard_bed"),
+    "single_door": ("door_with_handle", "window_panel_door"),
+    "double_door": ("double_door_with_handle", "double_window_panel_door"),
+    "rectangular_window": ("window_rectangular_frame", "window_rectangular_louver"),
+    "curved_window": ("window_top_arched", "window_double_arched"),
+    "storage_composite_cabinet": ("drawer_cabinet", "wide_door_cabinet"),
+}
 
 CATEGORY_IDS = tuple(BUILDERS)
 
@@ -570,16 +735,18 @@ def _remove_degenerate_faces(mesh: pf.MeshObject) -> int:
 
 
 def generate_workpiece(category_id: str, rng: pf.RNG) -> WorkpieceResult:
-    """Generate one instance of a fixed structural type from ``rng``."""
+    """Generate one instance from a registered interface using ``rng``."""
+    category_id = ALIASES.get(category_id, category_id)
     builder = BUILDERS.get(category_id)
     if builder is None:
         raise ValueError(f"Unknown Spraybot category: {category_id}")
     result = builder(rng)
     mesh_object = getattr(result, "mesh", None)
+    legend = getattr(result, "part_legend", LEGENDS[category_id])
     if mesh_object is None:
         raise TypeError(f"Builder for {category_id} returned no mesh field")
     # Every formally exposed workpiece must reach downstream tessellation with
     # non-degenerate triangles. The old registry only needed this for the
     # chair precedent; furniture assemblies can produce the same artifact.
     removed = _remove_degenerate_faces(mesh_object)
-    return WorkpieceResult(mesh_object, category_id, LEGENDS[category_id], removed, None)
+    return WorkpieceResult(mesh_object, category_id, legend, removed, None)

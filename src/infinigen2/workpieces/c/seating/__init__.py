@@ -13,7 +13,6 @@ from infinigen2.workpieces.c.seating import (
     lounge_chair,
     park_bench,
     rocking_chair,
-    step_stool,
     windsor_chair,
 )
 
@@ -26,6 +25,5 @@ __all__ = [
     "lounge_chair",
     "park_bench",
     "rocking_chair",
-    "step_stool",
     "windsor_chair",
 ]

@@ -3,8 +3,8 @@
 from infinigen2.workpieces.c.other import (
     coat_rack,
     folding_screen,
-    plant_stand,
     serving_cart,
+    stepped_platform,
 )
 
-__all__ = ["coat_rack", "folding_screen", "plant_stand", "serving_cart"]
+__all__ = ["coat_rack", "folding_screen", "serving_cart", "stepped_platform"]

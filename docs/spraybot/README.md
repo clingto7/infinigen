@@ -89,6 +89,18 @@ The fork owns mesh generation and generation-side structure data: `spray_part`,
 rules, PaintDS output, and training-format conversion. The two repositories are
 connected through exported compatibility data rather than Python imports.
 
+### Interface implementation method standard
+
+Every interface entry in the category overview and every newly accepted
+`Category` implementation must state its implementation method. Name the
+module and callable, then say whether it reuses an existing generator, combines
+shared primitives, or builds custom parametric geometry. Record the fixed
+structural branches and the sampled parameters that define the interface. For
+merged interfaces, list the source implementations, how a branch is selected,
+and how part labels are mapped across branches. Keep this separate from the
+structural criterion: the criterion describes the generated object's form;
+the implementation method describes how the code produces it.
+
 ### Standard validation workflow
 
 For an accepted category, run the 20-seed screen and create contact sheets:
