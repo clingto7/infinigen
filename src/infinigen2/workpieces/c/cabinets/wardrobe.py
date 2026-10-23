@@ -27,16 +27,19 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     material = hard_material(rng_mat)
     carcass = open_bay(rng_bay, (depth, width, height), n_spaces_y=1, n_spaces_z=1)
     shelf_z = height - 0.26
+    # The shelf and the hanging rod reach into the side panels.  The sampled
+    # carcass panels are 2-6 cm thick, so a 1.2 cm per-side shelf inset and
+    # rod ends 1 cm from the outer faces always embed without poking through.
     parts = [
         carcass,
         board(
-            (depth - 0.05, width - 0.05, 0.016),
+            (depth - 0.03, width - 0.03, 0.016),
             (depth * 0.5, width * 0.5, shelf_z),
             material, "shelf",
         ),
         rod(
-            (depth * 0.48, 0.06, shelf_z - 0.14),
-            (depth * 0.48, width - 0.06, shelf_z - 0.14),
+            (depth * 0.48, 0.01, shelf_z - 0.14),
+            (depth * 0.48, width - 0.01, shelf_z - 0.14),
             0.012, material, "frame",
         ),
     ]

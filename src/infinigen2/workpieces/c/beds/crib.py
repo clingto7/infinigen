@@ -43,7 +43,9 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     hy = width * 0.5
     post = 0.035
     parts = [
-        board((length - 0.06, width - 0.06, 0.018), (0.0, 0.0, deck), material, "frame"),
+        # The deck reaches into the corner posts; a 3 cm inset per side left
+        # the whole mattress deck floating between them.
+        board((length - 0.02, width - 0.02, 0.018), (0.0, 0.0, deck), material, "frame"),
     ]
     for sx in (-1.0, 1.0):
         for sy in (-1.0, 1.0):

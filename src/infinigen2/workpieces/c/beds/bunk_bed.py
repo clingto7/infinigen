@@ -39,12 +39,17 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         parts.append(board((length, 0.04, 0.08), (0.0, hy - 0.02, z - 0.05), material, "frame"))
         parts.append(board((length, 0.04, 0.08), (0.0, -hy + 0.02, z - 0.05), material, "frame"))
     for rise in (0.16, 0.34):
+        # The guard rails must reach into the corner posts; a shorter rail
+        # centred off the middle leaves both ends hanging in the air.
         parts.append(board(
-            (length - 0.35, 0.02, 0.04),
-            (-0.08, hy + 0.03, upper + rise),
+            (length - 0.02, 0.02, 0.04),
+            (0.0, hy + 0.03, upper + rise),
             material, "slat",
         ))
-    ladder_x = hx + 0.10
+    # Keep the ladder inside the end of the bed frame so its rails intersect
+    # the two deck boards.  Placing it outside the end (``hx + 0.10``) leaves
+    # the complete ladder assembly visibly detached from the bed.
+    ladder_x = hx - 0.02
     for y in (-0.16, 0.16):
         parts.append(board((0.028, 0.028, upper), (ladder_x, y, upper * 0.5), material, "frame"))
     for index in range(4):

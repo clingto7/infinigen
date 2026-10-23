@@ -31,7 +31,9 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         for sy in (-1.0, 1.0):
             x = sx * (depth * 0.5 - 0.06)
             y = sy * (length * 0.5 - 0.08)
-            apex = (x, y, under - 0.05)
+            # The apex must enter the top slab; stopping it short leaves the
+            # whole table as a floating top over four detached V legs.
+            apex = (x, y, under + 0.004)
             foot_a = (x + sx * 0.04, y - gap * 0.5, radius)
             foot_b = (x + sx * 0.04, y + gap * 0.5, radius)
             parts.extend(chain(

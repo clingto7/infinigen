@@ -47,7 +47,7 @@
 | S17 | 摇椅 | `rocking_chair` | C | 腿落在两根弧形摇脚上 | `workpieces/c/seating/rocking_chair.py`。餐椅座靠。四根短柱落在两根弧形摇脚上，不直接着地。20 个种子已通过自动检查，待人工复核 | 中 |
 | S18 | 折叠椅 | `folding_chair` | C | X 形交叉腿，座面与腿铰接 | `workpieces/c/seating/folding_chair.py`。每侧两根木条交叉，一根延到靠背。座面是搭在交叉点上方的横条。20 个种子已通过自动检查，待人工复核 | 高 |
 | S19 | 悬臂管椅 | `cantilever_chair` | C | 一根连续弯管形成底座和座下支撑，无后腿 | `workpieces/c/seating/cantilever_chair.py`。左右各一根圆管从前脚经后方弯上，再伸到座下并在到位前停下。座靠复用餐椅。20 个种子已通过自动检查，待人工复核 | 中 |
-| S20 | 儿童高脚椅 | `high_chair` | C | 高腿外撑，前方有托盘，座面有围挡 | `workpieces/c/seating/high_chair.py`。腿从座下向外撑开。座面前方有托盘，两侧和前方有围挡，前腿间有脚踏。20 个种子已通过自动检查，待人工复核 | 高 |
+| S20 | 儿童高脚椅 | `high_chair` | C | 高腿外撑，前方有托盘，座面有围挡 | `workpieces/c/seating/high_chair.py`。腿从座下向外撑开。座面前方有托盘，两侧和前方有围挡，前腿间有脚踏。20 个种子已通过自动检查，待人工复核（2026-10-20 修复围挡悬空后重跑） | 高 |
 | S21 | 公园长椅 | `park_bench` | C | 座面和靠背由多根横向条木组成，两端是侧框 | `workpieces/c/seating/park_bench.py`。两端侧框含前腿、后倾后腿和扶手。座面和靠背都是沿长度的条木。20 个种子已通过自动检查，待人工复核 | 中 |
 | S22 | 躺椅 | `lounge_chair` | C | 长条座面，靠背可倾斜，常为条木 | `workpieces/c/seating/lounge_chair.py`。两侧支架沿座面折上成靠背，倾斜程度是构型。条木横跨在支架上。20 个种子已通过自动检查，待人工复核 | 中 |
 | S23 | 踏步凳 | `step_stool` | C | 两到三级踏板，侧板支撑 | `workpieces/c/seating/step_stool.py`。低踏板在前，高踏板靠后，左右侧板从地面托到该级踏板。级数是构型。20 个种子已通过自动检查，待人工复核 | 低 |
@@ -68,7 +68,7 @@ Spraybot 的普通椅基于 Infinigen 1.0 `ChairFactory`，可能与 S01–S03 �
 | T17 | 折叠桌 | `folding_table` | C | 桌面下是可折叠的 X 腿或 U 形管腿 | `workpieces/c/tables/folding_table.py`。X 形和 U 形管是构型。X 在左右两侧沿长度交叉；U 形管在两端，弯在地面。20 个种子已通过自动检查，待人工复核 | 中 |
 | T18 | 绘图桌 | `drafting_table` | C | 桌面倾斜，带挡边 | `workpieces/c/tables/drafting_table.py`。前缘低、后缘高，挡边立在低的前缘上。前腿短、后腿长。20 个种子已通过自动检查，待人工复核 | 中 |
 | T19 | 工作台 | `workbench` | C | 厚台面、腿间有横撑和下层搁板 | `workpieces/c/tables/workbench.py`。厚台面下有一圈裙板，搁板嵌在四条方腿之间。20 个种子已通过自动检查，待人工复核 | 中 |
-| T20 | 发夹腿桌 | `hairpin_leg_table` | C | 每条腿是一根弯成 V 形的金属细杆 | `workpieces/c/tables/hairpin_leg_table.py`。四角各一根细杆，弯头露在桌面下，两脚在地面分开。20 个种子已通过自动检查，待人工复核 | 低 |
+| T20 | 发夹腿桌 | `hairpin_leg_table` | C | 每条腿是一根弯成 V 形的金属细杆 | `workpieces/c/tables/hairpin_leg_table.py`。四角各一根细杆，弯头露在桌面下，两脚在地面分开。20 个种子已通过自动检查，待人工复核（2026-10-20 修复腿顶点未达桌面后重跑） | 低 |
 | T21 | 弯腿边桌 | `cabriole_leg_table` | C | S 形弯腿，腿上部有裙板 | `workpieces/c/tables/cabriole_leg_table.py`。腿向外弯出膝再收回踝。裙板挂在桌面下、四腿之间。20 个种子已通过自动检查，待人工复核 | 高 |
 | T22 | 课桌 | `school_desk` | C | 桌面下有开口书斗，常为金属框加木面 | `workpieces/c/tables/school_desk.py`。书斗挂在桌面下、四腿之间，朝前方开口。前腿间有脚踏。20 个种子已通过自动检查，待人工复核 | 中 |
 
@@ -85,7 +85,7 @@ Spraybot 的普通椅基于 Infinigen 1.0 `ChairFactory`，可能与 S01–S03 �
 | C13 | 转角柜 | `corner_cabinet` | B | 平面为 L 形，两段柜体在转角相接 | `workpieces/b/cabinets/corner_cabinet.py`。两段门柜直角相接、体积不重叠，内角有一根封板。20 个种子已通过自动检查，待人工复核 | 中 |
 | C14 | 推拉门柜 | `sliding_door_cabinet` | B | 两扇门前后错开，在轨道上滑动，部分重叠 | `workpieces/b/cabinets/sliding_door_cabinet.py`。开敞格柜体前放两扇 `door_body_rand`，前后相差一个门厚，宽度都超过一半。20 个种子已通过自动检查，待人工复核 | 低 |
 | C15 | 吊柜 | `wall_cabinet` | B | 无底座，浅柜体，底面外露 | `workpieces/b/cabinets/wall_cabinet.py`。无腿。深度 0.28–0.36 m，底面是柜体底板。单扇或双开门是构型。20 个种子已通过自动检查，待人工复核 | 低 |
-| C16 | 衣柜 | `wardrobe` | C | 高柜，内部挂衣杆和顶部搁板，大门扇 | `workpieces/c/cabinets/wardrobe.py`。开敞高柜加顶部搁板和挂衣杆。单扇或双开门是构型。20 个种子已通过自动检查，待人工复核 | 中 |
+| C16 | 衣柜 | `wardrobe` | C | 高柜，内部挂衣杆和顶部搁板，大门扇 | `workpieces/c/cabinets/wardrobe.py`。开敞高柜加顶部搁板和挂衣杆。单扇或双开门是构型。20 个种子已通过自动检查，待人工复核（2026-10-20 修复挂衣杆与搁板悬空后重跑） | 中 |
 | C17 | 翻斗鞋柜 | `tilt_out_shoe_cabinet` | C | 正面是向外翻出的斗，内部是斜置隔板 | `workpieces/c/cabinets/tilt_out_shoe_cabinet.py`。每个斗绕下沿向前翻，斗里有一块更斜的隔板。斗数是构型。20 个种子已通过自动检查，待人工复核 | 高 |
 | C18 | 百叶门柜 | `louvered_cabinet` | C | 门芯由多根斜向百叶条组成 | `workpieces/c/cabinets/louvered_cabinet.py`。开敞柜体前是百叶门，不是平板门。门扇数是构型。20 个种子已通过自动检查，待人工复核 | 中 |
 | C19 | 梯形架 | `ladder_shelf` | C | 两根斜立柱靠墙，搁板由下往上变窄 | `workpieces/c/cabinets/ladder_shelf.py`。立柱下端向前、上端靠后。搁板数是构型，上层更窄。20 个种子已通过自动检查，待人工复核 | 中 |
@@ -101,8 +101,8 @@ Infinigen 1.0 有 `TVStandFactory`、`TriangleShelfFactory`、`KitchenIslandFact
 
 | 编号 | 类别 | 类别 ID | 档 | 结构判据 | 来源或实现路径 | 工作量 |
 | --- | --- | --- | --- | --- | --- | --- |
-| B04 | 婴儿床 | `crib` | C | 四周都是竖栏，床面离地较高 | `workpieces/c/beds/crib.py`。四根角柱之间四面都是竖栏，床板高于普通床。20 个种子已通过自动检查，待人工复核 | 中 |
-| B05 | 上下铺 | `bunk_bed` | C | 两层床面由四根立柱连接，带爬梯和护栏 | `workpieces/c/beds/bunk_bed.py`。四根立柱连两层床板。爬梯在床尾，上层长边有护栏。20 个种子已通过自动检查，待人工复核 | 高 |
+| B04 | 婴儿床 | `crib` | C | 四周都是竖栏，床面离地较高 | `workpieces/c/beds/crib.py`。四根角柱之间四面都是竖栏，床板高于普通床。20 个种子已通过自动检查，待人工复核（2026-10-20 修复床板悬空后重跑） | 中 |
+| B05 | 上下铺 | `bunk_bed` | C | 两层床面由四根立柱连接，带爬梯和护栏 | `workpieces/c/beds/bunk_bed.py`。四根立柱连两层床板。爬梯在床尾，上层长边有护栏。20 个种子已通过自动检查，待人工复核（2026-10-20 修复爬梯与护栏悬空后重跑） | 高 |
 | B06 | 四柱床 | `four_poster_bed` | C | 四角立柱高出床头，顶部可有框 | `workpieces/c/beds/four_poster_bed.py`。硬质床头、床尾、侧梁和床板。四根立柱升过床头，顶部连成框。20 个种子已通过自动检查，待人工复核 | 中 |
 
 ## 其他家具

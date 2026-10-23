@@ -131,16 +131,25 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
 def _render_views(obj: bpy.types.Object, output: Path, extent: list[float]) -> None:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_WORKBENCH"
-    scene.render.resolution_x = 384
-    scene.render.resolution_y = 384
+    scene.render.resolution_x = 448
+    scene.render.resolution_y = 448
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGB"
     scene.render.film_transparent = False
     scene.display.shading.light = "STUDIO"
     scene.display.shading.color_type = "OBJECT"
+    # Use a neutral viewport background and an explicit floor.  The old black
+    # background hid small gaps under seats, ladders, and cabinet doors and
+    # made correctly touching parts look detached.
+    scene.display.shading.background_type = "VIEWPORT"
+    scene.display.shading.background_color = (0.12, 0.14, 0.18)
+    scene.display.shading.show_shadows = True
+    scene.display.shading.shadow_intensity = 0.75
     scene.display.shading.show_cavity = True
     scene.display.shading.cavity_type = "BOTH"
+    scene.display.shading.cavity_ridge_factor = 1.35
+    scene.display.shading.cavity_valley_factor = 1.15
     obj.color = (0.47, 0.62, 0.78, 1.0)
     for other in bpy.data.objects:
         if other is not obj:
@@ -150,6 +159,16 @@ def _render_views(obj: bpy.types.Object, output: Path, extent: list[float]) -> N
     corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
     center = sum(corners, Vector()) / len(corners)
     span = max(extent)
+    # A temporary floor gives the review image a contact shadow and makes
+    # unsupported or floating geometry immediately visible.  It is removed
+    # before the .blend artifact is saved.
+    floor_z = min(float(v[2]) for v in corners)
+    bpy.ops.mesh.primitive_plane_add(
+        size=max(span * 3.0, 3.0), location=(0.0, 0.0, floor_z - 0.002)
+    )
+    floor = bpy.context.object
+    floor.name = "_ReviewFloor"
+    floor.color = (0.16, 0.18, 0.22, 1.0)
     camera_data = bpy.data.cameras.new("ReviewCamera")
     camera_data.type = "ORTHO"
     camera_data.ortho_scale = span * 1.9
@@ -163,6 +182,8 @@ def _render_views(obj: bpy.types.Object, output: Path, extent: list[float]) -> N
         bpy.ops.render.render(write_still=True)
         if not (output / f"view_{index}.png").is_file():
             raise RuntimeError(f"view_{index}.png was not rendered")
+
+    bpy.data.objects.remove(floor, do_unlink=True)
 
 
 def main() -> None:
@@ -203,7 +224,12 @@ def main() -> None:
     evaluated_mesh = evaluated.to_mesh()
     try:
         metrics = _geometry_metrics(obj, evaluated_mesh)
-        spray_checks = _spray_checks(evaluated_mesh, legend)
+        # Validate semantic attributes on the source mesh.  The generated
+        # workpiece is exported from this mesh; upstream subdivision/mirror
+        # modifiers may retain their pre-remap local attributes on the
+        # evaluated copy, which would compare unrelated label spaces against
+        # the shared legend.
+        spray_checks = _spray_checks(obj.data, legend)
     finally:
         evaluated.to_mesh_clear()
     _render_views(obj, args.output, metrics["extent_m"])

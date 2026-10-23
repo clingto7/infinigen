@@ -11,6 +11,7 @@
 import logging
 import os
 import sys
+import threading
 import typing
 from datetime import datetime
 from pathlib import Path
@@ -55,20 +56,33 @@ class Timer:
 
 
 class Suppress:
+    _lock = threading.RLock()
+
     def __enter__(self, logfile=os.devnull):
-        open(logfile, "w").close()
-        self.old = os.dup(1)
-        sys.stdout.flush()
-        os.close(1)
-        os.open(logfile, os.O_WRONLY)
-        self.level = logging.root.manager.disable
-        logging.disable(logging.CRITICAL)
+        self._lock.acquire()
+        try:
+            sys.stdout.flush()
+            self.old = os.dup(1)
+            sink = os.open(logfile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o666)
+            try:
+                os.dup2(sink, 1)
+            finally:
+                os.close(sink)
+            self.level = logging.root.manager.disable
+            logging.disable(logging.CRITICAL)
+        except BaseException:
+            if hasattr(self, "old"):
+                os.close(self.old)
+            self._lock.release()
+            raise
 
     def __exit__(self, type, value, traceback):
-        os.close(1)
-        os.dup(self.old)
-        os.close(self.old)
-        logging.disable(self.level)
+        try:
+            os.dup2(self.old, 1)
+        finally:
+            os.close(self.old)
+            logging.disable(self.level)
+            self._lock.release()
 
 
 class LogLevel:

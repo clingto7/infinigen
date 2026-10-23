@@ -50,16 +50,18 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     left = point_at_z(*floor[(1, -1)], 0.20)
     right = point_at_z(*floor[(1, 1)], 0.20)
     parts.append(rod(left, right, 0.012, material, "leg_base"))
-    guard_z = elevation + 0.07
+    # The guards reach down into the seat and the front guard overlaps the
+    # side guards; otherwise the whole arm assembly floats about a
+    # centimetre above the chair.
     for side in (-1.0, 1.0):
         parts.append(board(
-            (depth * 0.92, 0.016, 0.12),
-            (0.0, side * (width * 0.5 + 0.004), guard_z),
+            (depth * 0.92, 0.016, 0.14),
+            (0.0, side * (width * 0.5 + 0.004), elevation + 0.06),
             material, "arm",
         ))
     parts.append(board(
-        (0.016, width * 0.92, 0.10),
-        (depth * 0.46, 0.0, guard_z),
+        (0.016, width * 1.02, 0.10),
+        (depth * 0.46, 0.0, elevation + 0.07),
         material, "arm",
     ))
     tray_z = elevation + 0.14

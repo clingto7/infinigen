@@ -116,7 +116,49 @@ result.part_legend   # 共享表里的名字，例如 {0: "seat", 1: "back", 4: 
 
 ### 新工件现在审到哪
 
-57 类都已注册，可以生成。候选文档里各类写的“20 个种子已通过自动检查”是并入远端之前、针对当时本地生成器的结果，状态仍是待人工复核。并入之后柜体、桌台和门窗的编号做了改写，正式审查要在当前分支上按上面的命令重跑，再填人工模板。通过之前不要把这些类计入已验收的 80 类。
+当前正式登记 54 类，可以生成。合并前的 57 个接口已完成 1140 个样本的 20 种子自动检查，
+全部通过几何、类内变化和语义字段检查；每个接口的 seed 0 兼容导出探针也全部通过。
+后续按相似实现合并并复核注册表后，`plant_stand` 与 `step_stool` 合为
+`stepped_platform`；该合并接口和基线柜体合并接口均另做了 20 种子生成及语义检查。
+完整验证产物位于 `outputs_scratch/review-expansion-20seed-complete-20261018/`，其中
+`contact_sheets/` 含 57 张按接口命名的拼图；兼容导出位于
+`outputs_scratch/review-expansion-probe-20261018/`。自动检查通过也不替代人工审查，
+所有新类在人工审查记录完成前仍不计入已验收的 80 类。
+
+验证器对生成源网格检查 `spray_part`/`spray_target`，对修改器评估网格检查几何。
+部分上游门窗和柜体修改器会在评估副本中保留旧的本地部件编号，不能拿它和扩展接口的
+共享 legend 直接比较；导出接口使用源网格。
+
+### 2026-10-20 结构连通复审
+
+第一批 contact sheet 人工反馈“部分结构悬空”后，对 20261018 全量 1140 个样本做了
+连通岛审查（`scripts/spraybot_island_audit.py`）：把合并网格按边连通拆件，包围盒
+间隙 ≤1 mm 的件并岛，门窗抽屉等活动件按设计间隙豁免。结论是 5 个类别存在真实的
+悬空子装配，已修复并按 20 种子复验清零：
+
+| 类别 | 悬空部件 | 修复 |
+| --- | --- | --- |
+| `bunk_bed` | 床尾爬梯（距床架 10 cm）、上层两条护栏（距立柱 7.7 cm，两端够不到立柱） | 爬梯移入床架端面内；护栏加长到插入立柱 |
+| `hairpin_leg_table` | 全部四个 V 形腿，弯头顶点停在桌面下 5 cm，桌面完全悬空 | 顶点伸入桌板底面 |
+| `high_chair` | 两侧围挡与前围挡整体悬在座面上方约 1 cm | 侧围挡下延插入座面，前围挡加宽与侧围挡搭接 |
+| `crib` | 床板四周缩进 3 cm，够不到角柱 | 床板放大到插入角柱 |
+| `wardrobe` | 挂衣杆两端距侧板 4–6 cm，顶部搁板缩进 2.5 cm 部分种子悬空 | 挂衣杆伸入侧板，搁板缩进减到 1.2 cm |
+
+另有 9 个柜体/长凳类别存在约 2 mm 的腿-柜体装配间隙，低于可见阈值，按设计间隙
+记录，未改动。其余 43 类连通岛审查干净。用户指出的 `armchair`、
+`ladder_back_chair`、`louvered_cabinet` 渲染悬空感确认为渲染表现：几何包围盒
+真实重叠。审查的同时重写了审查图渲染：448 px、浅灰蓝背景、场景地面接触阴影和
+cavity 描边（`scripts/spraybot_validate_one.py`），并用新渲染重跑了全量
+57 类 × 20 种子，产物在 `outputs_scratch/review-expansion-20seed-20261020/`。
+此前 20261018 的黑色背景目录保留作对照。
+
+上述修复后的代码已于 2026-10-21 同步到 `sentry` 的
+`/home/simulator/ws/infinigen-spray`（该目录不是 git 仓库，用 rsync 同步；同步前的
+src/scripts 已打包为远端 `infinigen-spray-code-backup-20261021.tar.gz`）。四个
+10000 批（open_cell_shelf、slat_back_chair、solid_back_chair、wheeled_dining_chair）
+已全部完成且零失败；batch_2 剩余三类 storage_cabinet_single_door、
+storage_drawer_cabinet、storage_shelf_on_base 已按 3 类 × 2 workers、CPU-only 的
+既定策略在 tmux（`prod-<类别>`）续跑，double_door_with_handle 排在下一批。
 
 待定项 T05、C05、C06、W04 和候选文档里的备选没有实现。
 

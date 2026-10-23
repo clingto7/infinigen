@@ -7,7 +7,15 @@
 ## 当前状态（2026-10）
 
 - 单接口自动验证流水线已就绪，并对全部 94 个原生 `Object` 接口跑完 20 种子筛查：1880/1880 生成成功，76 个过几何筛查、18 个有退化面告警；原生接口均无喷涂标签（待改造状态）。
-- 4 个固定工件入口（`slat_back_chair`、`open_cell_shelf`、`opaque_panel_door`、`cup_body_candidate`）20 种子全过自动筛查，停在人工类别/工艺审查。
+- 当前登记 21 个合并后的基线接口和 54 个扩展接口，共 75 个生成接口。基线接口通过
+  `infinigen2.objects.spraybot.generate_workpiece`，扩展接口通过
+  `infinigen2.workpieces.generate` 调用；扩展接口的自动复核与人工审查状态见
+  [docs/spraybot/repository-status.md](docs/spraybot/repository-status.md)。
+- 扩展接口的前身 57 类已完成 20 种子自动检查和兼容导出探针；2026-10-20 修复
+  5 类悬空结构并改进审查图渲染后全量重跑，完整拼图在
+  `outputs_scratch/review-expansion-20seed-20261020/contact_sheets/`，
+  连通岛审查用 `scripts/spraybot_island_audit.py`。随后按实现合并和注册复核，当前扩展
+  接口为 54 类；新合并接口另做了 20 种子检查。
 - **当前阶段：阶段 1 人工接口审查**（候选分类），SOP 见 [docs/spraybot/manual-review-sop.md](docs/spraybot/manual-review-sop.md)。后续阶段见 [docs/spraybot/README.md](docs/spraybot/README.md) 的探索顺序。
 
 ## 文档
@@ -19,7 +27,8 @@
 ## 仓库结构
 
 ```
-src/infinigen2/objects/spraybot.py   # 固定工件入口 generate_workpiece()，4 个类别
+src/infinigen2/objects/spraybot.py   # 合并后的基线工件入口，21 个类别
+src/infinigen2/workpieces/           # 扩展工件入口与 54 个类别注册
 src/infinigen2/objects/*.py          # chair/door/storage/vase 支持 spray_tags=True 显式打标
 scripts/spraybot_validate.py         # 批量验证：断点续跑、超时、summary/review/interfaces 报表
 scripts/spraybot_validate_one.py     # 单种子 worker：修改器后网格度量、标签检查、双视角 PNG、.blend
@@ -45,7 +54,7 @@ python3.11 -m venv .venv
 ```bash
 # 原生接口或固定工件，各 20 种子（可断点续跑）
 .venv/bin/python scripts/spraybot_validate.py outputs_scratch/my-audit \
-    --category cup_body_candidate --seeds 20
+    --category backed_bench --seeds 20
 
 # 只跑部分接口 / 换种子段
 .venv/bin/python scripts/spraybot_validate.py outputs_scratch/recheck \

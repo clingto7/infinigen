@@ -12,7 +12,6 @@ from infinigen2.workpieces.c.openings.parts import (
     hard_material,
     join_tagged,
     placed,
-    register,
 )
 
 
@@ -36,12 +35,3 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     ]
     return join_tagged(parts)
 
-
-register(Category(
-    category_id="door_casing",
-    code="D07",
-    family="门窗",
-    criterion="贴墙的 U 形三边框，截面为线脚",
-    build=build,
-    allowed_parts=frozenset({"casing"}),
-))
