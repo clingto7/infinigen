@@ -5,8 +5,13 @@ from a cabinet built from drawers) can tag their own parts without the
 caller remapping them.
 """
 
+import bmesh
+import math
+
 import numpy as np
 import procfunc as pf
+from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 SPRAY_PART_IDS: dict[str, int] = {
     "seat": 0,
@@ -94,6 +99,52 @@ def write_spray_target(obj: pf.MeshObject) -> None:
     pf.ops.attr.write_attribute(
         obj, ~np.isin(parts, excluded), "spray_target", domain="FACE", overwrite=True
     )
+
+
+def write_spray_visibility(obj: pf.MeshObject, samples: int = 16) -> None:
+    """Write per-face ``spray_visibility`` in [0, 1].
+
+    The value is the fraction of ``samples`` deterministic hemisphere
+    directions around the outward normal from which a ray escapes the solid
+    unobstructed. Rays run in mesh coordinates (D-tier meshes store world
+    coordinates in vertices), so occlusion by other parts of the same
+    workpiece is included. Outer faces score ~1, closed-cavity walls ~0, and
+    outward-opening pockets score in between. ``spray_target`` stays
+    all-inclusive; this attribute lets consumers discount unreachable faces
+    without changing the target-face contract.
+    """
+    bm = bmesh.new()
+    try:
+        bm.from_mesh(obj.item().data)
+        bm.faces.ensure_lookup_table()
+        bvh = BVHTree.FromBMesh(bm)
+        golden = math.pi * (3.0 - math.sqrt(5.0))
+        local_dirs = []
+        for i in range(samples):
+            z = (i + 0.5) / samples
+            r = math.sqrt(max(0.0, 1.0 - z * z))
+            phi = i * golden
+            local_dirs.append(Vector((r * math.cos(phi), r * math.sin(phi), z)))
+        eps = 2e-4
+        values = np.empty(len(bm.faces), dtype=np.float32)
+        up = Vector((0.0, 0.0, 1.0))
+        for face in bm.faces:
+            normal = face.normal
+            if normal.length < 1e-9:
+                values[face.index] = 0.0
+                continue
+            normal.normalize()
+            spin = up.rotation_difference(normal)
+            origin = face.calc_center_median() + normal * eps
+            escaped = sum(
+                1 for local in local_dirs if bvh.ray_cast(origin, spin @ local)[0] is None
+            )
+            values[face.index] = escaped / samples
+        pf.ops.attr.write_attribute(
+            obj, values, "spray_visibility", domain="FACE", overwrite=True
+        )
+    finally:
+        bm.free()
 
 
 def present_part_legend(obj: pf.MeshObject) -> dict[int, str]:

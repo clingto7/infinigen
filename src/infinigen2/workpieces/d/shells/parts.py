@@ -190,7 +190,9 @@ def tag(obj: pf.MeshObject, material: pf.Material, part: str) -> pf.MeshObject:
 
 
 def finish(parts: list[pf.MeshObject]) -> pf.MeshObject:
-    return join_tagged(parts)
+    obj = join_tagged(parts)
+    spray.write_spray_visibility(obj)
+    return obj
 
 
 def pose(
