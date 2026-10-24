@@ -91,7 +91,9 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         ),
         what="drum mouth b",
     )
-    bore_len = max(0.06, span - rx_a * 0.20 - rx_b * 0.20)
+    # 内孔两端越过鼓心伸入两侧凹碗：碗心距鼓心 0.58*rx、碗半径 >=0.62*rx，
+    # 故鼓心外 0.1*min(rx) 处必在碗内；两腔必连通，且远离远端外壁。
+    bore_len = max(0.06, span + min(rx_a, rx_b) * 0.20)
     cut(
         shell,
         cylinder(max(0.012, r_neck - wall), bore_len, mid, rotation=aim_z(axis), vertices=24),
