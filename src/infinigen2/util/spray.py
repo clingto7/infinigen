@@ -31,6 +31,11 @@ SPRAY_PART_IDS: dict[str, int] = {
     "casing": 19,
     "glass": 20,
     "drawer_box": 21,
+    # D-tier shells. These are spray bodies, not furniture members.
+    "shell": 22,
+    "rib": 23,
+    "flange": 24,
+    "boss": 25,
 }
 SPRAY_PART_NAMES = {code: name for name, code in SPRAY_PART_IDS.items()}
 
