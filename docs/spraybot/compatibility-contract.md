@@ -19,6 +19,15 @@ A generated workpiece export contains:
 values to stable semantic names. Non-spray materials remain in the complete mesh
 when needed, but their triangles must have `spray_target=False`.
 
+## Generation-side face attributes
+
+D-tier shell workpieces additionally carry `spray_visibility`, a per-face float
+in [0, 1]: the fraction of 16 deterministic hemisphere directions around the
+outward normal from which a ray escapes the solid unobstructed, computed on the
+final joined mesh so self-occlusion is included. `spray_target` remains
+all-inclusive; consumers use `spray_visibility` to discount unreachable faces
+(inner cavity walls, deep bores) without changing the target-face contract.
+
 ## Existing Spraybot precedents
 
 The ordinary Infinigen chair consumes per-face semantic labels plus generation-time

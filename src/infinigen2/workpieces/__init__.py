@@ -2,13 +2,14 @@
 
 Import this package, not ``infinigen2.objects.spraybot``. Category ids stay
 the same. ``common.py`` holds the registry and ``assemble.py`` holds shared
-placement. Each category is one module under ``a/``, ``b/``, or ``c/``.
+placement. Furniture categories are one module under ``a/``, ``b/``, or ``c/``.
+Complex spray shells are under ``d/`` and are not furniture.
 
     from infinigen2.workpieces import generate
     generate("storage_bench", rng)
 """
 
-from infinigen2.workpieces import a, b, c
+from infinigen2.workpieces import a, b, c, d
 from infinigen2.workpieces.common import REGISTRY, WorkpieceResult, generate
 
 # Registration happens at import, so the id list is complete only after the
@@ -21,5 +22,6 @@ __all__ = [
     "a",
     "b",
     "c",
+    "d",
     "generate",
 ]

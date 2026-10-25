@@ -34,6 +34,18 @@ def _face_attribute(mesh: bpy.types.Mesh, name: str) -> dict | None:
     return {**info, "counts": counts}
 
 
+def _visibility_stats(mesh: bpy.types.Mesh) -> dict | None:
+    attr = mesh.attributes.get("spray_visibility")
+    if attr is None or attr.domain != "FACE" or attr.data_type != "FLOAT":
+        return None
+    values = np.asarray([d.value for d in attr.data], dtype=np.float64)
+    return {
+        "mean": float(values.mean()),
+        "min": float(values.min()),
+        "frac_below_0_25": float(np.mean(values < 0.25)),
+    }
+
+
 def _geometry_metrics(obj: bpy.types.Object, mesh: bpy.types.Mesh) -> dict:
     vertices = np.asarray([v.co[:] for v in mesh.vertices], dtype=np.float32)
     if len(vertices) == 0 or not np.isfinite(vertices).all():
@@ -75,6 +87,7 @@ def _geometry_metrics(obj: bpy.types.Object, mesh: bpy.types.Mesh) -> dict:
         "normalized_shape_sha256": normalized_hash.hexdigest(),
         "spray_part": _face_attribute(mesh, "spray_part"),
         "spray_target": _face_attribute(mesh, "spray_target"),
+        "spray_visibility": _visibility_stats(mesh),
     }
 
 
