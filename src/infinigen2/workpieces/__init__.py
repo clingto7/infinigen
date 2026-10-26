@@ -9,7 +9,7 @@ Complex spray shells are under ``d/`` and are not furniture.
     generate("storage_bench", rng)
 """
 
-from infinigen2.workpieces import a, b, c, d
+from infinigen2.workpieces import a, b, c, d, native_spraybot
 from infinigen2.workpieces.common import REGISTRY, WorkpieceResult, generate
 
 # Registration happens at import, so the id list is complete only after the
@@ -24,4 +24,5 @@ __all__ = [
     "c",
     "d",
     "generate",
+    "native_spraybot",
 ]

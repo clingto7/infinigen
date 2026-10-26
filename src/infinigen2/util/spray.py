@@ -41,6 +41,9 @@ SPRAY_PART_IDS: dict[str, int] = {
     "rib": 23,
     "flange": 24,
     "boss": 25,
+    "grille": 26,
+    "lip": 27,
+    "ornament": 28,
 }
 SPRAY_PART_NAMES = {code: name for name, code in SPRAY_PART_IDS.items()}
 

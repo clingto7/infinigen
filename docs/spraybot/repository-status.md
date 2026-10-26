@@ -1,6 +1,50 @@
 # 仓库现状
 
-日期：2026-10-18。本文说明当前 fork 里两套工件怎么生成、怎么审查。类别清单本身不在这里重复。
+## 当前状态（2026-10-26）
+
+当前仓库位于 `main`，HEAD 为 `c45fbf6f`，与 `origin/main` 同步。本文后面的
+10 月 18 日及 10 月 20 日记录保留为历史进度；其中分支名、类别计数和目录说明不代表当前状态。
+
+当前代码保留两个生成入口：旧入口 `infinigen2.objects.spraybot.generate_workpiece`，以及按
+工件类别注册的 `infinigen2.workpieces.generate`。后者已增加 D 档复杂壳体：G01–G30 候选中
+人工筛选出 22 类，清单见 [complex-workpiece-available-set.md](complex-workpiece-available-set.md)。
+最近的提交还修复了 `connected_drums` 的内孔连通，并在 D 档生成结果中写入逐面
+`spray_visibility`。
+
+逐面字段目前分工如下：`spray_part` 记录部件语义；`spray_target` 根据部件是否属于
+非目标部件写入布尔值；D 档 `spray_visibility` 记录 16 个确定性半球方向的射线逃逸比例。
+可用清单里的 22 类 `spray_target` 覆盖率均为 100%。这些值尚未证明轨迹覆盖、机器人可达性
+或涂层质量；凹腔面仍需逐模型检查其标签语义和遮挡表达。
+
+第一轮接口已加入当前代码：`car_bumper`、`opus_chair` 和 `infinigen_chair`。它们保留源工厂
+随机结构分支，并把源 `part_type` 映射到共享 `spray_part` 语义；可选生成记录通过
+`WorkpieceResult.structure_priors` 返回。22 个 D 类已设置 0.5–1.5 的整体缩放范围。
+
+2026-10-26 验证批次已完成：22 个 D 类各生成 20 个种子（440/440），三个原生接口各生成 20 个
+种子（60/60）。最终统一批次共 500/500 个样本，全部通过基础几何、喷涂字段检查；每接口 20 个
+种子的归一化形状均有变化。25 个类别的拼图位于 `outputs_scratch/phase1-20261026/contact_sheets/`。
+Infinigen Chair 还保留了每个部件的中心线先验和源脚本的 Z 旋转匹配；20 个种子都记录了 9–13 条
+中心线，所有记录均有旋转匹配。
+为运行原生工厂，本机 `.venv` 补装了项目 `infinigen1` 可选依赖组中已声明的 `gin-config`、
+`networkx`、`scikit-learn`、`psutil`；未修改项目依赖声明。
+
+本次项目工作区另有未跟踪目录 `draft_e4186e6d_folder/`，应在后续操作中保留。
+
+### 已确定的生成扩展安排
+
+- 第一轮接入 Spraybot 原生 `CarBumper`、`OpusChair`、Infinigen `ChairFactory`，分别使用
+  `car_bumper`、`opus_chair`、`infinigen_chair` 接口 ID，并保留这三个来源的原生离散分支随机性；
+  这是一次例外，不改变其他类别锁定结构分支的约定，见 [ADR 0001](../adr/0001-preserve-spraybot-native-generators.md)。
+- 同轮对 22 个 D 档几何工件使用 0.5–1.5 的整体等比例缩放因子。接口交付人工审核前，对每类做
+  20 种子外形与尺寸检查并生成模型拼图。
+- 后续轮次统一实现几何可达性面属性：与外部空间连通状态、通道最大可通过半径；不纳入通路长度。
+  字段定义及可视化要求见 [兼容契约](compatibility-contract.md)。
+
+---
+
+## 历史状态记录
+
+日期：2026-10-18。以下为当时记录的生成与审查方式。类别清单本身不在这里重复。
 
 本仓库是 Infinigen 2 的 Spraybot fork。生成几何和面上的 `spray_part`、`spray_target` 归本 fork；轨迹、PaintDS 和训练格式归 Spraybot。两边通过导出的网格和标签对接，不互相 import。字段约定见 [compatibility-contract.md](compatibility-contract.md)。
 

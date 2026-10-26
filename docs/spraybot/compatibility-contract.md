@@ -24,9 +24,26 @@ when needed, but their triangles must have `spray_target=False`.
 D-tier shell workpieces additionally carry `spray_visibility`, a per-face float
 in [0, 1]: the fraction of 16 deterministic hemisphere directions around the
 outward normal from which a ray escapes the solid unobstructed, computed on the
-final joined mesh so self-occlusion is included. `spray_target` remains
-all-inclusive; consumers use `spray_visibility` to discount unreachable faces
-(inner cavity walls, deep bores) without changing the target-face contract.
+final joined mesh so self-occlusion is included. This is a geometric line-of-sight
+estimate, not a binary sprayability decision and not a guarantee of trajectory,
+robot, or coating feasibility. `spray_target` continues to describe coating
+intent, including target faces in cavities; downstream consumers may interpret
+the visibility estimate under their own process constraints.
+
+The general accessibility schema describes geometry only and does not depend on
+a particular spray gun or coating process. It keeps access information separate
+from `spray_target`. The agreed per-face fields are:
+
+| Field | Type / domain | Meaning |
+| --- | --- | --- |
+| `spray_target` | boolean, one value per face | Whether the face belongs to the coating task. It expresses intent, including faces inside cavities. |
+| `geometry_accessible` | boolean, one value per face | Whether the face's adjacent free space connects to exterior free space through a path that does not cross the workpiece. This is geometric point connectivity, not a sprayability guarantee. |
+| `max_passable_radius_m` | float in meters, one value per face | The largest spherical probe radius that can pass from exterior free space to the face along an unobstructed path. A narrow opening lowers this value even when the interior connects to the exterior. |
+
+Direction probes may support computation, but the result is face-aligned; a
+small set of probe directions alone is not the face-level contract. The existing
+`spray_visibility` field remains a separate line-of-sight estimate where
+currently available. It does not replace connectivity or passage clearance.
 
 ## Existing Spraybot precedents
 
@@ -37,6 +54,27 @@ shared by the mesh and trajectory generator. The new furniture categories may
 provide optional `structure_priors` when a downstream rule needs equivalent
 information; simple categories need only the mesh and semantic face data.
 
+The `infinigen_chair` entry returns centerlines keyed by source `part_id`, transformed
+into the generated mesh frame, plus the source back metadata and the rotation selected
+by the source script's centerline-to-part bounds check. `opus_chair` and `car_bumper`
+return their source factory records under `structure_priors`.
+
 The current pilot exports the required mesh and label fields. A full Spraybot
 adapter import test remains environment-dependent because the checked-out Spraybot
 repository does not include its `hybrid_per_station` package in this workspace.
+
+## Native Spraybot generator interfaces
+
+The `car_bumper`, `opus_chair`, and `infinigen_chair` entries preserve their
+source generators' original random structural branches. This is a one-time
+integration exception for these Spraybot-native interfaces; it does not change
+the project's general rule that other formal workpiece categories lock their
+structural branch. The exception is recorded in [ADR 0001](../adr/0001-preserve-spraybot-native-generators.md).
+
+## Visual inspection of face data
+
+Every face-level field in the generation schema must be inspectable on the
+generated mesh. Provide a face-colored view for target labels and geometric
+openness/access data, with a legend and value scale. The inspection output should let a reviewer
+compare the visualization with the same mesh geometry and verify the 20-seed
+validation set before accepting an interface.

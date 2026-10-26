@@ -13,7 +13,7 @@ import procfunc as pf
 
 from infinigen2.util import spray
 from infinigen2.workpieces.assemble import hard_material, join_tagged
-from infinigen2.workpieces.common import Category, register
+from infinigen2.workpieces.common import Category, register as _register
 
 __all__ = [
     "Category",
@@ -32,6 +32,13 @@ __all__ = [
     "sphere",
     "tag",
 ]
+
+
+def register(category: Category) -> Category:
+    """Register a D-tier shell with its agreed instance-scale variation."""
+    if category.scale_range is None:
+        category = category._replace(scale_range=(0.5, 1.5))
+    return _register(category)
 
 
 def _realize(geometry) -> pf.MeshObject:
