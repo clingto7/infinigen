@@ -10,6 +10,8 @@ import math
 
 import numpy as np
 import procfunc as pf
+import trimesh
+from scipy import ndimage
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
@@ -101,6 +103,106 @@ def write_spray_target(obj: pf.MeshObject) -> None:
     excluded = [part_id(name) for name in NON_TARGET_PARTS]
     pf.ops.attr.write_attribute(
         obj, ~np.isin(parts, excluded), "spray_target", domain="FACE", overwrite=True
+    )
+
+
+def write_geometry_accessibility(
+    obj: pf.MeshObject, resolution: int = 96
+) -> None:
+    """Write per-face exterior connectivity and voxel passage clearance.
+
+    The closed mesh is voxelized at ``max_extent / resolution``. Exterior
+    free voxels are flood-filled; a max-min propagation then computes the
+    largest voxel-center clearance that can be carried along a path from the
+    exterior. Values are geometric estimates at this grid resolution.
+    """
+    item = obj.item()
+    mesh = item.data
+    if not mesh.polygons:
+        raise ValueError("cannot compute accessibility for an empty mesh")
+    mesh.calc_loop_triangles()
+    vertices = np.asarray([item.matrix_world @ vertex.co for vertex in mesh.vertices], dtype=np.float64)
+    triangles = np.asarray([triangle.vertices[:] for triangle in mesh.loop_triangles], dtype=np.int64)
+    lo, hi = vertices.min(axis=0), vertices.max(axis=0)
+    pitch = float(np.max(hi - lo)) / max(int(resolution), 8)
+    if not np.isfinite(pitch) or pitch <= 0:
+        raise ValueError("mesh has invalid bounds for accessibility voxelization")
+
+    tri_mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
+    surface = tri_mesh.voxelized(pitch=pitch, method="subdivide")
+    origin = lo - 2.0 * pitch
+    shape = np.ceil((hi - origin) / pitch).astype(int) + 3
+    occupied = np.zeros(tuple(shape), dtype=bool)
+    points = surface.points
+    ijk = np.floor((points - origin) / pitch).astype(np.int64)
+    valid = np.all((ijk >= 0) & (ijk < shape), axis=1)
+    occupied[tuple(ijk[valid].T)] = True
+    occupied = ndimage.binary_fill_holes(occupied)
+    free = ~occupied
+
+    boundary = np.zeros_like(free)
+    for axis in range(3):
+        first = [slice(None)] * 3
+        last = [slice(None)] * 3
+        first[axis], last[axis] = 0, -1
+        boundary[tuple(first)] = True
+        boundary[tuple(last)] = True
+    exterior = ndimage.binary_propagation(boundary & free, mask=free)
+    clearance = ndimage.distance_transform_edt(free) * pitch
+    capacity = np.where(exterior, clearance, 0.0)
+    footprint = ndimage.generate_binary_structure(3, 1)
+    while True:
+        expanded = ndimage.maximum_filter(capacity, footprint=footprint, mode="constant")
+        updated = np.minimum(clearance, expanded)
+        if np.array_equal(updated, capacity):
+            break
+        capacity = updated
+
+    centers = np.empty((len(mesh.polygons), 3), dtype=np.float64)
+    normals = np.empty_like(centers)
+    for face in mesh.polygons:
+        centers[face.index] = item.matrix_world @ face.center
+        normals[face.index] = (
+            item.matrix_world.to_3x3().inverted().transposed() @ face.normal
+        )
+    normal_lengths = np.linalg.norm(normals, axis=1)
+    normals /= np.maximum(normal_lengths[:, None], 1e-12)
+    probes = centers + normals * (1.5 * pitch)
+    indices = np.floor((probes - origin) / pitch).astype(np.int64)
+    indices = np.clip(indices, 0, np.asarray(shape) - 1)
+    accessible = np.zeros(len(mesh.polygons), dtype=bool)
+    passable = np.zeros(len(mesh.polygons), dtype=np.float32)
+    for face_index, (index, normal) in enumerate(zip(indices, normals)):
+        x, y, z = index
+        if free[x, y, z] and capacity[x, y, z] > 0:
+            accessible[face_index] = exterior[x, y, z]
+            passable[face_index] = capacity[x, y, z]
+            continue
+        best = None
+        best_distance = np.inf
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    candidate = index + (dx, dy, dz)
+                    if np.any(candidate < 0) or np.any(candidate >= shape):
+                        continue
+                    if not free[tuple(candidate)] or capacity[tuple(candidate)] <= 0:
+                        continue
+                    direction = np.asarray((dx, dy, dz), dtype=float)
+                    if np.dot(direction, normal) < -0.25:
+                        continue
+                    distance = dx * dx + dy * dy + dz * dz
+                    if distance < best_distance:
+                        best, best_distance = candidate, distance
+        if best is not None:
+            accessible[face_index] = exterior[tuple(best)]
+            passable[face_index] = capacity[tuple(best)]
+
+    pf.ops.attr.write_attribute(
+        obj, accessible, "geometry_accessible", domain="FACE", overwrite=True
+    )
+    pf.ops.attr.write_attribute(
+        obj, passable, "max_passable_radius_m", domain="FACE", overwrite=True
     )
 
 

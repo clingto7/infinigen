@@ -17,6 +17,7 @@ from pathlib import Path
 
 import bpy
 import numpy as np
+from PIL import Image, ImageDraw
 from mathutils import Vector
 
 
@@ -43,6 +44,30 @@ def _visibility_stats(mesh: bpy.types.Mesh) -> dict | None:
         "mean": float(values.mean()),
         "min": float(values.min()),
         "frac_below_0_25": float(np.mean(values < 0.25)),
+    }
+
+
+def _accessibility_metrics(mesh: bpy.types.Mesh) -> dict:
+    accessible = mesh.attributes.get("geometry_accessible")
+    radius = mesh.attributes.get("max_passable_radius_m")
+    if accessible is None or radius is None:
+        return {"geometry_accessible": None, "max_passable_radius_m": None}
+    values = np.asarray([item.value for item in radius.data], dtype=np.float64)
+    flags = np.asarray([item.value for item in accessible.data], dtype=bool)
+    if len(values) == 0:
+        return {"geometry_accessible": None, "max_passable_radius_m": None}
+    return {
+        "geometry_accessible": {
+            "accessible_faces": int(flags.sum()),
+            "inaccessible_faces": int((~flags).sum()),
+            "fraction_accessible": float(flags.mean()),
+        },
+        "max_passable_radius_m": {
+            "min": float(values.min()),
+            "median": float(np.median(values)),
+            "p95": float(np.percentile(values, 95)),
+            "max": float(values.max()),
+        },
     }
 
 
@@ -88,6 +113,7 @@ def _geometry_metrics(obj: bpy.types.Object, mesh: bpy.types.Mesh) -> dict:
         "spray_part": _face_attribute(mesh, "spray_part"),
         "spray_target": _face_attribute(mesh, "spray_target"),
         "spray_visibility": _visibility_stats(mesh),
+        **_accessibility_metrics(mesh),
     }
 
 
@@ -132,6 +158,22 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
                 ) / total_area
             if target_area_fraction is None or target_area_fraction <= 0:
                 issues.append("spray_target_zero_area")
+    accessible = mesh.attributes.get("geometry_accessible")
+    if accessible is None:
+        issues.append("geometry_accessible_missing")
+    elif accessible.domain != "FACE" or accessible.data_type != "BOOLEAN":
+        issues.append("geometry_accessible_must_be_boolean_face_attribute")
+    elif len(accessible.data) != len(mesh.polygons):
+        issues.append("geometry_accessible_length_mismatch")
+    radius = mesh.attributes.get("max_passable_radius_m")
+    if radius is None:
+        issues.append("max_passable_radius_m_missing")
+    elif radius.domain != "FACE" or radius.data_type != "FLOAT":
+        issues.append("max_passable_radius_must_be_float_face_attribute")
+    elif len(radius.data) != len(mesh.polygons):
+        issues.append("max_passable_radius_m_length_mismatch")
+    elif any(not np.isfinite(item.value) or item.value < 0 for item in radius.data):
+        issues.append("max_passable_radius_m_values_invalid")
     return {
         "passed": not issues,
         "issues": issues,
@@ -196,7 +238,97 @@ def _render_views(obj: bpy.types.Object, output: Path, extent: list[float]) -> N
         if not (output / f"view_{index}.png").is_file():
             raise RuntimeError(f"view_{index}.png was not rendered")
 
+    _render_face_fields(obj, output, center, span, camera)
+
     bpy.data.objects.remove(floor, do_unlink=True)
+
+
+def _render_face_fields(
+    obj: bpy.types.Object,
+    output: Path,
+    center: Vector,
+    span: float,
+    camera: bpy.types.Object,
+) -> None:
+    mesh = obj.data
+    scene = bpy.context.scene
+    scene.display.shading.color_type = "MATERIAL"
+    original_indices = [poly.material_index for poly in mesh.polygons]
+    original_materials = list(mesh.materials)
+    palettes = {
+        "spray_target": [(0.24, 0.28, 0.32, 1), (0.93, 0.25, 0.15, 1)],
+        "geometry_accessible": [(0.91, 0.30, 0.17, 1), (0.16, 0.72, 0.45, 1)],
+    }
+    radius_attr = mesh.attributes["max_passable_radius_m"]
+    radius_values = np.asarray([item.value for item in radius_attr.data], dtype=float)
+    radius_max = max(float(np.percentile(radius_values, 95)), 1e-9)
+    radius_palette = [
+        (0.16, 0.23, 0.55, 1), (0.16, 0.43, 0.72, 1),
+        (0.12, 0.63, 0.69, 1), (0.22, 0.75, 0.48, 1),
+        (0.61, 0.80, 0.25, 1), (0.94, 0.72, 0.18, 1),
+        (0.94, 0.42, 0.13, 1), (0.70, 0.16, 0.20, 1),
+    ]
+    specs = [
+        ("spray_target", "spray_target", "False", "True", None),
+        ("geometry_accessible", "geometry_accessible", "No", "Yes", None),
+        ("max_passable_radius_m", "max_passable_radius_m", "0 m", f"{radius_max:.4f} m (p95)", radius_max),
+    ]
+    try:
+        for attr_name, filename, _, _, scale_max in specs:
+            attr = mesh.attributes[attr_name]
+            values = [item.value for item in attr.data]
+            palette = palettes.get(attr_name, radius_palette)
+            first_material = len(mesh.materials)
+            for index, color in enumerate(palette):
+                material = bpy.data.materials.new(f"_Review_{attr_name}_{index}")
+                material.diffuse_color = color
+                mesh.materials.append(material)
+            for polygon, value in zip(mesh.polygons, values):
+                if scale_max is None:
+                    palette_index = int(bool(value))
+                else:
+                    palette_index = min(len(palette) - 1, int(float(value) / scale_max * len(palette)))
+                polygon.material_index = first_material + palette_index
+            for view, direction in enumerate(((1.0, -1.0, 0.65), (-1.0, 1.0, 0.65))):
+                camera.location = center + Vector(direction).normalized() * max(span * 3, 1)
+                camera.rotation_euler = (center - camera.location).to_track_quat("-Z", "Y").to_euler()
+                scene.render.filepath = str(output / f"{filename}_{view}.png")
+                bpy.ops.render.render(write_still=True)
+    finally:
+        while mesh.materials:
+            mesh.materials.pop(index=len(mesh.materials) - 1)
+        for material in original_materials:
+            mesh.materials.append(material)
+        for polygon, index in zip(mesh.polygons, original_indices):
+            polygon.material_index = index
+        for material in list(bpy.data.materials):
+            if material.name.startswith("_Review_"):
+                bpy.data.materials.remove(material)
+        scene.display.shading.color_type = "OBJECT"
+
+    width, height, legend_h = 448, 448, 62
+    sheet = Image.new("RGB", (width * 2, (height + legend_h) * 3), "#f4f5f7")
+    draw = ImageDraw.Draw(sheet)
+    for row, (attr_name, filename, low_text, high_text, scale_max) in enumerate(specs):
+        for view in range(2):
+            with Image.open(output / f"{filename}_{view}.png") as image:
+                sheet.paste(image.convert("RGB"), (view * width, row * (height + legend_h)))
+        y = row * (height + legend_h) + height + 5
+        if scale_max is None:
+            palette = palettes[attr_name]
+            draw.text((10, y), f"{attr_name}:", fill="#172238")
+            for x, color, label in ((170, palette[0], low_text), (300, palette[1], high_text)):
+                draw.rectangle((x, y, x + 20, y + 18), fill=tuple(int(channel * 255) for channel in color[:3]))
+                draw.text((x + 26, y), label, fill="#172238")
+        else:
+            draw.text((10, y), f"{attr_name}: min {radius_values.min():.4f} m", fill="#172238")
+            x0, bar_w = 270, 145
+            for index, color in enumerate(radius_palette):
+                left = x0 + index * bar_w // len(radius_palette)
+                right = x0 + (index + 1) * bar_w // len(radius_palette)
+                draw.rectangle((left, y, right, y + 18), fill=tuple(int(channel * 255) for channel in color[:3]))
+            draw.text((x0 + bar_w + 5, y), f"{radius_max:.4f} m (p95)", fill="#172238")
+    sheet.save(output / "face_fields.png")
 
 
 def main() -> None:
@@ -245,6 +377,7 @@ def main() -> None:
         spray_checks = _spray_checks(obj.data, legend)
     finally:
         evaluated.to_mesh_clear()
+    metrics.update(_accessibility_metrics(obj.data))
     _render_views(obj, args.output, metrics["extent_m"])
     bpy.ops.wm.save_as_mainfile(filepath=str(args.output / "model.blend"), compress=True)
     if not (args.output / "model.blend").is_file():
@@ -269,7 +402,7 @@ def main() -> None:
         "structure_priors": getattr(result, "structure_priors", None),
         "spray_checks": spray_checks,
         "env": env,
-        "artifacts": ["model.blend", "view_0.png", "view_1.png"],
+        "artifacts": ["model.blend", "view_0.png", "view_1.png", "face_fields.png"],
     }
     (args.output / "result.json").write_text(
         json.dumps(status, indent=2) + "\n", encoding="utf-8"

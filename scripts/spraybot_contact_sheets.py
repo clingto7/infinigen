@@ -42,6 +42,24 @@ def main() -> None:
                 else:
                     draw.text((x + 12 + view * width, y + 75), "pending / failed", fill="#a22b2b")
         sheet.save(sheet_dir / f"{index:03d}_{short}.jpg", quality=88)
+        accessibility = Image.new("RGB", (columns * (width + 12), rows * (height + 42) + 34), "#f4f5f7")
+        draw_accessibility = ImageDraw.Draw(accessibility)
+        draw_accessibility.text((10, 10), f"{index:03d} {short} | per-face fields", fill="#172238")
+        for cell, seed in enumerate(seeds):
+            sample = run / f"{index:03d}_{short}" / f"seed_{seed:04d}"
+            x = (cell % columns) * (width + 12)
+            y = (cell // columns) * (height + 42) + 34
+            draw_accessibility.text((x + 6, y + 5), f"seed {seed:04d}", fill="#172238")
+            path = sample / "face_fields.png"
+            if path.is_file():
+                with Image.open(path) as source:
+                    thumbnail = source.convert("RGB")
+                    thumbnail.thumbnail((width, height))
+                offset_x = (width - thumbnail.width) // 2
+                accessibility.paste(thumbnail, (x + 6 + offset_x, y + 26))
+            else:
+                draw_accessibility.text((x + 12, y + 75), "pending / failed", fill="#a22b2b")
+        accessibility.save(sheet_dir / f"{index:03d}_{short}_face_fields.jpg", quality=88)
     print(f"wrote {len(info['generators'])} contact sheets to {sheet_dir}")
 
 

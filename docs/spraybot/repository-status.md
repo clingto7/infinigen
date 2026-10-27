@@ -20,6 +20,12 @@
 随机结构分支，并把源 `part_type` 映射到共享 `spray_part` 语义；可选生成记录通过
 `WorkpieceResult.structure_priors` 返回。22 个 D 类已设置 0.5–1.5 的整体缩放范围。
 
+第二轮已接入逐面 `geometry_accessible` 与 `max_passable_radius_m`，并覆盖两套生成入口。
+实现以每个网格最长边 96 个体素做自由空间外连通与通路净空估计；属于离散几何近似，窄于体素的
+开口可能被误判关闭。`scripts/spraybot_validate_one.py` 新增三字段着色图和图例，20 种子验证器
+会要求 `face_fields.png`，contact sheet 另生成逐面字段拼图。`stepped_cavity` 与旧入口
+`slat_back_chair` 的 seed 0 冒烟生成已通过；全量 20 种子复验尚未运行。
+
 2026-10-26 验证批次已完成：22 个 D 类各生成 20 个种子（440/440），三个原生接口各生成 20 个
 种子（60/60）。最终统一批次共 500/500 个样本，全部通过基础几何、喷涂字段检查；每接口 20 个
 种子的归一化形状均有变化。25 个类别的拼图位于 `outputs_scratch/phase1-20261026/contact_sheets/`。
@@ -37,8 +43,8 @@ Infinigen Chair 还保留了每个部件的中心线先验和源脚本的 Z 旋�
   这是一次例外，不改变其他类别锁定结构分支的约定，见 [ADR 0001](../adr/0001-preserve-spraybot-native-generators.md)。
 - 同轮对 22 个 D 档几何工件使用 0.5–1.5 的整体等比例缩放因子。接口交付人工审核前，对每类做
   20 种子外形与尺寸检查并生成模型拼图。
-- 后续轮次统一实现几何可达性面属性：与外部空间连通状态、通道最大可通过半径；不纳入通路长度。
-  字段定义及可视化要求见 [兼容契约](compatibility-contract.md)。
+- 第二轮新增几何可达性面属性：与外部空间连通状态、通道最大可通过半径；不纳入通路长度。
+  字段定义、分辨率限制及可视化要求见 [兼容契约](compatibility-contract.md)。
 
 ---
 

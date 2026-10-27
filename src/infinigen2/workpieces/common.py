@@ -91,6 +91,7 @@ def generate(category_id: str, rng: pf.RNG) -> WorkpieceResult:
             vertex.co *= scale
         data.update()
     removed = _remove_degenerate_faces(mesh) if category.remove_degenerate else 0
+    spray.write_geometry_accessibility(mesh)
     legend = spray.present_part_legend(mesh)
     unexpected = set(legend.values()) - category.allowed_parts
     if unexpected:

@@ -29,7 +29,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "src/infinigen2/manifest.json"
 WORKER = Path(__file__).with_name("spraybot_validate_one.py")
-ARTIFACTS = ("model.blend", "view_0.png", "view_1.png")
+ARTIFACTS = ("model.blend", "view_0.png", "view_1.png", "face_fields.png")
 # Identity of the sampled grid; anything else in run_info is provenance metadata
 # that may legitimately differ between a resume and the original launch.
 CORE_RUN_KEYS = ("manifest_sha256", "generators", "seeds", "timeout_sec")

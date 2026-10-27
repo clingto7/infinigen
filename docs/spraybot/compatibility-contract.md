@@ -45,6 +45,15 @@ small set of probe directions alone is not the face-level contract. The existing
 `spray_visibility` field remains a separate line-of-sight estimate where
 currently available. It does not replace connectivity or passage clearance.
 
+The current Infinigen implementation voxelizes the final joined mesh at 96 cells
+per longest bounding-box dimension. It flood-fills exterior free cells and uses
+clearance-constrained grid propagation for `max_passable_radius_m`. These fields
+are geometric estimates at voxel resolution: openings narrower than a voxel can
+be closed by discretization, and clearances are quantized. `scripts/spraybot_validate_one.py`
+checks the per-face schema and writes `face_fields.png`, which shows two views
+each for target intent, exterior connectivity, and passage radius. The validation
+contact-sheet command also builds a per-category face-field sheet.
+
 ## Existing Spraybot precedents
 
 The ordinary Infinigen chair consumes per-face semantic labels plus generation-time
