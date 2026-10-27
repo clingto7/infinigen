@@ -11,10 +11,13 @@
 最近的提交还修复了 `connected_drums` 的内孔连通，并在 D 档生成结果中写入逐面
 `spray_visibility`。
 
-逐面字段目前分工如下：`spray_part` 记录部件语义；`spray_target` 根据部件是否属于
-非目标部件写入布尔值；D 档 `spray_visibility` 记录 16 个确定性半球方向的射线逃逸比例。
-可用清单里的 22 类 `spray_target` 覆盖率均为 100%。这些值尚未证明轨迹覆盖、机器人可达性
-或涂层质量；凹腔面仍需逐模型检查其标签语义和遮挡表达。
+逐面字段分工如下：`spray_part` 记录部件语义；`spray_target` 由材料和接口的喷涂任务策略决定，
+不根据外部连通性自动推断；D 档 `spray_visibility` 记录 16 个确定性半球方向的射线逃逸比例。
+自 2026-10-27 起，`valve_housing` 和 `tee_pipe` 的内部空腔及管道内壁显式标为非 target；
+这类面仍可在几何上连通外部。`geometry_accessible` 与 `max_passable_radius_m` 继续描述几何，
+不决定任务目标，也不证明轨迹覆盖、机器人可达性或涂层质量。
+新增逐面 `spray_target_reason` 整数字段：`0=target`、`1=non_spray_material`、
+`2=component_policy`、`3=internal_cavity`，用于区分玻璃等材料、部件策略和空腔策略排除。
 
 第一轮接口已加入当前代码：`car_bumper`、`opus_chair` 和 `infinigen_chair`。它们保留源工厂
 随机结构分支，并把源 `part_type` 映射到共享 `spray_part` 语义；可选生成记录通过

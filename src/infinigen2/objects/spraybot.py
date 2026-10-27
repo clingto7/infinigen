@@ -750,5 +750,6 @@ def generate_workpiece(category_id: str, rng: pf.RNG) -> WorkpieceResult:
     # non-degenerate triangles. The old registry only needed this for the
     # chair precedent; furniture assemblies can produce the same artifact.
     removed = _remove_degenerate_faces(mesh_object)
+    spray.ensure_spray_target_reason(mesh_object)
     spray.write_geometry_accessibility(mesh_object)
     return WorkpieceResult(mesh_object, category_id, legend, removed, None)

@@ -6,8 +6,10 @@
 
 import math
 
+import numpy as np
 import procfunc as pf
 
+from infinigen2.util import spray
 from infinigen2.workpieces.d.shells.parts import (
     Category,
     aim_z,
@@ -106,7 +108,36 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         (0.0, 0.0, z_ball + r_ball + boss_h * 0.5 - embed),
         vertices=24,
     )
-    return rest_on_ground(finish([tag(shell, material, "shell"), tag(boss, material, "boss")]))
+    obj = finish([tag(shell, material, "shell"), tag(boss, material, "boss")])
+    mesh = obj.item().data
+    centers = np.asarray([face.center[:] for face in mesh.polygons], dtype=float)
+    normals = np.asarray([face.normal[:] for face in mesh.polygons], dtype=float)
+    relative = centers - np.asarray((0.0, 0.0, z_ball))
+    radial_lengths = np.linalg.norm(relative, axis=1)
+    radial_units = relative / np.maximum(radial_lengths[:, None], 1e-12)
+
+    inner_r = r_ball - wall
+    excluded = (np.abs(radial_lengths - inner_r) <= max(0.003, inner_r * 0.04)) & (
+        np.einsum("ij,ij->i", normals, radial_units) < -0.8
+    )
+    bore_r = port_r - wall
+    if bore_r > 0.008:
+        inner_stop = r_ball - wall - 0.010
+        outer_tip = r_ball + port_len + 0.025
+        for direction in ports:
+            axis = np.asarray(direction, dtype=float)
+            axial = relative @ axis
+            radial = relative - axial[:, None] * axis
+            radial_lengths = np.linalg.norm(radial, axis=1)
+            radial_units = radial / np.maximum(radial_lengths[:, None], 1e-12)
+            excluded |= (
+                (axial >= inner_stop - 0.008)
+                & (axial <= outer_tip + 0.008)
+                & (np.abs(radial_lengths - bore_r) <= max(0.002, bore_r * 0.08))
+                & (np.einsum("ij,ij->i", normals, radial_units) < -0.8)
+            )
+    spray.exclude_spray_target_faces(obj, excluded)
+    return rest_on_ground(obj)
 
 
 register(Category(

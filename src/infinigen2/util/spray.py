@@ -52,6 +52,18 @@ SPRAY_PART_NAMES = {code: name for name, code in SPRAY_PART_IDS.items()}
 # Hardware, glass and closed-drawer interiors are not coated with the body.
 NON_TARGET_PARTS = frozenset({"handle", "glass", "drawer_box"})
 
+# Stable FACE/INT values exported alongside ``spray_target``. Zero means the
+# face is a target; each nonzero value explains one exclusion policy.
+SPRAY_TARGET_REASON_IDS: dict[str, int] = {
+    "target": 0,
+    "non_spray_material": 1,
+    "component_policy": 2,
+    "internal_cavity": 3,
+}
+SPRAY_TARGET_REASON_NAMES = {
+    code: name for name, code in SPRAY_TARGET_REASON_IDS.items()
+}
+
 # Codes written by storage_composite_rand / storage_with_legs_rand when spray_tags
 # is set. Existing Spraybot categories keep these integers; new workpieces remap.
 REMOTE_STORAGE_PARTS = {
@@ -101,8 +113,93 @@ def remap_spray_part(obj: pf.MeshObject, mapping: dict[int, str]) -> None:
 def write_spray_target(obj: pf.MeshObject) -> None:
     parts = pf.ops.attr.read_attribute(obj, "spray_part", domain="FACE")
     excluded = [part_id(name) for name in NON_TARGET_PARTS]
+    target = ~np.isin(parts, excluded)
     pf.ops.attr.write_attribute(
-        obj, ~np.isin(parts, excluded), "spray_target", domain="FACE", overwrite=True
+        obj, target, "spray_target", domain="FACE", overwrite=True
+    )
+    reasons = np.full(len(parts), SPRAY_TARGET_REASON_IDS["target"], dtype=np.int32)
+    reasons[np.isin(parts, [part_id("glass")])] = SPRAY_TARGET_REASON_IDS[
+        "non_spray_material"
+    ]
+    reasons[np.isin(parts, [part_id("handle"), part_id("drawer_box")])] = (
+        SPRAY_TARGET_REASON_IDS["component_policy"]
+    )
+    pf.ops.attr.write_attribute(
+        obj, reasons, "spray_target_reason", domain="FACE", overwrite=True
+    )
+
+
+def ensure_spray_target_reason(obj: pf.MeshObject) -> None:
+    """Fill reason codes for targets and pre-existing per-face exclusions."""
+    mesh = obj.item().data
+    target = np.asarray(
+        pf.ops.attr.read_attribute(obj, "spray_target", domain="FACE"), dtype=bool
+    )
+    if target.shape != (len(mesh.polygons),):
+        raise ValueError("spray_target must have one value per mesh face")
+    existing = mesh.attributes.get("spray_target_reason")
+    if (
+        existing is not None
+        and existing.domain == "FACE"
+        and existing.data_type == "INT"
+        and len(existing.data) == len(target)
+    ):
+        reasons = np.asarray(
+            pf.ops.attr.read_attribute(obj, "spray_target_reason", domain="FACE"),
+            dtype=np.int32,
+        )
+        reasons[~np.isin(reasons, list(SPRAY_TARGET_REASON_NAMES))] = -1
+    else:
+        reasons = np.full(len(target), -1, dtype=np.int32)
+    reasons[target] = SPRAY_TARGET_REASON_IDS["target"]
+    invalid_exclusion = (~target) & (reasons <= 0)
+    parts_attr = mesh.attributes.get("spray_part")
+    if parts_attr is not None and len(parts_attr.data) == len(target):
+        parts = np.asarray(
+            pf.ops.attr.read_attribute(obj, "spray_part", domain="FACE"),
+            dtype=np.int32,
+        )
+        reasons[invalid_exclusion] = SPRAY_TARGET_REASON_IDS["component_policy"]
+        reasons[invalid_exclusion & (parts == part_id("glass"))] = SPRAY_TARGET_REASON_IDS[
+            "non_spray_material"
+        ]
+    else:
+        reasons[invalid_exclusion] = SPRAY_TARGET_REASON_IDS["component_policy"]
+    pf.ops.attr.write_attribute(
+        obj, reasons, "spray_target_reason", domain="FACE", overwrite=True
+    )
+
+
+def exclude_spray_target_faces(
+    obj: pf.MeshObject,
+    excluded: np.ndarray,
+    reason: str = "internal_cavity",
+) -> None:
+    """Clear coating intent for an explicit per-face model policy mask."""
+    mesh = obj.item().data
+    excluded = np.asarray(excluded, dtype=bool)
+    if excluded.shape != (len(mesh.polygons),):
+        raise ValueError("spray target exclusion mask must match mesh face count")
+    target = np.asarray(
+        pf.ops.attr.read_attribute(obj, "spray_target", domain="FACE"), dtype=bool
+    )
+    if target.shape != excluded.shape:
+        raise ValueError("spray_target must have one value per mesh face")
+    target[excluded] = False
+    reason_code = SPRAY_TARGET_REASON_IDS[reason]
+    reasons = np.asarray(
+        pf.ops.attr.read_attribute(obj, "spray_target_reason", domain="FACE"),
+        dtype=np.int32,
+    )
+    if reasons.shape != excluded.shape:
+        reasons = np.where(target, SPRAY_TARGET_REASON_IDS["target"], reason_code)
+    reasons[excluded] = reason_code
+    reasons[target] = SPRAY_TARGET_REASON_IDS["target"]
+    pf.ops.attr.write_attribute(
+        obj, target, "spray_target", domain="FACE", overwrite=True
+    )
+    pf.ops.attr.write_attribute(
+        obj, reasons, "spray_target_reason", domain="FACE", overwrite=True
     )
 
 

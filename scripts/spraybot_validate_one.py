@@ -112,6 +112,7 @@ def _geometry_metrics(obj: bpy.types.Object, mesh: bpy.types.Mesh) -> dict:
         "normalized_shape_sha256": normalized_hash.hexdigest(),
         "spray_part": _face_attribute(mesh, "spray_part"),
         "spray_target": _face_attribute(mesh, "spray_target"),
+        "spray_target_reason": _face_attribute(mesh, "spray_target_reason"),
         "spray_visibility": _visibility_stats(mesh),
         **_accessibility_metrics(mesh),
     }
@@ -121,6 +122,7 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
     issues = []
     part = mesh.attributes.get("spray_part")
     target = mesh.attributes.get("spray_target")
+    reason = mesh.attributes.get("spray_target_reason")
     if part is None:
         issues.append("spray_part_missing")
     elif part.domain != "FACE" or part.data_type != "INT":
@@ -129,6 +131,10 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
         issues.append("spray_target_missing")
     elif target.domain != "FACE" or target.data_type != "BOOLEAN":
         issues.append("spray_target_must_be_boolean_face_attribute")
+    if reason is None:
+        issues.append("spray_target_reason_missing")
+    elif reason.domain != "FACE" or reason.data_type != "INT":
+        issues.append("spray_target_reason_must_be_int_face_attribute")
     if legend is None:
         issues.append("part_legend_missing")
     elif not legend or any(not isinstance(k, int) or k < 0 or not v for k, v in legend.items()):
@@ -158,6 +164,16 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
                 ) / total_area
             if target_area_fraction is None or target_area_fraction <= 0:
                 issues.append("spray_target_zero_area")
+    if reason is not None and reason.domain == "FACE" and reason.data_type == "INT":
+        if len(reason.data) != len(mesh.polygons):
+            issues.append("spray_target_reason_length_mismatch")
+        else:
+            codes = [int(item.value) for item in reason.data]
+            if any(code not in {0, 1, 2, 3} for code in codes):
+                issues.append("spray_target_reason_code_invalid")
+            if target is not None and len(target.data) == len(reason.data):
+                if any(bool(t.value) != (code == 0) for t, code in zip(target.data, codes)):
+                    issues.append("spray_target_reason_target_mismatch")
     accessible = mesh.attributes.get("geometry_accessible")
     if accessible is None:
         issues.append("geometry_accessible_missing")
@@ -257,6 +273,10 @@ def _render_face_fields(
     original_materials = list(mesh.materials)
     palettes = {
         "spray_target": [(0.24, 0.28, 0.32, 1), (0.93, 0.25, 0.15, 1)],
+        "spray_target_reason": [
+            (0.20, 0.72, 0.55, 1), (0.94, 0.74, 0.28, 1),
+            (0.67, 0.42, 0.85, 1), (0.30, 0.61, 0.91, 1),
+        ],
         "geometry_accessible": [(0.91, 0.30, 0.17, 1), (0.16, 0.72, 0.45, 1)],
     }
     radius_attr = mesh.attributes["max_passable_radius_m"]
@@ -270,6 +290,7 @@ def _render_face_fields(
     ]
     specs = [
         ("spray_target", "spray_target", "False", "True", None),
+        ("spray_target_reason", "spray_target_reason", "target / material / component / cavity", "see compatibility contract", None),
         ("geometry_accessible", "geometry_accessible", "No", "Yes", None),
         ("max_passable_radius_m", "max_passable_radius_m", "0 m", f"{radius_max:.4f} m (p95)", radius_max),
     ]
@@ -285,7 +306,7 @@ def _render_face_fields(
                 mesh.materials.append(material)
             for polygon, value in zip(mesh.polygons, values):
                 if scale_max is None:
-                    palette_index = int(bool(value))
+                    palette_index = int(bool(value)) if attr_name == "spray_target" else int(value)
                 else:
                     palette_index = min(len(palette) - 1, int(float(value) / scale_max * len(palette)))
                 polygon.material_index = first_material + palette_index
@@ -307,7 +328,7 @@ def _render_face_fields(
         scene.display.shading.color_type = "OBJECT"
 
     width, height, legend_h = 448, 448, 62
-    sheet = Image.new("RGB", (width * 2, (height + legend_h) * 3), "#f4f5f7")
+    sheet = Image.new("RGB", (width * 2, (height + legend_h) * len(specs)), "#f4f5f7")
     draw = ImageDraw.Draw(sheet)
     for row, (attr_name, filename, low_text, high_text, scale_max) in enumerate(specs):
         for view in range(2):

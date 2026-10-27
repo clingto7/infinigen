@@ -13,6 +13,7 @@ A generated workpiece export contains:
 - `part_id`: `(T,)` integer semantic part IDs, matching the existing Spraybot Infinigen adapter contract;
 - `spray_part`: `(T,)` integer fork-native alias of `part_id`;
 - `spray_target`: `(T,)` boolean target-face mask;
+- `spray_target_reason`: `(T,)` integer code explaining target inclusion/exclusion;
 - optional `structure_priors`: category-specific generation-time metadata.
 
 `part_id` is per triangle after triangulation. The category legend maps its integer
@@ -26,9 +27,9 @@ in [0, 1]: the fraction of 16 deterministic hemisphere directions around the
 outward normal from which a ray escapes the solid unobstructed, computed on the
 final joined mesh so self-occlusion is included. This is a geometric line-of-sight
 estimate, not a binary sprayability decision and not a guarantee of trajectory,
-robot, or coating feasibility. `spray_target` continues to describe coating
-intent, including target faces in cavities; downstream consumers may interpret
-the visibility estimate under their own process constraints.
+robot, or coating feasibility. It is independent from `spray_target`; category
+policy may exclude an internal surface from the coating task even when visibility
+or exterior connectivity is nonzero.
 
 The general accessibility schema describes geometry only and does not depend on
 a particular spray gun or coating process. It keeps access information separate
@@ -36,9 +37,10 @@ from `spray_target`. The agreed per-face fields are:
 
 | Field | Type / domain | Meaning |
 | --- | --- | --- |
-| `spray_target` | boolean, one value per face | Whether the face belongs to the coating task. It expresses intent, including faces inside cavities. |
-| `geometry_accessible` | boolean, one value per face | Whether the face's adjacent free space connects to exterior free space through a path that does not cross the workpiece. This is geometric point connectivity, not a sprayability guarantee. |
-| `max_passable_radius_m` | float in meters, one value per face | The largest spherical probe radius that can pass from exterior free space to the face along an unobstructed path. A narrow opening lowers this value even when the interior connects to the exterior. |
+| `spray_target` | boolean, one value per face | Whether the face belongs to the coating task under that interface's task and material policy. This is independent from geometric access. For `valve_housing` and `tee_pipe`, internal cavity and bore walls are explicitly non-target, though their free space may connect to the exterior. |
+| `spray_target_reason` | integer, one value per face | Stable reason code: `0=target`, `1=non_spray_material` (for example glass), `2=component_policy` (for example handles or closed drawer boxes), `3=internal_cavity` (for example valve/tee flow passages). Target faces use 0; non-target faces use a nonzero reason. |
+| `geometry_accessible` | boolean, one value per face | Whether free space adjacent to the face connects to exterior free space along a path that does not cross the workpiece. This reports geometric point connectivity only; it does not decide coating intent or guarantee sprayability. |
+| `max_passable_radius_m` | float in meters, one value per face | Largest spherical probe radius that can travel from exterior free space to the face along an unobstructed path. Narrow openings lower the value even when the interior connects to the exterior. |
 
 Direction probes may support computation, but the result is face-aligned; a
 small set of probe directions alone is not the face-level contract. The existing
@@ -51,8 +53,14 @@ clearance-constrained grid propagation for `max_passable_radius_m`. These fields
 are geometric estimates at voxel resolution: openings narrower than a voxel can
 be closed by discretization, and clearances are quantized. `scripts/spraybot_validate_one.py`
 checks the per-face schema and writes `face_fields.png`, which shows two views
-each for target intent, exterior connectivity, and passage radius. The validation
+each for target intent, exclusion reason, exterior connectivity, and passage radius. The validation
 contact-sheet command also builds a per-category face-field sheet.
+
+`spray_target` is assigned from the interface's task policy and material labels;
+it is never inferred from `geometry_accessible`. For example, internal walls in
+`valve_housing` and `tee_pipe` are deliberately excluded from the coating target.
+Their `geometry_accessible` value can still be true because the bores open to the
+exterior, and `max_passable_radius_m` still describes their geometric clearance.
 
 ## Existing Spraybot precedents
 

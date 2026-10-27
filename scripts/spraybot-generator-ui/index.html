@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Infinigen Spraybot · 工件生成器</title>
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+  </script>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0e12;--panel:#14191f;--line:#29323c;--muted:#8b98a8;--text:#edf2f7;--accent:#e6a956;--green:#79d9b4;--red:#fb755f}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-width:760px;height:100vh;overflow:hidden}
+    button,select,input{font:inherit;color:inherit}button,select,input{border:1px solid var(--line);background:#0e1217;border-radius:8px;padding:9px 11px}button{cursor:pointer}button:hover{border-color:#627181}button.primary{background:var(--accent);border-color:var(--accent);color:#1b1308;font-weight:700}button:disabled{opacity:.55;cursor:wait}
+    #app{height:100vh}.layout{height:100%;display:grid;gap:12px;padding:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;min-width:0;min-height:0}.eyebrow{text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-size:10px;font-weight:700}.title{font-size:16px;font-weight:680;margin:2px 0 12px}.subtle{color:var(--muted)}
+    .config{padding:15px;display:flex;flex-direction:column;gap:12px}.config label{display:grid;gap:5px;color:#b9c3cf;font-size:12px}.config select,.config input{width:100%}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.run-status{font-size:12px;color:var(--muted);min-height:36px;border-top:1px solid var(--line);padding-top:9px}.run-status[data-kind=success]{color:var(--green)}.run-status[data-kind=error]{color:#ff998a}
+    .viewer{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 44%,#28313b 0%,#13181e 48%,#0d1116 100%);min-height:360px}.viewer canvas{width:100%;height:100%;display:block}.view-head{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}.view-head>*{pointer-events:auto}.field-select{width:210px;background:#131920eF}.view-hint{font-size:11px;color:#98a4b2;background:#0c1016c9;padding:6px 9px;border-radius:7px}.corner-button{position:absolute;right:13px;bottom:13px;background:#151c24dd;font-size:11px}.empty-hint{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);text-align:center;color:#aab6c2;pointer-events:none}.empty-hint b{display:block;color:#edf2f7;font-size:17px;margin-bottom:6px}
+    .inspector{padding:15px;display:flex;flex-direction:column;gap:11px;overflow:auto}.inspector h2{font-size:14px;margin:0}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{padding:10px;background:#0e1217;border:1px solid #222b34;border-radius:9px}.stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}.stat span{font-size:10px;color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;background:#0c1015;padding:10px;border-radius:8px;color:#bdc8d5;font:11px/1.5 ui-monospace,SFMono-Regular,monospace;max-height:260px;margin:0}.face-readout{padding:10px;background:#0e1217;border-radius:8px;font:11px ui-monospace,monospace;color:#ccd5df;min-height:45px}.legend{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted)}.swatch{width:54px;height:10px;border-radius:4px;background:linear-gradient(90deg,#405064,#e6a956)}
+    .layout{grid-template-columns:250px minmax(0,1fr) 275px}.layout .config{grid-column:1;grid-row:1}.layout .viewer{grid-column:2;grid-row:1}.layout .inspector{grid-column:3;grid-row:1}
+    @media(max-width:1050px){.layout{grid-template-columns:220px minmax(0,1fr)}.layout .inspector{display:none}}
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Selected layout A: configuration, interactive model, and face inspector side by side.
+    const state = {generators:[], generator:'', seed:0, field:'geometry_accessible', data:null, busy:false, status:'载入生成接口…', statusKind:'', selectedFace:null};
+    const app = document.querySelector('#app');
+    const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    function controlsMarkup(){return `
+      <div class="brand"><div class="eyebrow">Infinigen · Spraybot</div><div class="title">工件生成实验台</div></div>
+      <label>生成接口<select id="generator"></select></label>
+      <div class="row"><label>随机种子<input id="seed" type="number" min="0" max="2147483647" value="${state.seed}"></label><button id="generate" class="primary" ${state.busy?'disabled':''}>${state.busy?'生成中…':'生成模型'}</button></div>
+      <div class="run-status" data-kind="${state.statusKind}">${safe(state.status)}</div>`;}
+    function fieldMarkup(){return `<label class="view-head">面字段<select class="field-select" id="field-mode"><option value="none">模型外观</option><option value="spray_target">spray_target · 涂装目标</option><option value="spray_target_reason">spray_target_reason · 非目标原因</option><option value="geometry_accessible">geometry_accessible · 外部连通</option><option value="max_passable_radius_m">max_passable_radius_m · 通路净空</option><option value="part_id">spray_part · 部件类型</option></select><span class="view-hint">拖动旋转 · 滚轮缩放 · 点击面查看数值</span></label>`;}
+    function inspectorMarkup(){return `
+      <section class="inspector"><div><div class="eyebrow">生成结果</div><h2>${state.data?safe(state.data.generator):'等待生成'}</h2><div class="subtle">${state.data?`seed ${state.data.seed}`:'选择接口和随机种子'}</div></div>
+        <div class="stat-grid"><div class="stat"><b>${state.data?.triangle_count?.toLocaleString()??'—'}</b><span>三角面</span></div><div class="stat"><b>${state.data?.vertex_count?.toLocaleString()??'—'}</b><span>顶点</span></div><div class="stat"><b>${state.data?`${state.data.geometry_accessible.filter(Boolean).length}/${state.data.triangle_count}`:'—'}</b><span>外部可达面</span></div><div class="stat"><b>${state.data?`${(state.data.max_passable_radius_p95_m*1000).toFixed(1)} mm`:'—'}</b><span>通路半径 p95</span></div></div>
+        <div class="legend"><i class="swatch"></i><span id="field-legend">${safe(legendText())}</span></div><div class="eyebrow">选中面</div><div class="face-readout" id="face-readout">${state.selectedFace===null?'点击模型表面查看逐面字段。':`triangle ${state.selectedFace}`}</div>
+        <div class="eyebrow">结构先验 / 接口数据</div><pre id="metadata">${state.data?safe(JSON.stringify({part_legend:state.data.part_legend,structure_priors:state.data.structure_priors},null,2)):'生成后显示完整结构数据。'}</pre>
+      </section>`;}
+    function renderLayout(){
+      const controls=`<form class="panel config" id="controls">${controlsMarkup()}</form>`;
+      const viewer=`<section class="panel viewer" id="viewer">${fieldMarkup()}${state.data?'':'<div class="empty-hint"><b>准备查看工件</b>选择生成接口与种子，生成后拖动旋转、滚轮缩放</div>'}<button class="corner-button" id="reset-view">重置视角</button></section>`;
+      const inspector=inspectorMarkup();
+      app.innerHTML=`<div class="layout">${controls}${viewer}${inspector}</div>`;
+      const selector=document.querySelector('#generator');
+      const groups=[...new Set(state.generators.map(g=>g.group))];
+      selector.innerHTML=groups.map(group=>`<optgroup label="${safe(group)}">${state.generators.filter(g=>g.group===group).map(g=>`<option value="${safe(g.id)}" ${g.id===state.generator?'selected':''}>${safe(g.label)}</option>`).join('')}</optgroup>`).join('');
+      selector.value=state.generator;
+      document.querySelector('#controls').addEventListener('submit',event=>{event.preventDefault();generateModel();});
+      document.querySelector('#generator').addEventListener('change',event=>{state.generator=event.target.value;state.status=`接口已选：${state.generator}`;state.statusKind='';renderLayout();});
+      document.querySelector('#seed').addEventListener('change',event=>{state.seed=Math.max(0,Number(event.target.value)||0);state.status=`随机种子：${state.seed}`;state.statusKind='';updateStatus();});
+      const field=document.querySelector('#field-mode');field.value=state.field;
+      field.addEventListener('change',event=>{state.field=event.target.value;state.selectedFace=null;state.status=`字段显示：${state.field}`;state.statusKind='';renderLayout();});
+      document.querySelector('#reset-view').addEventListener('click',()=>{state.status='视角已重置';state.statusKind='';updateStatus();mountScene();});
+      mountScene();updateStatus();
+    }
+    function legendText(){if(state.field==='spray_target')return '灰 = 非目标 · 红 = 目标';if(state.field==='spray_target_reason')return '绿 = 目标 · 黄 = 材料 · 紫 = 部件策略 · 蓝 = 内腔';if(state.field==='geometry_accessible')return '橙 = 不连通 · 青 = 外部可达';if(state.field==='max_passable_radius_m')return `蓝 0 m → 红 ${Number(state.data?.max_passable_radius_p95_m||0).toFixed(4)} m (p95)`;if(state.field==='part_id')return '颜色区分 spray_part 部件编号';return '默认材质色';}
+    function updateStatus(){for(const el of document.querySelectorAll('.run-status')){el.textContent=state.status;el.dataset.kind=state.statusKind;}const legend=document.querySelector('#field-legend');if(legend)legend.textContent=legendText();}
+    async function loadGenerators(){try{const response=await fetch('/api/generators');if(!response.ok)throw new Error('接口目录读取失败');state.generators=await response.json();state.generator=state.generators[0]?.id||'';state.status=`已载入 ${state.generators.length} 个生成接口`;state.statusKind='success';renderLayout();}catch(error){state.status=error.message;state.statusKind='error';updateStatus();}}
+    async function generateModel(){if(state.busy)return;state.seed=Math.max(0,Number(document.querySelector('#seed').value)||0);state.generator=document.querySelector('#generator').value;state.busy=true;state.status=`生成 ${state.generator} · seed ${state.seed}…`;state.statusKind='';renderLayout();try{const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({generator:state.generator,seed:state.seed})});const data=await response.json();if(!response.ok)throw new Error(data.error||'生成失败');state.data=data;state.selectedFace=null;state.status=`生成完成：${data.triangle_count.toLocaleString()} 面 · seed ${data.seed}`;state.statusKind='success';}catch(error){state.status=error.message;state.statusKind='error';}finally{state.busy=false;renderLayout();}}
+
+    let renderer=null,scene=null,camera=null,controls=null,resizeObserver=null,raycaster=null;
+    function disposeScene(){if(resizeObserver)resizeObserver.disconnect();if(controls)controls.dispose();if(renderer){renderer.setAnimationLoop(null);renderer.dispose();renderer.domElement.remove();}renderer=scene=camera=controls=raycaster=null;}
+    function faceColor(index){const d=state.data;if(!d)return new THREE.Color('#8995a2');if(state.field==='spray_target')return new THREE.Color(d.spray_target[index]?'#ee654c':'#3a434e');if(state.field==='spray_target_reason')return new THREE.Color(['#35c49a','#f1bd59','#bd82ee','#62a9f5'][d.spray_target_reason[index]]||'#8995a2');if(state.field==='geometry_accessible')return new THREE.Color(d.geometry_accessible[index]?'#35c49a':'#f07b51');if(state.field==='max_passable_radius_m'){const max=Math.max(d.max_passable_radius_p95_m,1e-9),t=Math.min(1,d.max_passable_radius_m[index]/max);return new THREE.Color().setHSL(.67*(1-t),.78,.48);}if(state.field==='part_id'){const id=Math.max(0,d.part_id[index]);return new THREE.Color().setHSL((id*.173)%1,.55,.55);}return new THREE.Color('#98a6b5');}
+    function mountScene(){disposeScene();const host=document.querySelector('#viewer');if(!host)return;const canvasHost=host;renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,host.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;canvasHost.prepend(renderer.domElement);scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.001,1000);camera.up.set(0,0,1);camera.position.set(2.7,-3.4,2.4);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);raycaster=new THREE.Raycaster();scene.add(new THREE.HemisphereLight(0xe6efff,0x30343a,2.0));const key=new THREE.DirectionalLight(0xffe0bd,3.0);key.position.set(-3,-4,6);scene.add(key);const fill=new THREE.DirectionalLight(0x9bc8ff,1.25);fill.position.set(4,3,2);scene.add(fill);const grid=new THREE.GridHelper(5,20,0x3e4c5a,0x26313c);grid.rotation.x=Math.PI/2;grid.position.z=-.01;scene.add(grid);
+      if(state.data){const positions=[],colors=[];for(let i=0;i<state.data.triangles.length;i++){for(const vertexIndex of state.data.triangles[i]){positions.push(...state.data.vertices[vertexIndex]);const c=faceColor(i);colors.push(c.r,c.g,c.b);}}const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.computeVertexNormals();const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:.02,side:THREE.DoubleSide});const object=new THREE.Mesh(geometry,material);scene.add(object);geometry.computeBoundingBox();const center=geometry.boundingBox.getCenter(new THREE.Vector3()),size=geometry.boundingBox.getSize(new THREE.Vector3()),extent=Math.max(size.x,size.y,size.z,1e-3);controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(1.8,-2.6,1.65).normalize().multiplyScalar(extent*2.5));camera.near=extent/1000;camera.far=extent*30;camera.updateProjectionMatrix();controls.minDistance=extent*.25;controls.maxDistance=extent*12;}
+      const render=()=>{if(!renderer)return;controls.update();renderer.render(scene,camera);};renderer.setAnimationLoop(render);resizeObserver=new ResizeObserver(()=>{if(!renderer)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);});resizeObserver.observe(host);renderer.domElement.addEventListener('click',event=>{if(!state.data)return;const rect=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,-((event.clientY-rect.top)/rect.height)*2+1),camera);const hit=raycaster.intersectObjects(scene.children.filter(object=>object.isMesh))[0];if(hit){state.selectedFace=hit.faceIndex;const i=hit.faceIndex;document.querySelector('#face-readout').textContent=`triangle ${i} | part ${state.data.part_id[i]} (${state.data.part_legend[String(state.data.part_id[i])]??'unknown'}) | target ${state.data.spray_target[i]} | target reason ${state.data.spray_target_reason_legend[String(state.data.spray_target_reason[i])]??'unknown'} | accessible ${state.data.geometry_accessible[i]} | max radius ${Number(state.data.max_passable_radius_m[i]).toFixed(5)} m`;state.status=`选中三角面 ${i}`;state.statusKind='success';updateStatus();}});}
+
+    renderLayout();loadGenerators();
+  </script>
+</body>
+</html>

@@ -4,8 +4,10 @@
 让三处端口和交汇腔连通。法兰是构型，三个端口都有或都没有。
 """
 
+import numpy as np
 import procfunc as pf
 
+from infinigen2.util import spray
 from infinigen2.workpieces.d.shells.parts import (
     Category,
     aim_z,
@@ -88,7 +90,44 @@ def build(rng: pf.RNG) -> pf.MeshObject:
                 material,
                 "flange",
             ))
-    return rest_on_ground(finish(parts))
+    obj = finish(parts)
+    mesh = obj.item().data
+    centers = np.asarray([face.center[:] for face in mesh.polygons], dtype=float)
+    normals = np.asarray([face.normal[:] for face in mesh.polygons], dtype=float)
+    excluded = np.zeros(len(mesh.polygons), dtype=bool)
+
+    def exclude_bore(center, direction, radius, start, end):
+        axis = np.asarray(direction, dtype=float)
+        relative = centers - np.asarray(center, dtype=float)
+        axial = relative @ axis
+        radial = relative - axial[:, None] * axis
+        radial_lengths = np.linalg.norm(radial, axis=1)
+        radial_units = radial / np.maximum(radial_lengths[:, None], 1e-12)
+        return (
+            (axial >= start)
+            & (axial <= end)
+            & (np.abs(radial_lengths - radius) <= max(0.002, radius * 0.08))
+            & (np.einsum("ij,ij->i", normals, radial_units) < -0.8)
+        )
+
+    main_inner_r = r_main - wall
+    excluded |= exclude_bore(
+        (0.0, 0.0, 0.0),
+        _ALONG_Y,
+        main_inner_r,
+        -main_len * 0.5 - 0.05,
+        main_len * 0.5 + 0.05,
+    )
+    branch_inner_r = r_branch - wall
+    excluded |= exclude_bore(
+        (0.0, offset, 0.0),
+        _ALONG_Z,
+        branch_inner_r,
+        -reach - 0.01,
+        branch_len + 0.05,
+    )
+    spray.exclude_spray_target_faces(obj, excluded)
+    return rest_on_ground(obj)
 
 
 register(Category(
