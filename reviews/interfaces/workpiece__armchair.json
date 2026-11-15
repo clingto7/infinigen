@@ -1,7 +1,7 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:armchair",
-  "status": "awaiting_review",
+  "status": "needs_fix",
   "machine_gate": {
     "status": "passed",
     "sha256": "696b53896a76a57868cc34fbeed22122308e7d75cd7b8a420ce61222f445df5b",
@@ -10,5 +10,13 @@
     "invariance_seeds": 20,
     "recorded_at": "2026-11-15T12:31:56.715077+00:00"
   },
-  "human_review": null
+  "human_review": {
+    "interface_id": "workpiece:armchair",
+    "status": "needs_fix",
+    "reviewer": "hqb",
+    "notes": "种子 0 4 6 的外部连通性这个字段的数据有点问题，对于seat这个part和arm连接处的旁边部分面存在错误标注成外部不连通的情况，需要检查一下",
+    "field_issues": [],
+    "seed_issues": [],
+    "reviewed_at": "2026-11-15T12:58:52.151140+00:00"
+  }
 }
