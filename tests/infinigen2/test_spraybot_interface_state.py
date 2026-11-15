@@ -58,10 +58,11 @@ class InterfaceStateTest(unittest.TestCase):
             (episode / "model.json").write_text("{}")
             (root / "review_manifest.json").write_text(json.dumps({
                 "schema": review_root.SCHEMA,
-                "interfaces": {generator: {"episodes": [episode.name]}},
+                "interfaces": {generator: {"episodes": [episode.name],
+                                            "machine_gate": {"sha256": "current", "source_commit": None}}},
             }))
             machine = {"schema": state.SCHEMA, "interface_id": generator,
-                       "status": "awaiting_review", "machine_gate": {"status": "passed"},
+                       "status": "awaiting_review", "machine_gate": {"status": "passed", "sha256": "current"},
                        "human_review": None}
             with patch.object(review_root, "read_committed_record", return_value=machine), \
                  patch.object(review_root, "save_human_review",
@@ -73,6 +74,22 @@ class InterfaceStateTest(unittest.TestCase):
                 })
             self.assertFalse((root / "interfaces" / generator / "human-review.json").exists())
             self.assertEqual(state.read_record(generator, records)["status"], "ready")
+
+    def test_stale_review_root_cannot_submit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generator = "workpiece:coat_rack"
+            (root / "review_manifest.json").write_text(json.dumps({
+                "schema": review_root.SCHEMA,
+                "interfaces": {generator: {"machine_gate": {
+                    "sha256": "old", "source_commit": None}}},
+            }))
+            machine = {"status": "awaiting_review", "machine_gate": {
+                "status": "passed", "sha256": "new", "source_commit": "fixed"}}
+            with patch.object(review_root, "read_committed_record", return_value=machine):
+                self.assertFalse(review_root.review_enabled(root, generator))
+                with self.assertRaisesRegex(ValueError, "machine pass"):
+                    review_root.save_review(root, generator, {"status": "accepted"})
 
 
 if __name__ == "__main__":

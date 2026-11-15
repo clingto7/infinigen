@@ -8,6 +8,7 @@ reviewer can load an existing run without importing Blender.
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 from spraybot_interface_state import read_committed_record, review_for_ui, save_human_review
@@ -120,12 +121,27 @@ def index(root: Path) -> dict:
 
 
 def review_enabled(root: Path, generator: str) -> bool:
-    """An interface can be reviewed after its own machine pass is recorded."""
+    """Only samples tied to the current committed machine pass are reviewable."""
     generator = _safe_id(generator)
     data = read_committed_record(generator)
+    gate = data.get("machine_gate") or {}
+    entry = load(root)["interfaces"].get(generator)
+    if entry is None:
+        return False
+    evidence = entry.get("machine_gate")
+    if evidence is None:
+        legacy = Path(root) / "automation-status.json"
+        if legacy.is_file():
+            path = json.loads(legacy.read_text(encoding="utf-8")).get("machine_gate_evidence", {}).get(generator)
+            if path and Path(path).is_file():
+                evidence = {"sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                            "source_commit": None}
     return (generator in load(root)["interfaces"]
             and data["status"] in {"awaiting_review", "needs_fix", "ready"}
-            and (data.get("machine_gate") or {}).get("status") == "passed")
+            and gate.get("status") == "passed"
+            and evidence is not None
+            and evidence.get("sha256") == gate.get("sha256")
+            and evidence.get("source_commit") == gate.get("source_commit"))
 
 
 def read_episode(root: Path, generator: str, episode: str) -> dict:

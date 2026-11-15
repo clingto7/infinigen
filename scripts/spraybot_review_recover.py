@@ -2,12 +2,14 @@
 
 import argparse
 import json
+import hashlib
 from pathlib import Path
 
 from spraybot_generator_ui_worker import payload_from_episode
 from spraybot_generator_ui_server import GENERATORS
 from spraybot_review_batch import existing_status
 from spraybot_review_root import load, save_episode
+from spraybot_interface_state import read_committed_record
 
 
 def recover(root: Path, batches: list[Path], count: int) -> dict:
@@ -41,6 +43,17 @@ def recover(root: Path, batches: list[Path], count: int) -> dict:
                            group=entry.get('group', registered.get('group', 'Workpieces')))
             save_episode(root, payload)
             restored.append({'generator': generator, 'seed': seed})
+        record = read_committed_record(generator)
+        gate = record.get('machine_gate') or {}
+        digest = hashlib.sha256((batch / 'machine-check.json').read_bytes()).hexdigest()
+        if gate.get('status') != 'passed' or gate.get('sha256') != digest:
+            raise ValueError(f'batch is not the committed machine gate: {batch}')
+        manifest = load(root)
+        manifest['interfaces'][generator]['machine_gate'] = {
+            'sha256': digest, 'source_commit': gate.get('source_commit'),
+        }
+        (root / 'review_manifest.json').write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     return {'restored': restored, 'count': len(restored)}
 
 
