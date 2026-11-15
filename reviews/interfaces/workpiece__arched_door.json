@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:arched_door",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "a57cd5623d67a7be0138c25daf313b16153a34e25e644fd6a5dea446ddf450ce",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.714992+00:00"
+  },
+  "human_review": null
+}

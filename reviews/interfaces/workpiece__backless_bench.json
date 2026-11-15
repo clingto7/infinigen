@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:backless_bench",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "ef707dbfa7f6ae529a6fd6552d5fde1909b6f37ac9d9e418e0bd900bada88afc",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.715245+00:00"
+  },
+  "human_review": null
+}

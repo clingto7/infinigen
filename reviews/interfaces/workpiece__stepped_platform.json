@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:stepped_platform",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "fd824f22f11bfd1d9310be1e97f9233e80516ab703ca216c34ab95cda6fe3266",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.720211+00:00"
+  },
+  "human_review": null
+}

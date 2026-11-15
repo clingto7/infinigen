@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:louvered_cabinet",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "5d75993dfb38c23a57ee072aeca1294ec30303b9506eeb785814c0d715c68163",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718523+00:00"
+  },
+  "human_review": null
+}

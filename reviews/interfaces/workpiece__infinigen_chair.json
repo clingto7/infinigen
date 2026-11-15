@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:infinigen_chair",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "8b5cdd07c0637ae705dd9dae84161c840e456905e18a48f088d5e9f635755a3b",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718001+00:00"
+  },
+  "human_review": null
+}

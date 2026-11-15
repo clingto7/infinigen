@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "spraybot:double_door",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "1b510310f547873d251bb5df87cf33467f85f9ca703704f2a3d723d634c837d5",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.713142+00:00"
+  },
+  "human_review": null
+}

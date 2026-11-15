@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:radial_rib_shell",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "9137e0a0a747ff07b5db41a5ccb06169360987fa2763268987e5b1c7dd10c338",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.719210+00:00"
+  },
+  "human_review": null
+}

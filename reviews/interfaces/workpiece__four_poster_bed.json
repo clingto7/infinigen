@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:four_poster_bed",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "9737d1095dcaa640395e81b6dad56283c192ab8b82e79e303e5eaca701bb7efb",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.717577+00:00"
+  },
+  "human_review": null
+}

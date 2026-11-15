@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "spraybot:curved_window",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "2692324aaf631280c7cd218503c1aec51587cbc83fa059cf73a7e1518a0e6597",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.712779+00:00"
+  },
+  "human_review": null
+}

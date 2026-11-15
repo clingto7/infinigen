@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:wardrobe",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "f5115a4f6f2737c0219968e98bd7c4ed90cde4a8b8990e2aa32d89ea0bdf4973",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.721315+00:00"
+  },
+  "human_review": null
+}

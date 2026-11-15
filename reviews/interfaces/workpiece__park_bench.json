@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:park_bench",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "2892c4d58d39f458e6e0120c1bcb9edcd6c9942fee9020fa3b0f40d11440e5db",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.719032+00:00"
+  },
+  "human_review": null
+}

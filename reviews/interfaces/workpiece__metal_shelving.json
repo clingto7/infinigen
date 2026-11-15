@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:metal_shelving",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "d72d3f6fe189f48d2aec1d9ccbf054137d3ff02c7916910fb83fc971bbe0f86c",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718695+00:00"
+  },
+  "human_review": null
+}

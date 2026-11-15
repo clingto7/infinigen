@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "spraybot:straight_leg_desk",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "53e8d66e10c69abf4cb9515bf497e83fec127e8e112fffbd4115fad2d5edc9de",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.714731+00:00"
+  },
+  "human_review": null
+}

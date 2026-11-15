@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:desk_with_hutch",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "2a578eb9b1055b8a64434496f40df28c1fbdad8b2d77b13897a8b413072b5861",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.716748+00:00"
+  },
+  "human_review": null
+}

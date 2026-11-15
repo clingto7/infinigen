@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:tee_pipe",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "7de85b11caa2ae9ee07b5ecab9d022683fcc006016866161e4f72e58575ec0c0",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.720773+00:00"
+  },
+  "human_review": null
+}

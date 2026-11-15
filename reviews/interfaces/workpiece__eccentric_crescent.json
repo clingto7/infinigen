@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:eccentric_crescent",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "c9f631b50e4ce9e6c3ddd12122e060527824fb36423c7193cf98f5cc9a1538cb",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.717006+00:00"
+  },
+  "human_review": null
+}

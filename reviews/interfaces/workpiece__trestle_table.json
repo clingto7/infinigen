@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:trestle_table",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "4d07280d0a9c9d3918c86f805f6fc5b57fb871e2d26fb4f7c58dd85cf04ee9d2",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.720932+00:00"
+  },
+  "human_review": null
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:legged_cabinet",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "fc05a187a192e432dc27a5879d1d4e0d8df1269f9cda3ee219450e419a568bb8",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718354+00:00"
+  },
+  "human_review": null
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:rocking_chair",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "857ef0fff2a202a09f3d9ffb73563eac0a6d5efc33ab9fa139ab3e0d8dde5427",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.719390+00:00"
+  },
+  "human_review": null
+}

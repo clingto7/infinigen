@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:bunk_bed",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "6cd22066cf1bc5e62553cb4a5fc78718ce3ba263684bf861d573f6aa62372083",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.715630+00:00"
+  },
+  "human_review": null
+}

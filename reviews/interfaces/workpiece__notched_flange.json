@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:notched_flange",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "10eceec5e95085120a8151c73964a7b23fa4d2f72ddc41eea7ad3ecb2f6a1556",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718864+00:00"
+  },
+  "human_review": null
+}

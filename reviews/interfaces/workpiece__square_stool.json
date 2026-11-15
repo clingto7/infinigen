@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:square_stool",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "5eab4d89da3fce6c465e14fdc0ba6ae4afd294756f7f25256ac6e8235ec4f625",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.719867+00:00"
+  },
+  "human_review": null
+}

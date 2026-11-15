@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:storage_chest",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "5046633fb3a09d2fc5b6ef3eca6ddaed01b0cee69cc54a93238d5df31937f519",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.720595+00:00"
+  },
+  "human_review": null
+}

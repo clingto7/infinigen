@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:kitchen_island",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "d5215ee861f8ef741b0d1c644383703e2efb27a1bd860b78e6b5534c34b3d56c",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.718089+00:00"
+  },
+  "human_review": null
+}

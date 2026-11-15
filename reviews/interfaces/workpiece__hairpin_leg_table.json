@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:hairpin_leg_table",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "286072ff0d82f57e5d7b25d77361c9066d8a196d7df754b7eb1936922d0420fb",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.717662+00:00"
+  },
+  "human_review": null
+}

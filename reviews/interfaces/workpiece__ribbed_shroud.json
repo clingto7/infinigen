@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:ribbed_shroud",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "8c18732e4da400e2a8e538dd9a0cd5366bd71470df3e9b79351f11e3924a39a1",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.719303+00:00"
+  },
+  "human_review": null
+}

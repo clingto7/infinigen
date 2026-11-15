@@ -1,0 +1,14 @@
+{
+  "schema": "spraybot.interface-review.v1",
+  "interface_id": "workpiece:flanged_elbow",
+  "status": "awaiting_review",
+  "machine_gate": {
+    "status": "passed",
+    "sha256": "ead89661e48da2027c4abde837e0d8a2d1ccf42215fc242b64bb42e4ad65c2e9",
+    "source_commit": null,
+    "geometry_episodes": 20,
+    "invariance_seeds": 20,
+    "recorded_at": "2026-11-15T12:31:56.717176+00:00"
+  },
+  "human_review": null
+}
