@@ -1,22 +1,35 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:armchair",
-  "status": "needs_fix",
+  "status": "awaiting_review",
   "machine_gate": {
     "status": "passed",
-    "sha256": "696b53896a76a57868cc34fbeed22122308e7d75cd7b8a420ce61222f445df5b",
-    "source_commit": null,
+    "sha256": "7d27b5c8cf9bd88730bb18050803e1eb07ce31349b5259176983e156c967422b",
+    "source_commit": "37ecc98142e58d35820aec3340cbc543e5a1f851",
     "geometry_episodes": 20,
     "invariance_seeds": 20,
-    "recorded_at": "2026-11-15T12:31:56.715077+00:00"
+    "recorded_at": "2026-11-15T13:07:06.258043+00:00"
   },
-  "human_review": {
-    "interface_id": "workpiece:armchair",
-    "status": "needs_fix",
-    "reviewer": "hqb",
-    "notes": "种子 0 4 6 的外部连通性这个字段的数据有点问题，对于seat这个part和arm连接处的旁边部分面存在错误标注成外部不连通的情况，需要检查一下",
-    "field_issues": [],
-    "seed_issues": [],
-    "reviewed_at": "2026-11-15T12:58:52.151140+00:00"
-  }
+  "human_review": null,
+  "review_history": [
+    {
+      "human_review": {
+        "interface_id": "workpiece:armchair",
+        "status": "needs_fix",
+        "reviewer": "hqb",
+        "notes": "种子 0 4 6 的外部连通性这个字段的数据有点问题，对于seat这个part和arm连接处的旁边部分面存在错误标注成外部不连通的情况，需要检查一下",
+        "field_issues": [],
+        "seed_issues": [],
+        "reviewed_at": "2026-11-15T12:58:52.151140+00:00"
+      },
+      "machine_gate": {
+        "status": "passed",
+        "sha256": "696b53896a76a57868cc34fbeed22122308e7d75cd7b8a420ce61222f445df5b",
+        "source_commit": null,
+        "geometry_episodes": 20,
+        "invariance_seeds": 20,
+        "recorded_at": "2026-11-15T12:31:56.715077+00:00"
+      }
+    }
+  ]
 }
