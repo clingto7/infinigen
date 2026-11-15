@@ -17,6 +17,7 @@ from infinigen2.workpieces.d.shells.parts import (
     rest_on_ground,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 def _groove_cutter(
@@ -38,7 +39,16 @@ def _groove_cutter(
     profile = pf.nodes.geo.curve_quadrilateral(width=radial, height=groove_w)
     solid = pf.nodes.geo.curve_to_mesh(curve=spiral, profile_curve=profile, fill_caps=True)
     placed = pf.nodes.geo.transform(solid, translation=(0.0, 0.0, margin))
-    return pf.nodes.to_mesh_object(placed)
+    obj = pf.nodes.to_mesh_object(placed)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(
+            obj, 'spiral_groove_cutter', helix_radius=float(helix_r),
+            turns=float(turns), travel=float(travel), radial_width=float(radial),
+            groove_width=float(groove_w), margin=float(margin),
+            path_sections=int(resolution), profile_sides=4,
+        )
+    return obj
 
 
 def build(rng: pf.RNG) -> pf.MeshObject:

@@ -14,7 +14,7 @@ def build(rng):
     factory = CarBumperFactory(native_seed(rng))
     obj = factory.create_asset()
     mesh = map_part_type(pf.MeshObject(obj), PARTS)
-    return BuiltWorkpiece(mesh, json_safe(factory._rec))
+    return BuiltWorkpiece(mesh, json_safe({**factory._rec, "factory_seed": factory.factory_seed}))
 
 
 register(category("car_bumper", "N01", "CarBumperFactory 原生随机结构", build, PARTS.values()))

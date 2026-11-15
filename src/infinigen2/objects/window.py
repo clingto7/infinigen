@@ -929,17 +929,21 @@ def _window_geometry(
         b=shutter_panels,
     )
 
-    def frame_part(geometry: pf.ProcNode) -> pf.ProcNode:
-        return pf.nodes.geo.store_named_attribute(
+    def frame_part(geometry: pf.ProcNode, component: int) -> pf.ProcNode:
+        geometry = pf.nodes.geo.store_named_attribute(
             geometry=geometry,
             name="spray_part",
             value=0,
             domain="FACE",
             data_type="INT",
         )
+        return pf.nodes.geo.store_named_attribute(
+            geometry=geometry, name="parametric_window_component",
+            value=component, domain="FACE", data_type="INT",
+        )
 
     joined = pf.nodes.geo.join_geometry(
-        [frame_part(outer_frame), frame_part(primary_grid), frame_part(details)]
+        [frame_part(outer_frame, 1), frame_part(primary_grid, 2), frame_part(details, 3)]
     )
     realized = cast(
         pf.ProcNode[pf.MeshObject],
@@ -1064,6 +1068,26 @@ def _window_build(
     pf.ops.uv.cube_project(frame_obj, uv_name="UVMap")
     if spray_tags:
         pf.ops.attr.write_attribute(frame_obj, True, "spray_target", domain="FACE")
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.window_frame(frame_obj, {
+                "dimensions": list(map(float, dimensions)),
+                "top_profile_height": float(profile.top_profile_height),
+                "bottom_profile_height": float(profile.bottom_profile_height),
+                "frame_width": float(frame_width),
+                "panel_h_amount": int(panel_h_amount),
+                "panel_v_amount": int(panel_v_amount),
+                "sub_frame_width": float(sub_frame_width),
+                "sub_frame_thickness": float(sub_frame_thickness),
+                "sub_panel_h_amount": int(sub_panel_h_amount),
+                "sub_panel_v_amount": int(sub_panel_v_amount),
+                "shutter": bool(shutter),
+                "shutter_width": float(shutter_width),
+                "shutter_thickness": float(shutter_thickness),
+                "shutter_rotation": float(shutter_rotation),
+                "shutter_interval": float(shutter_interval),
+        })
 
     if include_glass_pane:
         pane = _glass_pane(
@@ -1074,6 +1098,9 @@ def _window_build(
             material=glass_material,
         )
         pane_obj = pf.nodes.to_mesh_object(pane)
+        pf.ops.attr.write_attribute(
+            pane_obj, True, "parametric_window_glass", domain="FACE"
+        )
         if spray_tags:
             pf.ops.attr.write_attribute(
                 pane_obj,

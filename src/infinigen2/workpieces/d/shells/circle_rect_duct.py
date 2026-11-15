@@ -20,6 +20,7 @@ from infinigen2.workpieces.d.shells.parts import (
     rest_on_ground,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 def _open_tube(radius: float, depth: float, center: tuple[float, float, float]) -> pf.MeshObject:
@@ -114,6 +115,14 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     shell = _open_tube(r_circle, length, (0.0, 0.0, length * 0.5))
     _morph(shell, 0.0, length, r_circle, half_w, half_h, corner, offset)
     pf.ops.modifier.solidify(shell, thickness=wall, offset=-1.0, use_even_offset=True, use_rim=True)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(
+            shell, 'solidified_circle_rect_loft', radius=float(r_circle),
+            half_width=float(half_w), half_height=float(half_h),
+            corner_radius=float(corner), wall=float(wall), length=float(length),
+            offset=float(offset), radial_sections=48, height_sections=12,
+        )
 
     material = hard_material(rng_mat)
     round_flange = flange_ring(
@@ -126,11 +135,17 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         (2.0 * half_w + 2.0 * flange_w, 2.0 * half_h + 2.0 * flange_w, flange_t),
         (offset, 0.0, length - flange_t * 0.35),
     )
-    cutter = box(
-        (2.0 * (half_w - wall * 0.2), 2.0 * (half_h - wall * 0.2), flange_t + 0.04),
-        (offset, 0.0, length - flange_t * 0.35),
-    )
-    pf.ops.modifier.bevel(cutter, width=max(corner - wall, 0.008), segments=2)
+    cutter_size = (2.0 * (half_w - wall * 0.2), 2.0 * (half_h - wall * 0.2), flange_t + 0.04)
+    cutter_center = (offset, 0.0, length - flange_t * 0.35)
+    cutter = box(cutter_size, cutter_center)
+    bevel_width = max(corner - wall, 0.008)
+    pf.ops.modifier.bevel(cutter, width=bevel_width, segments=2)
+    if capture is not None:
+        capture.solid_rebase_source(
+            cutter, 'beveled_box', size=list(map(float, cutter_size)),
+            center=list(map(float, cutter_center)), bevel_width=float(bevel_width),
+            bevel_segments=2,
+        )
     cut(plate, cutter, what="rect flange opening")
     return rest_on_ground(finish([
         tag(shell, material, "shell"),

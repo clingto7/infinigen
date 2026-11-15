@@ -53,6 +53,19 @@ def bed(
     )
     # one level here plus the assembled bed's two keeps the soft parts at three
     pf.ops.modifier.subdivide_surface(platform, levels=1)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        address = platform.item().data.attributes.get('parametric_grid_address')
+        if address is not None and address.domain == 'CORNER':
+            for corner in address.data:
+                corner.vector = [2.0 * value for value in corner.vector]
+        capture.grid(platform, 'bed_platform', source={
+            'size_m': [float(dimensions.x + 0.08), float(dimensions.y + 0.08), 0.10],
+            'support_loop_offset_m': [0.01, 0.01, 0.01],
+            'grid_resolution': [4, 4, 4],
+            'subdivision_level': 1,
+        })
     pf.ops.object.set_transform(
         headboard, location=(-dimensions.x * 0.5 - 0.04, 0, frame_height - 0.10)
     )
@@ -103,6 +116,10 @@ def _bed_base_rand(
         pf.ops.object.set_transform(first, location=(-depth * 0.5, -length * 0.5, 0))
         pf.ops.mesh.transform_apply(first, location=True, rotation=False, scale=False)
         second = first.clone()
+        from infinigen2.workpieces.parametric_capture import active_capture
+        capture = active_capture()
+        if capture is not None:
+            capture.duplicate(second)
         pf.ops.object.set_transform(
             first,
             location=(0, (depth + 0.02) * 0.5, 0),
@@ -316,6 +333,10 @@ def bed_rand(
             domain="EDGE",
         )
         obj = pf.nodes.to_mesh_object(geo)
+        from infinigen2.workpieces.parametric_capture import active_capture
+        capture = active_capture()
+        if capture is not None:
+            capture.grid(obj, 'bed_headboard')
         pf.ops.object.set_material(
             obj,
             surface=frame_material.surface,
@@ -335,6 +356,7 @@ def bed_rand(
             dimensions=board_dimensions,
             material=material,
             slat_count_rand=slat_count_rand,
+            capture_part='bed_headboard',
         ).mesh
 
     # one style for the pair, so a footboard always matches its headboard
@@ -404,6 +426,14 @@ def bed_rand(
         pf.ops.attr.write_attribute(
             result.mesh, True, "spray_target", domain="FACE", overwrite=True
         )
+        # A storage base may contain window-leaf doors. Their glass is carried
+        # through the join but remains outside the paintable frame.
+        glass = result.mesh.item().data.attributes.get("parametric_window_glass")
+        if glass is not None:
+            target = result.mesh.item().data.attributes["spray_target"]
+            for index, face in enumerate(glass.data):
+                if face.value:
+                    target.data[index].value = False
         pf.ops.attr.write_attribute(
             result.mattress_child, False, "spray_target", domain="FACE", overwrite=True
         )

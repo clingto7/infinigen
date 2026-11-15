@@ -19,6 +19,7 @@ from infinigen2.workpieces.c.seating.parts import (
     strut,
 )
 from infinigen2.workpieces.common import Category as _Category
+from infinigen2.workpieces.parametric_capture import active_capture
 
 __all__ = [
     "Category",
@@ -107,8 +108,8 @@ def triangle_slab(
     z1 = z + thick
     corners = np.array(
         [
-            [0, 0, z], [size_x, 0, z], [0, size_y, z],
-            [0, 0, z1], [0, size_y, z1], [size_x, 0, z1],
+            [0, 0, z], [0, size_y, z], [size_x, 0, z],
+            [0, 0, z1], [size_x, 0, z1], [0, size_y, z1],
             [0, 0, z], [size_x, 0, z], [size_x, 0, z1], [0, 0, z1],
             [0, 0, z], [0, 0, z1], [0, size_y, z1], [0, size_y, z],
             [size_x, 0, z], [0, size_y, z], [0, size_y, z1], [size_x, 0, z1],
@@ -122,4 +123,7 @@ def triangle_slab(
         obj, surface=material.surface, displacement=material.displacement
     )
     spray.write_spray_part(obj, part)
+    capture = active_capture()
+    if capture is not None:
+        capture.triangle_prism(obj, size_x, size_y, thick, z, part)
     return obj

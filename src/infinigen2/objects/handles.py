@@ -61,6 +61,22 @@ def _rounded_prism(
         geometry=quad_cap(profile, insets=3, scale=0.5),
         translation=pf.nodes.math.combine_xyz(z=depth),
     )
+    # The caps belong to the same two source sections as the swept wall.
+    # Their corner indices identify cells in quad_cap's concentric fill.
+    for rail_index, cap in ((1, cap_start), (2, cap_end)):
+        cap = pf.nodes.geo.store_named_attribute(
+            geometry=cap, name="parametric_rail_index", value=float(rail_index),
+            domain="CORNER", data_type="FLOAT",
+        )
+        cap = pf.nodes.geo.store_named_attribute(
+            geometry=cap, name="parametric_profile_index",
+            value=pf.nodes.geo.input_index().astype(dtype=float) + 1.0,
+            domain="CORNER", data_type="FLOAT",
+        )
+        if rail_index == 1:
+            cap_start = cap
+        else:
+            cap_end = cap
     solid = pf.nodes.geo.join_geometry([walls, cap_start, cap_end])
     return pf.nodes.geo.merge_by_distance(solid, distance=1e-5)
 
@@ -70,6 +86,7 @@ def _cylinder_with_uv(
     radius: t.SocketOrVal[float],
     depth: t.SocketOrVal[float],
     vertices: t.SocketOrVal[int] = 16,
+    source_component: t.SocketOrVal[int] = 0,
 ) -> pf.ProcNode[pf.MeshObject]:
     cyl = pf.nodes.geo.mesh_cylinder(vertices=vertices, radius=radius, depth=depth)
     # mesh_cylinder packs the wall into v 0.5..1 and each cap into a uv disc of radius 0.225
@@ -84,8 +101,29 @@ def _cylinder_with_uv(
     uv = pf.nodes.func.switch(
         switch=is_cap, a=wall, b=cap, data_type=NodeDataType.FLOAT_VECTOR
     )
-    return pf.nodes.geo.store_named_attribute(
+    result = pf.nodes.geo.store_named_attribute(
         geometry=cyl.mesh, name="UVMap", value=uv, domain="CORNER", data_type="FLOAT2"
+    )
+    position = pf.nodes.geo.input_position()
+    rail_index = pf.nodes.func.switch(
+        switch=position.z > 0.0, a=1.0, b=2.0,
+    )
+    profile_index = pf.nodes.func.switch(
+        switch=is_cap,
+        a=pf.nodes.math.round(cyl.uv_map.x * vertices.astype(dtype=float)) + 1.0,
+        b=pf.nodes.geo.input_index().astype(dtype=float) + 1.0,
+    )
+    result = pf.nodes.geo.store_named_attribute(
+        geometry=result, name="parametric_rail_index", value=rail_index,
+        domain="CORNER", data_type="FLOAT",
+    )
+    result = pf.nodes.geo.store_named_attribute(
+        geometry=result, name="parametric_profile_index", value=profile_index,
+        domain="CORNER", data_type="FLOAT",
+    )
+    return pf.nodes.geo.store_named_attribute(
+        geometry=result, name="parametric_handle_component",
+        value=source_component, domain="FACE", data_type="INT",
     )
 
 
@@ -108,6 +146,16 @@ def _uv_sphere_with_uv(
         value=uv,
         domain="CORNER",
         data_type="FLOAT2",
+    )
+    mesh = pf.nodes.geo.store_named_attribute(
+        geometry=mesh, name="parametric_rail_index",
+        value=pf.nodes.math.round(sphere.uv_map.y * rings.astype(dtype=float)) + 1.0,
+        domain="CORNER", data_type="FLOAT",
+    )
+    mesh = pf.nodes.geo.store_named_attribute(
+        geometry=mesh, name="parametric_profile_index",
+        value=pf.nodes.math.round(sphere.uv_map.x * segments.astype(dtype=float)) + 1.0,
+        domain="CORNER", data_type="FLOAT",
     )
     return pf.nodes.geo.transform(
         geometry=mesh, scale=pf.nodes.math.combine_xyz(x=1.0, y=1.0, z=z_scale)
@@ -266,11 +314,19 @@ def _handle_knob_geometry(
     head_radius: t.SocketOrVal[float] = 0.013,
 ) -> pf.ProcNode[pf.MeshObject]:
     base = quad_cylinder(radius=base_radius, depth=base_depth, resolution=12)
+    base = pf.nodes.geo.store_named_attribute(
+        geometry=base, name="parametric_handle_component", value=1,
+        domain="FACE", data_type="INT",
+    )
     base = pf.nodes.geo.transform(
         geometry=base, translation=pf.nodes.math.combine_xyz(z=base_depth * 0.5)
     )
     stem_depth = stem_length + base_depth * 0.5
     stem = quad_cylinder(radius=stem_radius, depth=stem_depth, resolution=8)
+    stem = pf.nodes.geo.store_named_attribute(
+        geometry=stem, name="parametric_handle_component", value=2,
+        domain="FACE", data_type="INT",
+    )
     stem = pf.nodes.geo.transform(
         geometry=stem,
         translation=pf.nodes.math.combine_xyz(
@@ -278,6 +334,10 @@ def _handle_knob_geometry(
         ),
     )
     head = _uv_sphere_with_uv(radius=head_radius, z_scale=0.8, segments=12, rings=8)
+    head = pf.nodes.geo.store_named_attribute(
+        geometry=head, name="parametric_handle_component", value=3,
+        domain="FACE", data_type="INT",
+    )
     head = pf.nodes.geo.transform(
         geometry=head,
         translation=pf.nodes.math.combine_xyz(z=base_depth + stem_length),
@@ -300,8 +360,10 @@ def _standoff_post(
     length: t.SocketOrVal[float],
     radius: t.SocketOrVal[float],
     z: t.SocketOrVal[float],
+    source_component: t.SocketOrVal[int] = 0,
 ) -> pf.ProcNode[pf.MeshObject]:
-    post = _cylinder_with_uv(radius=radius, depth=length)
+    post = _cylinder_with_uv(radius=radius, depth=length,
+                             source_component=source_component)
     return pf.nodes.geo.transform(
         geometry=post,
         rotation=(-1.5708, 0.0, 0.0),
@@ -316,13 +378,16 @@ def _handle_bar_pull_geometry(
     standoff_length: t.SocketOrVal[float] = 0.035,
     standoff_radius: t.SocketOrVal[float] = 0.006,
 ) -> pf.ProcNode[pf.MeshObject]:
-    grip = _cylinder_with_uv(radius=grip_radius, depth=grip_length)
+    grip = _cylinder_with_uv(radius=grip_radius, depth=grip_length,
+                             source_component=1)
     grip = pf.nodes.geo.transform(
         geometry=grip, translation=pf.nodes.math.combine_xyz(y=standoff_length)
     )
     post_z = grip_length * 0.5 - grip_radius
-    top = _standoff_post(standoff_length, standoff_radius, post_z)
-    bottom = _standoff_post(standoff_length, standoff_radius, -post_z)
+    top = _standoff_post(standoff_length, standoff_radius, post_z,
+                         source_component=2)
+    bottom = _standoff_post(standoff_length, standoff_radius, -post_z,
+                            source_component=3)
     grip = pf.nodes.geo.store_named_attribute(
         geometry=grip, name="spray_part", value=0, domain="FACE", data_type="INT"
     )
@@ -413,6 +478,11 @@ def handle_lever_rand(
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
     result = _finish(geo, material)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(result.mesh, 'handle', allow_removed_source_patches=True,
+                      triangulate_source_caps=True)
     if spray_tags:
         pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result
@@ -426,21 +496,30 @@ def handle_knob(material: pf.Material | None = None) -> HandleResult:
 
 
 def handle_knob_rand(
-    rng: pf.RNG, material: pf.Material | None = None, spray_tags: bool = False
+    rng: pf.RNG, material: pf.Material | None = None, spray_tags: bool = False,
+    capture_part: str = 'handle',
 ) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     stem_radius = pf.random.uniform(rng, 0.004, 0.007)
     head_radius = pf.random.uniform(rng, stem_radius * 1.8, 0.018)
+    base_radius = pf.random.uniform(rng, 0.012, 0.02)
+    base_depth = pf.random.uniform(rng, 0.003, 0.006)
+    stem_length = pf.random.uniform(rng, head_radius, 0.022)
     geo = _handle_knob_geometry(
-        base_radius=pf.random.uniform(rng, 0.012, 0.02),
-        base_depth=pf.random.uniform(rng, 0.003, 0.006),
+        base_radius=base_radius,
+        base_depth=base_depth,
         stem_radius=stem_radius,
-        stem_length=pf.random.uniform(rng, head_radius, 0.022),
+        stem_length=stem_length,
         head_radius=head_radius,
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
     result = _finish(geo, material, crease_value=_KNOB_RIM_CREASE)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.knob(result.mesh, base_radius, base_depth, stem_radius,
+                     stem_length, head_radius, capture_part)
     if spray_tags:
         pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result
@@ -466,6 +545,10 @@ def handle_curved_pull_rand(
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
     result = _finish(geo, material)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(result.mesh, 'handle')
     if spray_tags:
         pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result
@@ -483,19 +566,28 @@ def handle_bar_pull_rand(
     material: pf.Material | None = None,
     grip_length: float | None = None,
     spray_tags: bool = False,
+    capture_part: str = 'handle',
 ) -> HandleResult:
     rng, rng_mat = rng.spawn(2)
     if grip_length is None:
         grip_length = pf.random.uniform(rng, 0.1, 0.25)
+    grip_radius = pf.random.uniform(rng, 0.006, 0.012)
+    standoff_length = pf.random.uniform(rng, 0.025, 0.045)
+    standoff_radius = pf.random.uniform(rng, 0.004, 0.008)
     geo = _handle_bar_pull_geometry(
         grip_length=grip_length,
-        grip_radius=pf.random.uniform(rng, 0.006, 0.012),
-        standoff_length=pf.random.uniform(rng, 0.025, 0.045),
-        standoff_radius=pf.random.uniform(rng, 0.004, 0.008),
+        grip_radius=grip_radius,
+        standoff_length=standoff_length,
+        standoff_radius=standoff_radius,
     )
     if material is None:
         material = decorative_material_rand(rng_mat, pf.nodes.shader.coord().object)
     result = _finish(geo, material)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.bar_pull(result.mesh, grip_length, grip_radius,
+                         standoff_length, standoff_radius, capture_part)
     if spray_tags:
         pf.ops.attr.write_attribute(result.mesh, True, "spray_target", domain="FACE")
     return result

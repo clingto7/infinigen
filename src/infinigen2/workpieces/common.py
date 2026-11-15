@@ -71,25 +71,39 @@ def _remove_degenerate_faces(mesh: pf.MeshObject) -> int:
         bm.free()
 
 
-def generate(category_id: str, rng: pf.RNG) -> WorkpieceResult:
+def generate(category_id: str, rng: pf.RNG, *, record_parameters: bool = False) -> WorkpieceResult:
     try:
         category = REGISTRY[category_id]
     except KeyError:
         known = ", ".join(REGISTRY) or "(none registered)"
         raise ValueError(f"Unknown workpiece category: {category_id}; known: {known}")
-    built = category.build(rng)
+    construction_record = None
+    if record_parameters and category_id not in {"car_bumper", "opus_chair", "infinigen_chair"}:
+        from infinigen2.util.construction_record import ConstructionRecorder
+
+        with ConstructionRecorder() as recorder:
+            built = category.build(rng)
+        construction_record = recorder.payload()
+    else:
+        built = category.build(rng)
     if isinstance(built, BuiltWorkpiece):
         mesh = built.mesh
         structure_priors = built.structure_priors
     else:
         mesh = built
         structure_priors = None
+    if construction_record is not None:
+        # Preserve native factory keys consumed by existing trajectory rules.
+        structure_priors = dict(structure_priors or {})
+        structure_priors["construction_record"] = construction_record
     if category.scale_range is not None:
         scale = pf.random.uniform(rng, *category.scale_range)
         data = mesh.item().data
         for vertex in data.vertices:
             vertex.co *= scale
         data.update()
+        if structure_priors is not None:
+            structure_priors["post_build_uniform_scale"] = float(scale)
     removed = _remove_degenerate_faces(mesh) if category.remove_degenerate else 0
     spray.ensure_spray_target_reason(mesh)
     spray.write_geometry_accessibility(mesh)

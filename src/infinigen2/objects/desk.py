@@ -88,6 +88,10 @@ def _side_cell_shelf_base_rand(
         spray_tags=spray_tags,
     ).mesh
     right = left.clone()
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.duplicate(right)
     pf.ops.object.set_transform(
         left,
         location=(-dimensions.x / 2, -dimensions.y / 2, 0.0),

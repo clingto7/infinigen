@@ -19,6 +19,7 @@ from infinigen2.objects.chair import (
 from infinigen2.util import mesh, spray
 from infinigen2.workpieces.assemble import join_tagged, vertex_bounds
 from infinigen2.workpieces.common import Category, register
+from infinigen2.workpieces.parametric_capture import active_capture
 
 __all__ = [
     "Category",
@@ -59,6 +60,9 @@ def board(
     geo = mesh.box(size=size, location=(0.0, 0.0, 0.0), anchor=(0.5, 0.5, 0.5))
     obj = _materialize(geo, material, part)
     pf.ops.object.set_transform(obj, location=center, rotation_euler=rotation)
+    capture = active_capture()
+    if capture is not None:
+        capture.board(obj, size, part)
     return obj
 
 
@@ -105,6 +109,9 @@ def rod(
     geo = mesh.quad_cylinder(radius=radius, depth=length, resolution=resolution)
     obj = _materialize(geo, material, part)
     pf.ops.object.set_transform(obj, location=mid, rotation_euler=rotation)
+    capture = active_capture()
+    if capture is not None:
+        capture.rod(obj, start, end, radius, resolution, part)
     return obj
 
 

@@ -17,7 +17,7 @@ from infinigen2.shaders.functionality_lists import (
     furniture_material_rand,
     glass_material_rand,
 )
-from infinigen2.util.mesh import metric_box_uv
+from infinigen2.util.mesh import fit_bevel_width, metric_box_uv
 
 __all__ = [
     "DoorResult",
@@ -128,7 +128,14 @@ def _opaque_and_glass(rng: pf.RNG, vec) -> tuple[pf.Material, pf.Material]:
 def _door_body_finish(geo: pf.ProcNode, bevel_width: float) -> DoorResult:
     geo = metric_box_uv(geo)
     obj = pf.nodes.to_mesh_object(geo)
+    bevel_width = fit_bevel_width(obj, bevel_width)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.bevel_source(obj, 'door_body', bevel_width)
     pf.ops.modifier.bevel(obj, width=bevel_width, segments=6)
+    if capture is not None:
+        capture.bevel_finish(obj, 'door_body', {0: 'door_frame', 1: 'door_panel'})
     pf.ops.attr.write_attribute(obj, 1.0, "crease_edge", domain="EDGE", overwrite=True)
     pf.ops.modifier.subdivide_surface(obj, levels=2, _skip_apply=True)
     return DoorResult(mesh=obj)
@@ -313,7 +320,12 @@ def door_double_rand(
         spray_tags=spray_tags,
     ).mesh
     pf.ops.mesh.transform(door, location=(0.0, -leaf_width, 0.0))
+    original_face_count = len(door.item().data.polygons)
     pf.ops.modifier.mirror(door, use_axis=(False, True, False))
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.mirror_duplicate(door, original_face_count)
     pf.ops.mesh.transform(door, location=(0.0, leaf_width, 0.0))
     if spray_tags and body_style == "window":
         parts = np.array(

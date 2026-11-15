@@ -12,6 +12,7 @@ import mathutils
 import procfunc as pf
 
 from infinigen2.util import spray
+from infinigen2.workpieces.parametric_capture import active_capture
 from infinigen2.workpieces.assemble import hard_material, join_tagged
 from infinigen2.workpieces.common import Category, register as _register
 
@@ -53,7 +54,12 @@ def box(
     """Axis-aligned box until ``rotation``, then moved so ``center`` is its center."""
     cube = pf.nodes.geo.mesh_cube(size=size)
     placed = pf.nodes.geo.transform(cube.mesh, translation=center, rotation=rotation)
-    return _realize(placed)
+    obj = _realize(placed)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(obj, "box", size=list(map(float, size)),
+                             center=list(map(float, center)), rotation=list(map(float, rotation)))
+    return obj
 
 
 def cylinder(
@@ -68,7 +74,13 @@ def cylinder(
         vertices=vertices, radius=radius, depth=depth, fill_type="NGON"
     )
     placed = pf.nodes.geo.transform(solid.mesh, translation=center, rotation=rotation)
-    return _realize(placed)
+    obj = _realize(placed)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(obj, "cylinder", radius=float(radius), depth=float(depth),
+                             center=list(map(float, center)), rotation=list(map(float, rotation)),
+                             vertices=int(vertices))
+    return obj
 
 
 def sphere(
@@ -81,7 +93,12 @@ def sphere(
     solid = pf.nodes.geo.mesh_uv_sphere(segments=segments, rings=rings, radius=1.0)
     scaled = pf.nodes.geo.transform(solid.mesh, scale=radii)
     placed = pf.nodes.geo.transform(scaled, translation=center)
-    return _realize(placed)
+    obj = _realize(placed)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(obj, "sphere", radii=list(map(float, radii)),
+                             center=list(map(float, center)), segments=int(segments), rings=int(rings))
+    return obj
 
 
 def frustum(
@@ -105,7 +122,14 @@ def frustum(
     # Mesh Cone sits on z = 0; shift to the center, then rotate like cylinder.
     centered = pf.nodes.geo.transform(solid.mesh, translation=(0.0, 0.0, -depth * 0.5))
     placed = pf.nodes.geo.transform(centered, translation=center, rotation=rotation)
-    return _realize(placed)
+    obj = _realize(placed)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(obj, "frustum", radius_bottom=float(radius_bottom),
+                             radius_top=float(radius_top), depth=float(depth),
+                             center=list(map(float, center)), rotation=list(map(float, rotation)),
+                             vertices=int(vertices), side_segments=int(side_segments))
+    return obj
 
 
 def aim_z(direction: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -163,6 +187,10 @@ def _weld(host: pf.MeshObject) -> None:
 
 def cut(host: pf.MeshObject, cutter: pf.MeshObject, *, what: str = "difference") -> pf.MeshObject:
     pf.ops.modifier.boolean_difference(host, cutter, fast=False, hole_tolerant=True)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_boolean(host, cutter, "difference")
+        capture.solid_forget(cutter)
     discard(cutter)
     _weld(host)
     return _require_solid(host, what)
@@ -170,6 +198,10 @@ def cut(host: pf.MeshObject, cutter: pf.MeshObject, *, what: str = "difference")
 
 def fuse(host: pf.MeshObject, piece: pf.MeshObject, *, what: str = "union") -> pf.MeshObject:
     pf.ops.modifier.boolean_union(host, piece, fast=False, hole_tolerant=True)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_boolean(host, piece, "union")
+        capture.solid_forget(piece)
     discard(piece)
     _weld(host)
     return _require_solid(host, what)
@@ -197,7 +229,11 @@ def tag(obj: pf.MeshObject, material: pf.Material, part: str) -> pf.MeshObject:
 
 
 def finish(parts: list[pf.MeshObject]) -> pf.MeshObject:
+    capture = active_capture()
+    refs = [capture.solid_ref(part) for part in parts] if capture is not None else []
     obj = join_tagged(parts)
+    if capture is not None:
+        capture.solid_join(obj, refs)
     spray.write_spray_visibility(obj)
     return obj
 
@@ -214,6 +250,9 @@ def pose(
     data = obj.item().data
     data.transform(matrix)
     data.update()
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_transform(obj, matrix)
     return obj
 
 

@@ -22,6 +22,7 @@ from infinigen2.workpieces.d.shells.parts import (
     sphere,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 def build(rng: pf.RNG) -> pf.MeshObject:
@@ -42,6 +43,12 @@ def build(rng: pf.RNG) -> pf.MeshObject:
 
     shell = box((hx * 2.0, hy * 2.0, hz * 2.0), (0.0, 0.0, hz))
     pf.ops.modifier.bevel(shell, width=fillet, segments=2)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_rebase_source(
+            shell, 'beveled_box', size=[float(hx * 2.0), float(hy * 2.0), float(hz * 2.0)],
+            center=[0.0, 0.0, float(hz)], bevel_width=float(fillet), bevel_segments=2,
+        )
     fuse(
         shell,
         sphere(

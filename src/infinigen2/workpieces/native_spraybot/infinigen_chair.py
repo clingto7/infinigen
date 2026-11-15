@@ -5,6 +5,7 @@ import numpy as np
 import procfunc as pf
 
 from infinigen2.workpieces.native_spraybot.common import BuiltWorkpiece, category, json_safe, map_part_type, native_seed, register, write_source_face_attribute
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 PARTS = {0: "seat", 1: "leg_base", 2: "back", 3: "slat", 4: "arm", 5: "back"}
@@ -20,6 +21,7 @@ _METHOD_CODES = {
 
 def build(rng):
     import infinigen.assets.objects.seating.chairs.chair as chair_mod
+    from infinigen.core.util.math import FixedSeed
 
     seed = native_seed(rng)
     state = {"part_id": 0, "centerlines": {}, "part_type_legend": dict(PARTS)}
@@ -59,22 +61,43 @@ def build(rng):
 
     def wrap_method(name, code, original):
         def tagged(self, *args, **kwargs):
+            state['factory'] = self
             result = original(self, *args, **kwargs)
             objects = result if isinstance(result, (list, tuple)) else [result]
             for obj in objects:
                 if obj is not None:
                     obj["_spraybot_part_type"] = code
+                    obj["_spraybot_constructor"] = name
             return result
         return tagged
 
     def tagged_join(objects, *args, **kwargs):
         if isinstance(objects, (list, tuple)):
+            final_assembly = bool(objects) and objects[0] is not None and (
+                objects[0].get('_spraybot_constructor') == 'make_seat')
+            capture = active_capture() if final_assembly else None
+            factory = state.get('factory')
+            factory_parameters = None
+            if capture is not None:
+                keys = ('width', 'size', 'thickness', 'bevel_width', 'seat_back',
+                        'seat_mid', 'seat_mid_x', 'seat_mid_z', 'seat_front',
+                        'is_seat_round', 'is_seat_subsurf', 'leg_thickness',
+                        'limb_profile', 'leg_height', 'back_height',
+                        'is_leg_round', 'leg_type', 'back_thickness',
+                        'back_type', 'back_profile', 'back_vertical_cuts',
+                        'back_partial_scale', 'has_arm', 'arm_thickness',
+                        'arm_height', 'arm_y', 'arm_z', 'arm_mid', 'arm_profile')
+                factory_parameters = json_safe({key: getattr(factory, key) for key in keys})
             for obj in objects:
                 code = int(obj.get("_spraybot_part_type", 0))
                 write_source_face_attribute(obj.data, "part_type", code)
                 write_source_face_attribute(obj.data, "part_id", state["part_id"])
                 if obj.name in raw_centerlines:
                     state["centerlines"][state["part_id"]] = raw_centerlines[obj.name]
+                if capture is not None and len(obj.data.polygons):
+                    capture.native_chair(obj, PARTS[code],
+                                         str(obj.get('_spraybot_constructor', 'unknown')),
+                                         factory_parameters)
                 state["part_id"] += 1
         return original_join(objects, *args, **kwargs)
 
@@ -84,8 +107,11 @@ def build(rng):
         chair_mod.join_objects = tagged_join
         for name, function in original_curves.items():
             setattr(chair_mod, name, wrap_curve(function))
-        factory = chair_mod.ChairFactory(seed)
-        obj = factory.create_asset()
+        # create_asset also samples (e.g. back decoration). Constructor-only
+        # seeding leaves those choices dependent on prior process RNG state.
+        with FixedSeed(seed):
+            factory = chair_mod.ChairFactory(seed)
+            obj = factory.create_asset()
     finally:
         chair_mod.join_objects = original_join
         for name, method in original_methods.items():
@@ -131,6 +157,8 @@ def build(rng):
         for part_id, points in centerlines.items()
     }
     priors = {
+        "factory_seed": seed,
+        "centerline_representation": "ordered_sampled_polyline_not_bezier_control_points",
         "back_type": str(factory.back_type),
         "back_profile": factory.back_profile.tolist() if hasattr(factory.back_profile, "tolist") else factory.back_profile,
         "back_vertical_cuts": int(factory.back_vertical_cuts),

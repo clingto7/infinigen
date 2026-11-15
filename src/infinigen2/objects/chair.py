@@ -438,8 +438,16 @@ def _round_seat_generate_table_top(
         geometry=curve_to, translation=transform_6_translation
     )
     flip_faces = pf.nodes.geo.flip_faces(transform_6)
-    bottom_fill = pf.nodes.geo.fill_curve(
-        curve=n_gon_cylinder_result.profile_curve, mode="NGONS"
+    bottom_fill = pf.nodes.geo.fill_curve(curve=n_gon_cylinder_result.profile_curve, mode="NGONS")
+    bottom_source = pf.nodes.geo.capture_attribute(geometry=bottom_fill, index=pf.nodes.geo.input_index())
+    bottom_fill = bottom_source.geometry
+    bottom_fill = pf.nodes.geo.store_named_attribute(
+        geometry=bottom_fill, domain="CORNER", data_type="FLOAT",
+        name="parametric_rail_index", value=1,
+    )
+    bottom_fill = pf.nodes.geo.store_named_attribute(
+        geometry=bottom_fill, domain="CORNER", data_type="FLOAT",
+        name="parametric_profile_index", value=(bottom_source.index.astype(dtype=float)+1.0).astype(dtype=int),
     )
     bottom_translation = pf.nodes.math.combine_xyz(z=thickness * -1.0)
     bottom_cap = pf.nodes.geo.transform(
@@ -469,6 +477,8 @@ def _round_seat_create_cap(
     mid_z = mid_z * height_scale + z_offset
     top_z = top_z * height_scale + z_offset
     fill_curve = pf.nodes.geo.fill_curve(curve=rim_curve, mode="NGONS")
+    rim_source = pf.nodes.geo.capture_attribute(geometry=fill_curve, index=pf.nodes.geo.input_index())
+    fill_curve = rim_source.geometry
     extrude_mid = pf.nodes.geo.extrude_mesh(
         mesh=fill_curve, offset=(0.0, 0.0, 1.0), offset_scale=mid_z, individual=False
     )
@@ -491,6 +501,22 @@ def _round_seat_create_cap(
         value=True,
         domain="FACE",
         data_type=NodeDataType.BOOLEAN,
+    )
+    cap = pf.nodes.geo.store_named_attribute(
+        geometry=cap, domain="CORNER", data_type="FLOAT",
+        name="parametric_profile_index", value=(rim_source.index.astype(dtype=float)+1.0).astype(dtype=int),
+    )
+    # These levels come from the three explicitly constructed extrusion rings.
+    z = pf.nodes.geo.input_position().z
+    mid_distance = pf.nodes.math.absolute(z-mid_z)
+    top_distance = pf.nodes.math.absolute(z-top_z)
+    base_distance = pf.nodes.math.absolute(z)
+    nearer_top = top_distance < mid_distance
+    upper = pf.nodes.func.switch(switch=nearer_top, a=2, b=3)
+    upper_distance = pf.nodes.math.minimum(mid_distance, top_distance)
+    level = pf.nodes.func.switch(switch=upper_distance < base_distance, a=1, b=upper)
+    cap = pf.nodes.geo.store_named_attribute(
+        geometry=cap, domain="CORNER", data_type="FLOAT", name="parametric_rail_index", value=level,
     )
     return mesh.metric_box_uv(cap)
 
@@ -560,7 +586,12 @@ def chair_seat_round(
         cap_radius=cap_radius,
         bevel_factor=bevel_factor,
     )
-    return ChairResult(mesh=pf.nodes.to_mesh_object(geo))
+    obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "seat")
+    return ChairResult(mesh=obj)
 
 
 # ==== from src/infinigen2/objects/_scratch_wheeled.py ====
@@ -1191,7 +1222,16 @@ def _wheeled_base_geometry(
     column = pf.nodes.geo.join_geometry([transform, transform_2])
     if material is not None:
         column = pf.nodes.geo.set_material(column, material)
-    join = pf.nodes.geo.join_geometry([column, align_bottom_to_floor_result.geometry])
+    column = pf.nodes.geo.store_named_attribute(
+        geometry=column, name='parametric_wheeled_component', value=1,
+        domain='FACE', data_type='INT',
+    )
+    wheel_assembly = pf.nodes.geo.store_named_attribute(
+        geometry=align_bottom_to_floor_result.geometry,
+        name='parametric_wheeled_component', value=2,
+        domain='FACE', data_type='INT',
+    )
+    join = pf.nodes.geo.join_geometry([column, wheel_assembly])
     return join
 
 
@@ -1259,7 +1299,7 @@ def chair_seat_curvy_rand(
     back_width = pf.random.uniform(rng, 0.75, 1.05)
     top_width = back_width - pf.random.uniform(rng, 0.0, 0.5)
     mid_width = back_width * pf.random.uniform(rng, 0.7, 1.0)
-    geo = _curvy_seat_geometry(
+    parameters = dict(
         width=dimensions[0],
         u_resolution=16,
         v_resolution=11,
@@ -1281,6 +1321,7 @@ def chair_seat_curvy_rand(
         mid_pos=pf.random.uniform(rng, 0.4, 0.6),
         seat_height=pf.random.uniform(rng, 0.5, 0.7),
     )
+    geo = _curvy_seat_geometry(**parameters)
     geo = pf.nodes.geo.transform(
         geo,
         translation=(0.0, 0.0, dimensions[2]),
@@ -1288,6 +1329,10 @@ def chair_seat_curvy_rand(
         scale=(1, 1, 1),
     )
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.curvy_seat(obj, parameters)
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(
@@ -1320,6 +1365,10 @@ def chair_seat_round_rand(
         scale=(1, 1, 1),
     )
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "seat")
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(
@@ -1348,15 +1397,18 @@ def chair_base_wheeled_rand(
         material = furniture_material_rand(rng_mat, vec)
     if wheel_material is None:
         wheel_material = castor_wheel_material_rand(rng_wheel_mat, vec, material)
+    parameters = dict(
+        top_height=float(dimensions[2]),
+        joint_height=float(pf.random.uniform(rng, 0.5, 0.8) * dimensions[2]),
+        leg_diameter=float(_wheeled_base_post_diameter_rand(rng)),
+        arc_sweep_angle=float(pf.random.uniform(rng, 120.0, 240.0)),
+        wheel_width=float(pf.random.uniform(rng, 0.11, 0.15)),
+        wheel_rotation=float(pf.random.uniform(rng, 0.0, 360.0)),
+        pole_length=float(pf.random.uniform(rng, 1.6, 2.0)),
+        leg_number=int(pf.control.choice(rng, [(4, 0.5), (5, 0.5)])),
+    )
     geo = _wheeled_base_geometry(
-        top_height=dimensions[2],
-        joint_height=pf.random.uniform(rng, 0.5, 0.8) * dimensions[2],
-        leg_diameter=_wheeled_base_post_diameter_rand(rng),
-        arc_sweep_angle=pf.random.uniform(rng, 120.0, 240.0),
-        wheel_width=pf.random.uniform(rng, 0.11, 0.15),
-        wheel_rotation=pf.random.uniform(rng, 0.0, 360.0),
-        pole_length=pf.random.uniform(rng, 1.6, 2.0),
-        leg_number=pf.control.choice(rng, [(4, 0.5), (5, 0.5)]),
+        **parameters,
         material=material,
         wheel_material=wheel_material,
     )
@@ -1366,6 +1418,10 @@ def chair_base_wheeled_rand(
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
     pf.ops.modifier.subdivide_surface(obj, levels=_CHAIR_SUBDIV, _skip_apply=True)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.wheeled_base(obj, parameters)
     return ChairResult(mesh=obj)
 
 
@@ -1421,6 +1477,10 @@ def _chair_back_geometry(
     points = pf.nodes.geo.curve_to_mesh(curve=points)
     slats = pf.nodes.geo.instance_on_points(points=points, instance=slat)
     slats = pf.nodes.geo.realize_instances(slats)
+    slats = pf.nodes.geo.store_named_attribute(
+        geometry=slats, name='parametric_back_component', value=1,
+        domain='FACE', data_type='INT',
+    )
 
     crest_width = dimensions.y + crest_margin * 2.0
     crest = mesh.box_with_support_loops(
@@ -1439,6 +1499,10 @@ def _chair_back_geometry(
         ),
         rotation=(0, 0, 0),
         scale=(1, 1, 1),
+    )
+    crest = pf.nodes.geo.store_named_attribute(
+        geometry=crest, name='parametric_back_component', value=2,
+        domain='FACE', data_type='INT',
     )
     if slat_material is not None:
         slats = pf.nodes.geo.set_material(slats, slat_material)
@@ -1488,6 +1552,7 @@ def chair_back_rand(
     dimensions: pf.Vector | None = None,
     material: pf.Material | None = None,
     slat_count_rand: Callable[[pf.RNG, float, float], int] | None = None,
+    capture_part: str = 'chair_back',
 ) -> ChairResult:
     """Slatted wooden back. `aspect` runs the slat cross-section from flat (wide
     in Y) to near-square; the support-loop offset then rounds it toward a spindle
@@ -1535,6 +1600,10 @@ def chair_back_rand(
         slat_profile_resolution=pf.control.choice(rng, [(24, 2.0), (4, 1.0)]),
         crest_align=pf.random.uniform(rng, 0.0, 1.0),
     ).mesh
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.mixed_sweep_grid(obj, capture_part)
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(
@@ -1848,10 +1917,23 @@ def _dining_seat_with_back(
         )
 
     obj = pf.nodes.to_mesh_object(seat)
-    seat_round = pf.random.uniform(rng, 0.05, 0.49) * thickness
+    seat_round = mesh.fit_bevel_width(
+        obj, pf.random.uniform(rng, 0.05, 0.49) * thickness
+    )
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.bevel_source(obj, 'chair_dining_seat', seat_round)
     pf.ops.modifier.bevel(obj, width=seat_round, segments=2)
+    if capture is not None:
+        capture.bevel_finish(obj, 'seat')
     back_obj = pf.nodes.to_mesh_object(back)
+    back_round = mesh.fit_bevel_width(back_obj, back_round)
+    if capture is not None:
+        capture.bevel_source(back_obj, 'chair_dining_back', back_round)
     pf.ops.modifier.bevel(back_obj, width=back_round, segments=2)
+    if capture is not None:
+        capture.bevel_finish(back_obj, 'back')
     pf.ops.object.join(obj, back_obj)
     return obj
 

@@ -22,6 +22,7 @@ from infinigen2.workpieces.d.shells.parts import (
     rest_on_ground,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 _RESOLUTION = 48
 
@@ -51,7 +52,17 @@ def _spiral_solid(
         sized = pf.nodes.geo.trim_curve(sized, start=trim[0], end=trim[1])
     profile = pf.nodes.geo.curve_quadrilateral(width=width, height=height)
     solid = pf.nodes.geo.curve_to_mesh(curve=sized, profile_curve=profile, fill_caps=True)
-    return pf.nodes.to_mesh_object(solid)
+    obj = pf.nodes.to_mesh_object(solid)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(
+            obj, 'variable_spiral_sweep', start_radius=float(start_r),
+            end_radius=float(end_r), turns=float(turns),
+            profile_width=float(width), profile_height=float(height),
+            growth=float(growth), trim=list(map(float, trim)) if trim else None,
+            path_sections=_RESOLUTION, profile_sides=4,
+        )
+    return obj
 
 
 def _end_tangent(start_r: float, end_r: float, turns: float) -> tuple[float, float, float, float]:

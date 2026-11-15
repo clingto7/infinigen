@@ -20,6 +20,7 @@ from infinigen2.workpieces.d.shells.parts import (
     rest_on_ground,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 def _arc_tube(
@@ -40,7 +41,15 @@ def _arc_tube(
     arc = pf.nodes.geo.set_curve_normal(arc, mode="Z_UP")
     circle = pf.nodes.geo.curve_circle(resolution=profile, radius=pipe_r)
     solid = pf.nodes.geo.curve_to_mesh(curve=arc, profile_curve=circle, fill_caps=True)
-    return pf.nodes.to_mesh_object(solid)
+    obj = pf.nodes.to_mesh_object(solid)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(
+            obj, 'arc_tube', path_radius=float(path_r), start_angle=float(start),
+            sweep_angle=float(sweep), tube_radius=float(pipe_r),
+            path_sections=int(resolution), profile_sections=int(profile),
+        )
+    return obj
 
 
 def _port(path_r: float, angle: float) -> tuple[tuple[float, float, float], tuple[float, float, float]]:

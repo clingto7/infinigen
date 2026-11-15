@@ -120,3 +120,12 @@ usable only after generation, automatic checks, contact-sheet review, manual
 review, and compatibility export all pass. Use
 `scripts/spraybot_compare_batches.py` to compare same-seed batches when a
 reproducibility check is needed.
+
+For parameterized delivery, also apply the
+[parametric description contract](parametric-description-contract.md): record
+generation-time surface parameters, export them in the OBJ frame, validate
+complete `spray_target` coverage and outward normals on multiple seeds, and
+check a source-independent consumer. Existing categories are retrofitted in
+batches; their model generation remains available while descriptions are
+incomplete. A new category can register for development, but needs this gate
+before being called parametric-description ready.

@@ -156,6 +156,8 @@ def _assemble_table(
     spray_tags: bool = False,
     top_part: int | None = None,
     base_part: int | None = None,
+    top_box_size: tuple[float, float, float] | None = None,
+    top_cylinder: tuple[float, float] | None = None,
 ) -> TableResult:
     top = pf.nodes.geo.transform(top, translation=(0, 0, top_height))
     top = pf.nodes.to_mesh_object(top)
@@ -193,6 +195,14 @@ def _assemble_table(
             )
         if base.item().data.attributes.get("spray_target") is None:
             pf.ops.attr.write_attribute(base, True, "spray_target", domain="FACE", overwrite=True)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        if top_box_size is not None:
+            capture.box(top, top_box_size, (0, 0, top_height), (0.5, 0.5, 0), "top")
+        elif top_cylinder is not None:
+            radius, thickness = top_cylinder
+            capture.rod(top, (0, 0, top_height), (0, 0, top_height + thickness), radius, 32, "top")
     pf.ops.object.join(top, base)
     pf.ops.modifier.subdivide_surface(top, levels=3, _skip_apply=True)
     return TableResult(mesh=top)
@@ -281,6 +291,7 @@ def table_dining_rand(
         spray_tags,
         top_part=top_part,
         base_part=base_part,
+        top_box_size=(x, y, top_thickness),
     )
 
 
@@ -340,7 +351,8 @@ def table_dining_circular_rand(
             base_fn = base_options[base_style]
         base = base_fn(rng_base, (diameter, diameter, top_height)).mesh
     top = _table_top_circular(diameter=diameter, thickness=top_thickness)
-    return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags)
+    return _assemble_table(top, base, top_height, top_material, leg_material, spray_tags,
+                           top_cylinder=(diameter * 0.5, top_thickness))
 
 
 def table_rectangular_rand(

@@ -8,8 +8,7 @@ import math
 
 import procfunc as pf
 
-from infinigen2.util import mesh, spray
-from infinigen2.workpieces.assemble import hard_material, join_tagged, tagged_slab
+from infinigen2.workpieces.assemble import hard_material, join_tagged, tagged_box, tagged_slab
 from infinigen2.workpieces.c.tables.parts import Category, register
 
 
@@ -20,14 +19,7 @@ def _board(
     rotation: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> pf.MeshObject:
     """Box whose bottom-center is the object origin, then placed in the world."""
-    geo = mesh.metric_box_uv(
-        mesh.box(size=size, location=(0.0, 0.0, 0.0), anchor=(0.5, 0.5, 0.0))
-    )
-    obj = pf.nodes.to_mesh_object(geo)
-    pf.ops.object.set_material(
-        obj, surface=material.surface, displacement=material.displacement
-    )
-    spray.write_spray_part(obj, "leg_base")
+    obj = tagged_box(size, (0.0, 0.0, 0.0), material, "leg_base", anchor=(0.5, 0.5, 0.0))
     pf.ops.object.set_transform(obj, location=location, rotation_euler=rotation)
     return obj
 

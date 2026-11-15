@@ -7,6 +7,7 @@
 import procfunc as pf
 
 from infinigen2.objects.chair import chair_seat_dining
+from infinigen2.workpieces.parametric_capture import active_capture
 from infinigen2.workpieces.assemble import hard_material
 from infinigen2.workpieces.c.seating.parts import (
     Category,
@@ -40,6 +41,9 @@ def build(rng: pf.RNG) -> pf.MeshObject:
         geometry=seat_geo, name="spray_part", value=0, domain="FACE", data_type="INT"
     )
     seat = pf.nodes.to_mesh_object(seat_geo)
+    capture = active_capture()
+    if capture is not None:
+        capture.grid(seat, "seat")
     legs = four_legs(rng_base, depth, width, elevation - thickness * 0.5, material)
     stile_h = back_h + 0.03
     stile_z = elevation - 0.02 + stile_h * 0.5

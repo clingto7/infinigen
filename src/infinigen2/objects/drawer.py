@@ -81,6 +81,7 @@ def drawer(
     thickness: float = 0.012,
     front_bevel: float = 0,
     opening_fraction: float = 0,
+    capture_part_legend: dict[int, str] | None = None,
 ) -> DrawerResult:
     """Tray fitting a min-corner slot of `dimensions`, fronted at `front_origin`.
 
@@ -124,7 +125,15 @@ def drawer(
     geo = mesh.crease_sharp(geo, threshold_degrees=30.0)
     geo = pf.nodes.geo.set_material(geo, material=material)
     obj = pf.nodes.to_mesh_object(geo)
-    pf.ops.modifier.bevel(obj, width=min(0.001, board * 0.1), segments=2)
+    bevel_width = mesh.fit_bevel_width(obj, min(0.001, board * 0.1))
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.bevel_source(obj, 'drawer_body', bevel_width)
+    pf.ops.modifier.bevel(obj, width=bevel_width, segments=2)
+    if capture is not None:
+        capture.bevel_finish(obj, 'drawer_body', capture_part_legend or
+                            {0: 'drawer_box', 1: 'front_panel'})
     pf.ops.object.set_transform(obj, location=(tray_depth * opening_fraction, 0, 0))
     pf.ops.mesh.transform_apply(obj, location=True, rotation=False, scale=False)
     obj.item().name = "drawer"
@@ -133,19 +142,21 @@ def drawer(
     return DrawerResult(obj)
 
 
-def drawer_handle_rand(rng: pf.RNG, dimensions: pf.Vector) -> pf.MeshObject:
+def drawer_handle_rand(rng: pf.RNG, dimensions: pf.Vector,
+                       capture_part: str = 'handle') -> pf.MeshObject:
     """Bar pull grip-sized to the drawer front, or a knob."""
     rng_style, rng_handle = rng.spawn(2)
 
-    def bar_pull(r: pf.RNG) -> handles.HandleResult:
+    def bar_pull(r: pf.RNG, capture_part: str = 'handle') -> handles.HandleResult:
         return handles.handle_bar_pull_rand(
-            r, grip_length=min(0.16, dimensions.y * 0.6)
+            r, grip_length=min(0.16, dimensions.y * 0.6),
+            capture_part=capture_part,
         )
 
     handle_fn = pf.control.choice(
         rng_style, [(bar_pull, 1.0), (handles.handle_knob_rand, 1.0)]
     )
-    return handle_fn(rng_handle).mesh
+    return handle_fn(rng_handle, capture_part=capture_part).mesh
 
 
 def drawer_rand(
@@ -157,6 +168,7 @@ def drawer_rand(
     opening_fraction: float | None = None,
     handle: pf.MeshObject | None = None,
     spray_tags: bool = False,
+    capture_part_legend: dict[int, str] | None = None,
 ) -> DrawerResult:
     """Sample a drawer; frame widths are the left/right/bottom/top board shares an
     overlay front covers up to a small reveal.
@@ -229,9 +241,13 @@ def drawer_rand(
         thickness=min(0.012, smallest * 0.08),
         front_bevel=front_bevel,
         opening_fraction=opening_fraction,
+        capture_part_legend=capture_part_legend,
     )
     if handle is None:
-        handle = drawer_handle_rand(r_handle, front[1])
+        handle = drawer_handle_rand(
+            r_handle, front[1],
+            capture_part='drawer_front' if capture_part_legend else 'handle',
+        )
     pf.ops.object.set_transform(
         handle,
         location=(

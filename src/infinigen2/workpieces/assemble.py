@@ -10,6 +10,7 @@ import procfunc as pf
 from infinigen2.objects import storage, table
 from infinigen2.shaders.functionality_lists import furniture_material_rand
 from infinigen2.util import mesh, spray
+from infinigen2.workpieces.parametric_capture import active_capture
 
 # Local codes written by storage._shelf_geometry.
 _SHELF_PARTS = {0: "carcass", 1: "back_panel", 2: "shelf", 3: "shelf"}
@@ -45,6 +46,9 @@ def tagged_slab(
         obj, surface=material.surface, displacement=material.displacement
     )
     spray.write_spray_part(obj, part)
+    capture = active_capture()
+    if capture is not None:
+        capture.slab(obj, size, part)
     return obj
 
 
@@ -62,6 +66,9 @@ def tagged_box(
         obj, surface=material.surface, displacement=material.displacement
     )
     spray.write_spray_part(obj, part)
+    capture = active_capture()
+    if capture is not None:
+        capture.box(obj, size, location, anchor, part)
     return obj
 
 

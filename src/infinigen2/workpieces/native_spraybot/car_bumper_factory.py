@@ -42,6 +42,7 @@ from infinigen.core.util.random import random_general as rg
 from .bumper_surface import (
     BumperSurface, rrect, ellipse, trapezoid, scale_hex, pip, grid_mesh,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 PART_TYPE = {"shell": 0, "grille": 1, "lip": 2}
 
@@ -215,6 +216,14 @@ class CarBumperFactory(AssetFactory):
         me.update()
         obj = bpy.data.objects.new(name, me)
         bpy.context.collection.objects.link(obj)
+        capture = active_capture()
+        if capture is not None:
+            capture.native_surface_source(
+                obj, kind='bumper_surface_grid',
+                parameters={'surface': self.surf.params(), 'part': part,
+                            'recess_m': float(recess), 'solidify_thickness_m': float(self.thick)},
+                uv=sv, faces=faces,
+            )
         butil.modify_mesh(obj, "SOLIDIFY", thickness=self.thick, offset=-1.0)
         self._tag(obj, part)            # tag after modifiers so every final face is labelled
         return obj
@@ -318,6 +327,16 @@ class CarBumperFactory(AssetFactory):
         me.update()
         obj = bpy.data.objects.new("bumper_lip", me)
         bpy.context.collection.objects.link(obj)
+        capture = active_capture()
+        if capture is not None:
+            capture.native_surface_source(
+                obj, kind='bumper_lip_grid',
+                parameters={'surface': self.surf.params(), 'part': 'lip',
+                            'lip_forward_m': float(self.lip_fwd),
+                            'lip_height': float(self.lip_h),
+                            'solidify_thickness_m': float(self.thick)},
+                uv=sv, faces=np.asarray(faces, dtype=int),
+            )
         butil.modify_mesh(obj, "SOLIDIFY", thickness=self.thick, offset=-1.0)
         self._tag(obj, "lip")
         return [obj]

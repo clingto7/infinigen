@@ -746,6 +746,10 @@ def base_straight(
     )
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     pf.ops.modifier.subdivide_surface(obj, levels=1, _skip_apply=True)
     return TableResult(mesh=obj)
 
@@ -807,6 +811,10 @@ def base_straight_rand(
     )
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(
@@ -847,6 +855,10 @@ def base_pedestal(
     )
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     pf.ops.modifier.subdivide_surface(obj, levels=3, _skip_apply=True)
     return TableResult(mesh=obj)
 
@@ -894,6 +906,10 @@ def base_pedestal_rand(
     geo = base_pedestal_column_rand(rng_profile, z, top_radius, bottom_radius)
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(
@@ -930,6 +946,10 @@ def base_square(
     )
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     pf.ops.modifier.subdivide_surface(obj, levels=1, _skip_apply=True)
     return TableResult(mesh=obj)
 
@@ -968,6 +988,10 @@ def base_square_rand(
     )
     geo = mesh.crease_sharp(geo, threshold_degrees=40.0)
     obj = pf.nodes.to_mesh_object(geo)
+    from infinigen2.workpieces.parametric_capture import active_capture
+    capture = active_capture()
+    if capture is not None:
+        capture.sweep(obj, "leg_base")
     if material is None:
         material = furniture_material_rand(rng_mat, pf.nodes.shader.coord().uv)
     pf.ops.object.set_material(

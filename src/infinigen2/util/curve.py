@@ -44,7 +44,7 @@ def curve_to_mesh_with_uv(
     swap_uv: t.SocketOrVal[bool] = False,
 ) -> CurveToMeshWithUvResult:
     input_index = pf.nodes.geo.input_index()
-    index_on_curve = pf.nodes.geo.capture_attribute(geometry=curve, index=input_index)
+    index_on_curve = pf.nodes.geo.capture_attribute(geometry=curve, index=input_index, source_index=input_index.astype(dtype=float))
 
     spline_parameter = pf.nodes.geo.spline_parameter()
     # unset curves report radius 0 but curve_to_mesh sweeps them at 1.0; keep V metric
@@ -59,7 +59,7 @@ def curve_to_mesh_with_uv(
 
     profile_input_index = pf.nodes.geo.input_index()
     index_on_profile = pf.nodes.geo.capture_attribute(
-        geometry=profile, index=profile_input_index
+        geometry=profile, index=profile_input_index, source_index=profile_input_index.astype(dtype=float)
     )
 
     spline_parameter_1 = pf.nodes.geo.spline_parameter()
@@ -139,6 +139,16 @@ def curve_to_mesh_with_uv(
         selection=is_cap,
         value=cap_uv,
         data_type="FLOAT2",
+    )
+    # Source sweep addresses survive instancing and realization. Zero is
+    # reserved for geometry that was not constructed by this primitive.
+    mesh_with_uv = pf.nodes.geo.store_named_attribute(
+        geometry=mesh_with_uv, domain="CORNER", data_type="FLOAT",
+        name="parametric_rail_index", value=index_on_curve.source_index + 1.0,
+    )
+    mesh_with_uv = pf.nodes.geo.store_named_attribute(
+        geometry=mesh_with_uv, domain="CORNER", data_type="FLOAT",
+        name="parametric_profile_index", value=index_on_profile.source_index + 1.0,
     )
     return CurveToMeshWithUvResult(
         mesh=mesh_with_uv,

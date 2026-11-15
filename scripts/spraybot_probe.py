@@ -28,7 +28,7 @@ def main() -> None:
     if args.category in CATEGORY_IDS:
         result = generate_workpiece(args.category, rng)
     elif args.category in WORKPIECE_IDS:
-        result = generate_expansion(args.category, rng)
+        result = generate_expansion(args.category, rng, record_parameters=True)
     else:
         raise SystemExit(f"unknown category: {args.category}")
     obj = result.mesh.item()
@@ -67,12 +67,19 @@ def main() -> None:
     payload = {
         "vertices": vertices,
         "faces": faces,
-        # Spraybot's existing Infinigen adapter calls the per-triangle
-        # semantic label `part_id`; keep the fork-native name as well.
+        # Legacy alias for categories without native instance IDs. When source
+        # IDs exist, the loop below preserves them instead.
         "part_id": tri_part,
         "spray_part": tri_part,
         "spray_target": tri_target,
     }
+    # Native Chair centerlines are keyed by unique source part_id, NOT by the
+    # semantic spray_part code shared by all legs/arms.
+    for name in ("part_id", "part_type", "spray_target_reason"):
+        attr = mesh.attributes.get(name)
+        if attr is not None:
+            values = np.asarray([d.value for d in attr.data])
+            payload[name] = values[[t.polygon_index for t in mesh.loop_triangles]]
     if structure_priors is not None:
         payload["structure_priors"] = np.array(structure_priors, dtype=object)
     np.savez_compressed(args.outdir / "mesh.npz", **payload)
@@ -94,6 +101,7 @@ def main() -> None:
         "target_status": "candidate_only_not_reachability_checked",
         "removed_degenerate_faces": result.removed_degenerate_faces,
         "structure_priors": structure_priors,
+        "part_id_kind": "native_instance" if mesh.attributes.get("part_id") is not None else "semantic_legacy_alias",
         "surface_area": float(triangle_areas.sum()),
     }
     if args.check_modifiers:
@@ -117,7 +125,7 @@ def main() -> None:
     (args.outdir / "summary.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"
     )
-    print(json.dumps(summary))
+    print(json.dumps({key: value for key, value in summary.items() if key != "structure_priors"}))
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ from infinigen2.shaders.functionality_lists import (
     glass_material_rand,
 )
 from infinigen2.util import mesh as mesh_util
+from infinigen2.workpieces.parametric_capture import active_capture
 
 __all__ = [
     "StorageParams",
@@ -115,8 +116,13 @@ def _storage_drawers_rand(
         frame_widths=(side, side, row, row),
         opening_fraction=0,
         handle=handle,
+        capture_part_legend={0: 'drawer_front', 1: 'drawer_front'},
     ).mesh
     copies = [drawers.clone() for _ in slots[1:]]
+    capture = active_capture()
+    if capture is not None:
+        for copy in copies:
+            capture.duplicate(copy)
     if spray_tags:
         pf.ops.attr.write_attribute(
             drawers,
@@ -485,7 +491,13 @@ def storage_cell_shelf(
     geo = pf.nodes.geo.set_material(geometry=geo, material=frame_material)
     geo = mesh_util.crease_sharp(geo, threshold_degrees=30.0)
     result = pf.nodes.to_mesh_object(geo)
-    pf.ops.modifier.bevel(result, width=0.003, segments=2)
+    bevel_width = mesh_util.fit_bevel_width(result, 0.003)
+    capture = active_capture()
+    if capture is not None:
+        capture.bevel_source(result, 'storage_cell_shelf', bevel_width)
+    pf.ops.modifier.bevel(result, width=bevel_width, segments=2)
+    if capture is not None:
+        capture.bevel_finish(result, 'storage_cell_shelf')
     pf.ops.modifier.subdivide_surface(result, levels=2, _skip_apply=True)
     return StorageResult(mesh=result)
 
@@ -646,9 +658,15 @@ def storage_cell_shelf_rand(
     result = pf.nodes.to_mesh_object(geo)
     if spray_tags:
         pf.ops.attr.write_attribute(result, True, "spray_target", domain="FACE")
-    pf.ops.modifier.bevel(
-        result, width=pf.random.uniform(rng_bevel, 0.001, 0.005), segments=2
+    bevel_width = mesh_util.fit_bevel_width(
+        result, pf.random.uniform(rng_bevel, 0.001, 0.005)
     )
+    capture = active_capture()
+    if capture is not None:
+        capture.bevel_source(result, 'storage_cell_shelf', bevel_width)
+    pf.ops.modifier.bevel(result, width=bevel_width, segments=2)
+    if capture is not None:
+        capture.bevel_finish(result, 'storage_cell_shelf')
     # left unapplied so fronts and legs joined in afterwards share this density
     pf.ops.modifier.subdivide_surface(result, levels=2, _skip_apply=True)
     return StorageResult(mesh=result)
@@ -947,6 +965,19 @@ def _grid_legs(
         anchor=(0.0, 0.0, 0.0),
     )
     leg = mesh_util.metric_box_uv(leg)
+    # Keep the three construction coordinates on each instanced box corner.
+    # Realization duplicates these addresses with the leg, so the capture
+    # can describe each source face without fitting the assembled mesh.
+    leg_position = pf.nodes.geo.input_position()
+    leg_address = pf.nodes.math.combine_xyz(
+        x=pf.nodes.func.greater_than(a=leg_position.x, b=diameter * 0.5).astype(dtype=float) + 1.0,
+        y=pf.nodes.func.greater_than(a=leg_position.y, b=diameter * 0.5).astype(dtype=float) + 1.0,
+        z=pf.nodes.func.greater_than(a=leg_position.z, b=height * 0.5).astype(dtype=float) + 1.0,
+    )
+    leg = pf.nodes.geo.store_named_attribute(
+        geometry=leg, name="parametric_grid_address", value=leg_address,
+        domain="CORNER", data_type="FLOAT_VECTOR",
+    )
     return pf.nodes.geo.realize_instances(
         pf.nodes.geo.instance_on_points(points=points, instance=leg)
     )
@@ -976,7 +1007,11 @@ def storage_legs_grid_rand(
         diameter = pf.random.uniform(rng_diameter, 0.025, 0.14)
     geo = _grid_legs(depth, width, leg_height, margin_frac, spacing, diameter)
     geo = mesh_util.crease_sharp(geo, threshold_degrees=30.0)
-    return pf.nodes.to_mesh_object(geo)
+    result = pf.nodes.to_mesh_object(geo)
+    capture = active_capture()
+    if capture is not None:
+        capture.grid(result, "storage_grid_legs")
+    return result
 
 
 def _table_base_rand(
@@ -1432,11 +1467,15 @@ def storage_drawer_door_rand(
     if drawer_fraction is None:
         drawer_fraction = pf.random.uniform(rng_draws, 0.18, 0.35)
     door_height = dimensions.z * (1.0 - drawer_fraction)
+    door_handle = handle.clone()
+    capture = active_capture()
+    if capture is not None:
+        capture.duplicate(door_handle)
     cabinet = storage_cabinet_with_door_rand(
         rng_door,
         pf.Vector((dimensions.x, dimensions.y, door_height)),
         frame_material,
-        handle.clone(),
+        door_handle,
         spray_tags=spray_tags,
     ).mesh
     top_dimensions = pf.Vector(

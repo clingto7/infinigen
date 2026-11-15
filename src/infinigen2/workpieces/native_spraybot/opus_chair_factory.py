@@ -45,6 +45,7 @@ from infinigen.core.placement.factory import AssetFactory
 from infinigen.core.util import blender as butil
 from infinigen.core.util.math import FixedSeed
 from infinigen.core.util.random import random_general as rg
+from infinigen2.workpieces.parametric_capture import active_capture
 
 PART_TYPE = {"seat": 0, "leg": 1, "ornament": 2}
 
@@ -195,6 +196,13 @@ class OpusChairFactory(AssetFactory):
         if rec is not None:
             key = "legs" if part == "leg" else "orn_rods"
             rec[key].append((np.asarray(anchors, float).copy(), float(r0), float(r1)))
+        capture = active_capture()
+        if capture is not None and part == 'leg':
+            capture.native_opus(obj, 'leg_base', 'tapered_bezier_tube', {
+                'anchors_m': np.asarray(anchors, float).tolist(),
+                'start_radius_m': float(r0), 'end_radius_m': float(r1),
+                'profile_sides': int(_TUBE_RES),
+            })
         return obj
 
     # ------------------------------------------------------------------ seat
@@ -219,6 +227,14 @@ class OpusChairFactory(AssetFactory):
         if getattr(self, "_rec", None) is not None:
             self._rec["seat"] = {"shape": str(self.seat_shape), "r": float(self.seat_r),
                                  "ry": float(self.seat_ry), "t": float(self.seat_t)}
+        capture = active_capture()
+        if capture is not None:
+            capture.native_opus(obj, 'seat', 'beveled_seat', {
+                **self._rec['seat'],
+                'bevel_width_m': float(min(self.seat_r * .3, self.seat_t * .45)
+                                       if self.seat_shape == 'square' else self.seat_t * .3),
+                'bevel_segments': 8 if self.seat_shape == 'square' else 4,
+            })
         return obj
 
     # ------------------------------------------------------------------ legs
@@ -255,6 +271,23 @@ class OpusChairFactory(AssetFactory):
         if self.ornament_type not in _FULL_ORNAMENTS:
             # mirror across the sagittal plane (object origin is world origin)
             butil.modify_mesh(obj, "MIRROR", use_axis=(True, False, False))
+        capture = active_capture()
+        if capture is not None:
+            if self.ornament_type in _FULL_ORNAMENTS:
+                parameters = {'ornament_type': self.ornament_type,
+                              'panel': self._rec['orn_panel'],
+                              'bevel_width_m': float(self.panel_t * .4),
+                              'bevel_segments': 3}
+                constructor = 'beveled_ornament_panel'
+            else:
+                parameters = {'ornament_type': self.ornament_type,
+                              'rods': [{'anchors_m': np.asarray(points, float).tolist(),
+                                        'start_radius_m': float(r0),
+                                        'end_radius_m': float(r1)}
+                                       for points, r0, r1 in self._rec['orn_rods']],
+                              'profile_sides': int(_TUBE_RES), 'mirrored_x': True}
+                constructor = 'mirrored_bezier_tubes'
+            capture.native_opus(obj, 'ornament', constructor, parameters)
         return [obj]
 
     # ---- antler: a main beam with a few outward-forking tines ---------

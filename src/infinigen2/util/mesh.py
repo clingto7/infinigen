@@ -27,6 +27,7 @@ __all__ = [
     "extrude_mesh_seamless_uvs",
     "extrude_mesh_seamless_uvs_along",
     "face_selection_boundary_curve",
+    "fit_bevel_width",
     "fill_between_curves",
     "grid_from_corners",
     "lofting",
@@ -360,7 +361,11 @@ def extrude_mesh_seamless_uvs_along(
     uv0 = pf.nodes.geo.input_named_attribute(
         uv_name, data_type="FLOAT_VECTOR"
     ).attribute
-    cap = pf.nodes.geo.capture_attribute(mesh, domain="CORNER", p0=pos0, uv0=uv0)
+    fields = {"p0": pos0, "uv0": uv0}
+    fields["grid_address"] = pf.nodes.geo.input_named_attribute(
+        "parametric_grid_address", data_type="FLOAT_VECTOR"
+    ).attribute
+    cap = pf.nodes.geo.capture_attribute(mesh, domain="CORNER", **fields)
 
     ext = pf.nodes.geo.extrude_mesh(
         mesh=cap.geometry,
@@ -411,7 +416,33 @@ def extrude_mesh_seamless_uvs_along(
         domain="CORNER",
         data_type="FLOAT2",
     )
+    address = pf.nodes.math.separate_xyz(cap.grid_address)
+    # This is the known extrusion displacement from the captured source
+    # corner, before assembly/warping, not a final-mesh shape estimate.
+    level = pf.nodes.func.greater_than(a=depth, b=1e-7).astype(dtype=float) + 1.0
+    out = pf.nodes.geo.store_named_attribute(
+        geometry=out, name="parametric_grid_address",
+        value=pf.nodes.math.combine_xyz(x=address.x, y=address.y, z=level),
+        domain="CORNER", data_type="FLOAT_VECTOR",
+    )
     return ExtrudeSeamlessResult(mesh=out, top=ext.top, side=ext.side)
+
+
+def fit_bevel_width(obj: pf.MeshObject, sampled_width: float) -> float:
+    """Bound a bevel by the shortest source edge before changing topology."""
+    source_mesh = obj.item().data
+    lengths = [
+        np.linalg.norm(
+            np.asarray(source_mesh.vertices[edge.vertices[0]].co)
+            - np.asarray(source_mesh.vertices[edge.vertices[1]].co)
+        )
+        for edge in source_mesh.edges
+    ]
+    positive = [length for length in lengths if length > 1e-9]
+    if not positive:
+        raise ValueError("source mesh has no positive-length edges")
+    shortest = min(positive)
+    return min(sampled_width, 0.45 * shortest)
 
 
 def center_footprint(obj: pf.MeshObject) -> None:
@@ -821,6 +852,11 @@ def box_with_support_loops(
     supported = pf.nodes.geo.set_position(
         geometry=capture.geometry, position=supported_position
     )
+    supported = pf.nodes.geo.store_named_attribute(
+        geometry=supported, name="parametric_grid_address",
+        value=pf.nodes.math.vector_add(index, (1.0, 1.0, 1.0)),
+        domain="CORNER", data_type="FLOAT_VECTOR",
+    )
     center_factor = pf.nodes.math.map_range(
         value=anchor,
         from_min=(0.0, 0.0, 0.0),
@@ -888,9 +924,14 @@ def fill_between_curves(
     uv = pf.nodes.geo.capture_attribute(
         geometry=grid.mesh,
         uv=pf.nodes.math.combine_xyz(x=u, y=v),
+        grid_address=pf.nodes.math.combine_xyz(x=row + 1.0, y=along + 1.0, z=1.0),
     )
     positioned = pf.nodes.geo.set_position(
         geometry=uv.geometry, position=lerped, offset=(0.0, 0.0, 0.0)
+    )
+    positioned = pf.nodes.geo.store_named_attribute(
+        geometry=positioned, name="parametric_grid_address",
+        value=uv.grid_address, domain="CORNER", data_type="FLOAT_VECTOR",
     )
     return pf.nodes.geo.store_named_attribute(
         geometry=positioned,

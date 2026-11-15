@@ -18,6 +18,7 @@ from infinigen2.workpieces.d.shells.parts import (
     rest_on_ground,
     tag,
 )
+from infinigen2.workpieces.parametric_capture import active_capture
 
 
 def _open_frustum(
@@ -66,6 +67,14 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     shell = _open_frustum(r_large, r_small, length, (0.0, 0.0, length * 0.5), vertices=48, side_segments=10)
     _shift_x(shell, ecc, 0.0, length, bend)
     pf.ops.modifier.solidify(shell, thickness=wall, offset=-1.0, use_even_offset=True, use_rim=True)
+    capture = active_capture()
+    if capture is not None:
+        capture.solid_source(
+            shell, 'solidified_eccentric_frustum', radius_bottom=float(r_large),
+            radius_top=float(r_small), wall=float(wall), length=float(length),
+            offset=float(ecc), bend=float(bend), radial_sections=48,
+            height_sections=10,
+        )
 
     material = hard_material(rng_mat)
     bottom = flange_ring(

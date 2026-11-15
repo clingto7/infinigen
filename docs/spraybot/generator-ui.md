@@ -1,6 +1,6 @@
 # 本机交互式工件生成器
 
-该本机 Web 界面可选择已注册接口、输入随机种子并生成工件。三栏 A 布局同时展示生成控件、可交互的 3D 网格和逐面描述数据。
+该 Web 界面可加载已有审查样本，也可选择已注册接口、输入随机种子现场生成。三栏布局分别放置样本入口、可交互的 3D 视图和审查数据。模型与参数化描述叠层有独立显示开关，默认只显示模型。
 
 ## 启动
 
@@ -16,17 +16,40 @@ uv run python scripts/spraybot_generator_ui_server.py
 SPRAYBOT_UI_PORT=9000 uv run python scripts/spraybot_generator_ui_server.py
 ```
 
-然后打开 `http://127.0.0.1:9000/`。停止服务按 `Ctrl-C`。
+要把本轮生成结果集中保存为可复查的 review root，并在下次启动时直接加载已有结果：
+
+```bash
+uv run python scripts/spraybot_generator_ui_server.py \
+  --review-root outputs_scratch/review-20261112
+```
+
+该目录由 `review_manifest.json`、按接口分组的 `interfaces/*/episodes/seed_*` 和接口级
+`human-review.json` 组成。模型、面字段、结构先验和参数化描述都保存在 episode 的
+`model.json` 中；生成过程不会覆盖已有完整 seed。界面左栏的“加载已有审查样本”读取
+同一目录，与“现场生成新样本”分开；两处接口选择都支持搜索，标签格式为 `id - 工件名`。
+全量自动检查通过后，目录内的 `automation-status.json` 解锁审查保存功能。
+
+本轮 radar 审查服务可通过笔记本 SSH 转发访问：
+
+```bash
+ssh -N -L 18765:127.0.0.1:8765 radar
+```
+
+随后打开 <http://127.0.0.1:18765/>。统一审查目录位于 radar 的
+`/home/sentry/ws/infinigen-spray-parametric-v2-output/web-review-100x10-20261114`。
+
+若使用上面的本机自定义端口 9000，则打开 <http://127.0.0.1:9000/>。停止服务按 `Ctrl-C`。
 
 界面用 Three.js 的 jsDelivr CDN 模块渲染 3D 网格，浏览器需能访问该 CDN。生成器继续使用项目当前 Python 环境和 Blender 依赖。
 
 ## 使用
 
-1. 在“生成接口”中选 `Workpieces` 或 `Spraybot` 接口。
-2. 输入非负随机种子，点“生成模型”。接口列表来自当前代码注册表。
-3. 在模型上拖动可旋转视角，滚轮缩放，点“重置视角”恢复取景。
-4. 用“面字段”选择默认材质色、`spray_target`、`spray_target_reason`、`geometry_accessible`、`max_passable_radius_m` 或 `spray_part` 着色。点一个三角面可查看该面的部件、目标状态及原因、外部连通状态和最大通路半径。
-5. 右侧结果栏显示网格规模、可达面数、半径 p95、部件图例和 `structure_priors`。
+1. 从“加载已有审查样本”选接口和 seed，逐个查看一个接口的十个样本；额外抽样时再用“现场生成新样本”。
+2. 在模型上拖动旋转、滚轮缩放，点“重置视角”恢复取景。用“显示模型”与“显示参数化描述”分别切换网格和参数叠层，可单独看其中之一，也可叠加比较。
+3. 用“面字段”选择默认外观、`spray_target`、`spray_target_reason`、`geometry_accessible`、`max_passable_radius_m` 或 `spray_part` 着色。显示模型时点击三角面，可看该面的部件、目标状态、排除原因、外部连通状态及通路半径。
+4. 参数叠层显示采样点与线；`csg_trimmed_face` 的闭合彩线标示裁剪边界和孔洞边界。它是人工概览，不代替独立机器门禁的精确几何与法向检查。
+5. 右侧滚动栏分别展示样本统计、逐面字段、参数化描述、部件图例、可选的 `structure_priors` 与接口级审查。`structure_priors=null` 表示此接口没有专用结构先验，不代表 `parametric` 缺失。
+6. 审查结论以接口为单位，选“待审查”“通过”或“需要修复”。在对应字段的文本框写当前 seed 的问题，提交时自动关联 seed；再次加载该 seed 可修改或清空反馈。未解决问题存在时不能标记通过。结果写入该接口的 `human-review.json`。
 
 字段颜色说明：
 
@@ -40,4 +63,5 @@ SPRAYBOT_UI_PORT=9000 uv run python scripts/spraybot_generator_ui_server.py
 
 每个面都带 `spray_target_reason`：`0=target`、`1=non_spray_material`、`2=component_policy`、`3=internal_cavity`。目前玻璃、把手和封闭抽屉盒分别按材料或部件策略排除；阀壳和三通管内壁按内腔策略排除。布料等材质由类别生成器显式标注为非目标后，使用同一 `non_spray_material` 原因码；该字段不会仅凭几何或外观猜测材质。
 
-每次生成在临时目录中运行 Blender worker，返回网格和面字段后删除临时文件。结果保存在浏览器内存中；关闭或刷新页面后需重新生成。
+每次现场生成在临时目录中运行 Blender worker；启用 review root 时，完整结果会在返回浏览器前写入该目录，
+因此可重复加载并交给后续 contact-sheet 导出。未启用 review root 时仍保持原来的临时内存模式。
