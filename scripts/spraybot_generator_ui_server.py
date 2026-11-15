@@ -41,6 +41,7 @@ GENERATORS = [
 ]
 ALLOWED = {item["id"] for item in GENERATORS}
 REVIEW_ROOT = Path(os.environ["SPRAYBOT_REVIEW_ROOT"]).resolve() if os.environ.get("SPRAYBOT_REVIEW_ROOT") else None
+TRAJECTORY_ROOT = Path(os.environ["SPRAYBOT_TRAJECTORY_ROOT"]).resolve() if os.environ.get("SPRAYBOT_TRAJECTORY_ROOT") else None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -73,6 +74,16 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, json.dumps(GENERATORS))
         elif path == "/api/review-root":
             self.respond(200, json.dumps(review_index(REVIEW_ROOT) if REVIEW_ROOT else {"root": None, "interfaces": []}))
+        elif path.startswith("/api/trajectory/") and TRAJECTORY_ROOT:
+            parts = [unquote(part) for part in path.split("/")]
+            if (len(parts) != 5 or parts[3] not in ALLOWED
+                    or not parts[4].startswith("seed_") or len(parts[4]) != 15
+                    or not parts[4][5:].isdigit()):
+                self.respond(404, json.dumps({"error": "trajectory artifact not found"}))
+            else:
+                artifact = TRAJECTORY_ROOT / parts[3] / f"{parts[4]}.json"
+                self.respond(200, artifact.read_bytes()) if artifact.is_file() else self.respond(
+                    404, json.dumps({"error": "trajectory artifact not found"}))
         elif path.startswith("/api/review/") and REVIEW_ROOT:
             parts = [unquote(part) for part in path.split("/")]
             if len(parts) == 5 and parts[4] == "review":
@@ -133,9 +144,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=int(os.environ.get("SPRAYBOT_UI_PORT", "8765")))
     parser.add_argument("--review-root", type=Path, default=None)
+    parser.add_argument("--trajectory-root", type=Path, default=None)
     args = parser.parse_args()
     if args.review_root:
         REVIEW_ROOT = args.review_root.resolve()
+    if args.trajectory_root:
+        TRAJECTORY_ROOT = args.trajectory_root.resolve()
     port = args.port
     print(f"Spraybot generator UI: http://127.0.0.1:{port}/ review_root={REVIEW_ROOT or '-'}", flush=True)
     HTTPServer(("127.0.0.1", port), Handler).serve_forever()
