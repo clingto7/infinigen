@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from spraybot_interface_state import read_committed_record, review_for_ui, save_human_review
+
 
 SCHEMA = "spraybot.review-root.v1"
 REVIEW_FIELDS = frozenset({
@@ -110,23 +112,20 @@ def index(root: Path) -> dict:
         item.setdefault("group", generator.split(":", 1)[0])
         episode_dir = root / "interfaces" / generator / "episodes"
         item["episodes"] = sorted(path.name for path in episode_dir.iterdir() if path.is_dir()) if episode_dir.is_dir() else []
+        item["interface_status"] = read_committed_record(generator)["status"]
+        item["review_enabled"] = review_enabled(root, generator)
         interfaces.append(item)
     return {"schema": SCHEMA, "root": str(root), "interfaces": interfaces,
-            "review_enabled": review_enabled(root)}
+            "review_enabled": any(item["review_enabled"] for item in interfaces)}
 
 
-def review_enabled(root: Path) -> bool:
-    """The current campaign opens human review only after full automatic gates."""
-    path = Path(root) / "automation-status.json"
-    if not path.is_file():
-        return False
-    status = json.loads(path.read_text(encoding="utf-8"))
-    passed = status.get("passed_interfaces", [])
-    expected = set(load(root).get("interfaces", {}))
-    return (bool(expected) and status.get("all_automatic_checks_passed") is True
-            and status.get("registered_interfaces") == len(expected)
-            and len(passed) == len(expected) and set(passed) == expected
-            and not status.get("incomplete_interfaces") and not status.get("gate_failures"))
+def review_enabled(root: Path, generator: str) -> bool:
+    """An interface can be reviewed after its own machine pass is recorded."""
+    generator = _safe_id(generator)
+    data = read_committed_record(generator)
+    return (generator in load(root)["interfaces"]
+            and data["status"] in {"awaiting_review", "needs_fix", "ready"}
+            and (data.get("machine_gate") or {}).get("status") == "passed")
 
 
 def read_episode(root: Path, generator: str, episode: str) -> dict:
@@ -139,10 +138,10 @@ def read_episode(root: Path, generator: str, episode: str) -> dict:
 
 
 def save_review(root: Path, generator: str, review: dict) -> Path:
-    root = ensure(root)
-    if not review_enabled(root):
-        raise ValueError("human review requires automatic checks for every registered interface")
+    root = Path(root).resolve()
     generator = _safe_id(generator)
+    if not review_enabled(root, generator):
+        raise ValueError("interface has no recorded machine pass or review samples")
     status = review.get("status")
     if generator not in load(root)["interfaces"]:
         raise ValueError("interface is absent from this review root")
@@ -168,14 +167,8 @@ def save_review(root: Path, generator: str, review: dict) -> Path:
         seen.add(key)
     if status == "accepted" and (issues or review.get("seed_issues")):
         raise ValueError("accepted review still has unresolved issues")
-    path = root / "interfaces" / generator / "human-review.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({**review, "interface_id": generator}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return path
+    return save_human_review(generator, review)
 
 
 def read_review(root: Path, generator: str) -> dict:
-    path = Path(root).resolve() / "interfaces" / _safe_id(generator) / "human-review.json"
-    if not path.is_file():
-        return {"interface_id": generator, "status": "pending", "notes": "", "seed_issues": []}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return review_for_ui(_safe_id(generator))

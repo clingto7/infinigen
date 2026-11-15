@@ -95,7 +95,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not REVIEW_ROOT:
                     raise ValueError("server has no --review-root; start it with SPRAYBOT_REVIEW_ROOT")
                 path = save_review(REVIEW_ROOT, request["interface_id"], request)
-                self.respond(200, json.dumps({"saved": str(path)}))
+                self.respond(200, json.dumps({"saved": str(path),
+                                              "interface_status": read_review(REVIEW_ROOT, request["interface_id"])["interface_status"]}))
                 return
             generator = str(request["generator"])
             seed = int(request.get("seed", 0))

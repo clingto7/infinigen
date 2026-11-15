@@ -41,8 +41,7 @@ def main():
              'machine_gate_passed':len(passed),'passed_interfaces':passed,
              'incomplete_interfaces':[r for r in rows if r['generator'] not in complete],
              'gate_failures':[r for r in checks if r['status']!='passed'],
-             'all_automatic_checks_passed':len(passed)==len(rows) and bool(rows),
-             'human_review':'not_started'}
+             'all_automatic_checks_passed':len(passed)==len(rows) and bool(rows)}
     (root/'coverage-status.json').write_text(json.dumps(summary,indent=2)+'\n')
     (screen/'automation-status.json').write_text(json.dumps(summary,indent=2)+'\n')
     print(json.dumps(summary),flush=True)

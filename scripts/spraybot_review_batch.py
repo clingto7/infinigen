@@ -84,7 +84,7 @@ def main():
             row = {'generator': item['id'], 'seed': seed, 'status': status, 'error': error}
             results.append(row)
             summary = {'planned': len(jobs), 'completed': len(results), 'results': results,
-                       'strict_machine_gate': 'not_run', 'human_review': 'pending'}
+                       'strict_machine_gate': 'not_run'}
             temporary = root / 'batch-status.tmp'
             temporary.write_text(json.dumps(summary, indent=2) + '\n')
             temporary.replace(root / 'batch-status.json')

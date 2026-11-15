@@ -109,9 +109,12 @@ well as the newly generated description; the machine gate remains responsible
 for strict checks that a human visual review cannot prove.
 
 The default manual sample is ten seeds per interface. Human review is recorded
-once per interface with status `pending`, `accepted`, `needs_fix`, or
-`rejected`; issue entries carry one or more seed references. The UI writes only
-review records and optional screenshots or overlay exports. The existing
+once per interface in the Git-tracked project record under `reviews/interfaces/`;
+issue entries refer to concrete seeds. Interface status is `developing`,
+`awaiting_review`, `needs_fix`, or `ready`; a saved review becomes formal when
+its record is committed. Existing `parametric_description_status=ready` in an
+episode denotes the legacy machine-certified artifact, not interface readiness.
+The review root keeps samples and evidence, not the authoritative conclusion. The existing
 contact-sheet exporter can read the same immutable review root on demand for
 reports and presentations.
 

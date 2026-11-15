@@ -49,7 +49,7 @@ def main():
             write_episode(batch, category, args.one, seed, done)
             print(json.dumps({'generator': args.one, 'generated_seed': seed}), flush=True)
         result = {'geometry_gate': gate(batch, args.count),
-                  'capture_invariance': compare(batch, args.count), 'human_review': 'pending'}
+                  'capture_invariance': compare(batch, args.count)}
         (batch / 'machine-check.json').write_text(json.dumps(result, indent=2) + '\n')
         return
     from spraybot_parametric_readiness import load

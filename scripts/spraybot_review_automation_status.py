@@ -54,7 +54,6 @@ def audit(review_root: Path, checks_root: Path, seeds_per_interface: int) -> dic
         'incomplete_interfaces': [],
         'gate_failures': [],
         'all_automatic_checks_passed': True,
-        'human_review': 'not_started',
     }
 
 

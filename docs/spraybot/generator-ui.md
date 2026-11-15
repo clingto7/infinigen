@@ -23,11 +23,13 @@ uv run python scripts/spraybot_generator_ui_server.py \
   --review-root outputs_scratch/review-20261112
 ```
 
-该目录由 `review_manifest.json`、按接口分组的 `interfaces/*/episodes/seed_*` 和接口级
-`human-review.json` 组成。模型、面字段、结构先验和参数化描述都保存在 episode 的
+该目录由 `review_manifest.json` 和按接口分组的 `interfaces/*/episodes/seed_*` 组成。模型、面字段、结构先验和参数化描述都保存在 episode 的
 `model.json` 中；生成过程不会覆盖已有完整 seed。界面左栏的“加载已有审查样本”读取
 同一目录，与“现场生成新样本”分开；两处接口选择都支持搜索，标签格式为 `id - 工件名`。
-全量自动检查通过后，目录内的 `automation-status.json` 解锁审查保存功能。
+机器门禁通过后，用 `scripts/spraybot_interface_state.py machine-pass <interface-id> <machine-check.json>`
+将该接口记为 `awaiting_review`，并提交生成的 `reviews/interfaces/*.json`。审查结论由 Web 写入该仓库文件；Git 提交后才正式生效。review root 只保存样本和机器证据，可任意指定，不保存权威审查状态。
+若生成几何、参数曲面、目标面策略或导出契约发生影响产物的改动，先执行
+`python scripts/spraybot_interface_state.py invalidate <interface-id> '<原因>'` 并提交，再重跑该接口的机器门禁与人工审查。
 
 本轮 radar 审查服务可通过笔记本 SSH 转发访问：
 
@@ -49,7 +51,7 @@ ssh -N -L 18765:127.0.0.1:8765 radar
 3. 用“面字段”选择默认外观、`spray_target`、`spray_target_reason`、`geometry_accessible`、`max_passable_radius_m` 或 `spray_part` 着色。显示模型时点击三角面，可看该面的部件、目标状态、排除原因、外部连通状态及通路半径。
 4. 参数叠层显示采样点与线；`csg_trimmed_face` 的闭合彩线标示裁剪边界和孔洞边界。它是人工概览，不代替独立机器门禁的精确几何与法向检查。
 5. 右侧滚动栏分别展示样本统计、逐面字段、参数化描述、部件图例、可选的 `structure_priors` 与接口级审查。`structure_priors=null` 表示此接口没有专用结构先验，不代表 `parametric` 缺失。
-6. 审查结论以接口为单位，选“待审查”“通过”或“需要修复”。在对应字段的文本框写当前 seed 的问题，提交时自动关联 seed；再次加载该 seed 可修改或清空反馈。未解决问题存在时不能标记通过。结果写入该接口的 `human-review.json`。
+6. 审查结论以接口为单位，填写审查人并选“待审查”“通过”或“需要修复”。在对应字段的文本框写当前 seed 的问题，保存时自动关联 seed；再次加载该 seed 可修改或清空反馈。未解决问题存在时不能标记通过。结果写入仓库的 `reviews/interfaces/*.json`，界面会标出尚未 Git 提交的结论。
 
 字段颜色说明：
 
