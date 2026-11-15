@@ -5,6 +5,7 @@ Run from the repository root with:
 """
 
 import json
+import gzip
 import os
 import subprocess
 import sys
@@ -45,9 +46,18 @@ REVIEW_ROOT = Path(os.environ["SPRAYBOT_REVIEW_ROOT"]).resolve() if os.environ.g
 class Handler(BaseHTTPRequestHandler):
     def respond(self, status, body, content_type="application/json; charset=utf-8"):
         encoded = body if isinstance(body, bytes) else body.encode("utf-8")
+        compress = (content_type.startswith("application/json")
+                    and "gzip" in self.headers.get("Accept-Encoding", "").lower()
+                    and len(encoded) > 4096)
+        if compress:
+            encoded = gzip.compress(encoded, compresslevel=3)
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(encoded)))
+        if compress:
+            self.send_header("Content-Encoding", "gzip")
+        if content_type.startswith("application/json"):
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(encoded)
