@@ -45,6 +45,14 @@ def write_record(data: dict, records: Path = RECORDS) -> Path:
     return path
 
 
+def archive_review(data: dict) -> None:
+    if data.get("human_review") is not None:
+        data.setdefault("review_history", []).append({
+            "human_review": data["human_review"],
+            "machine_gate": data.get("machine_gate"),
+        })
+
+
 def committed(generator: str, records: Path = RECORDS) -> bool:
     path = record_path(generator, records)
     if not path.exists():
@@ -90,6 +98,7 @@ def record_machine_pass(generator: str, check_path: Path, records: Path = RECORD
     if (data["status"] == "needs_fix" and previous.get("sha256") == digest
             and previous.get("source_commit") == source_commit):
         raise ValueError("needs_fix requires new machine evidence or source revision")
+    archive_review(data)
     data.update(status="awaiting_review", machine_gate={
         "status": "passed", "sha256": digest,
         "source_commit": source_commit,
@@ -125,6 +134,7 @@ def invalidate(generator: str, reason: str, records: Path = RECORDS) -> Path:
     if not reason.strip():
         raise ValueError("invalidation reason is required")
     data = read_record(generator, records)
+    archive_review(data)
     data.update(status="developing", machine_gate=None, human_review=None,
                 invalidation={"reason": reason.strip(),
                               "recorded_at": datetime.now(timezone.utc).isoformat()})

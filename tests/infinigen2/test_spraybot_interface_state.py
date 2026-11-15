@@ -40,6 +40,11 @@ class InterfaceStateTest(unittest.TestCase):
                 state.save_human_review("workpiece:coat_rack", {
                     "status": "accepted", "reviewer": "reviewer", "field_issues": [],
                 }, records)
+            state.record_machine_pass("workpiece:coat_rack", check, records,
+                                      source_commit="fixed-revision")
+            updated = state.read_record("workpiece:coat_rack", records)
+            self.assertEqual(updated["status"], "awaiting_review")
+            self.assertEqual(updated["review_history"][0]["human_review"]["status"], "needs_fix")
             state.invalidate("workpiece:coat_rack", "generator changed", records)
             self.assertEqual(state.read_record("workpiece:coat_rack", records)["status"], "developing")
 
