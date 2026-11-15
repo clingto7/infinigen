@@ -1,7 +1,7 @@
 # Spraybot compatibility contract
 
 The Infinigen fork owns workpiece generation and generation-side semantic data.
-Spraybot owns trajectory rules, PaintDS writing, and training-format conversion.
+Infinigen keeps newly reviewed interface-specific trajectory rules and PaintDS writing alongside the generator; Spraybot owns downstream training-format conversion. The three original Spraybot trajectory programs remain reference implementations (ADR 0007).
 The repositories communicate through exported data, not Python imports.
 
 ## Required mesh export

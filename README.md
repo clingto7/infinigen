@@ -2,7 +2,7 @@
 
 [Infinigen](https://github.com/princeton-vl/infinigen) 的 fork（基线 `a0d1a0dd`，v2.0.0a3），为 [Spraybot](https://github.com/liang-zijian/Spraybot) 喷涂轨迹研究提供程序化工件生成。目标：**80+ 个结构上明显不同的可喷涂工件类别**（不限于家具）。
 
-职责边界：本 fork 只负责**几何与生成侧结构信息**；喷涂轨迹、数据转换和模型留在 Spraybot 仓库，双方通过跨家族样本核对接口。
+职责边界：本 fork 负责**工件生成接口、生成侧结构信息、接口专属轨迹程序及配套审查**；Spraybot 负责后续训练数据加工与模型。既有三类原生 Spraybot 轨迹程序作为参考，见 [ADR 0007](docs/adr/0007-colocate-interface-trajectory-programs.md)。
 
 ## 当前状态（2026-10）
 

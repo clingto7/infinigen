@@ -20,7 +20,8 @@ SPRAYBOT_UI_PORT=9000 uv run python scripts/spraybot_generator_ui_server.py
 
 ```bash
 uv run python scripts/spraybot_generator_ui_server.py \
-  --review-root outputs_scratch/review-20261112
+  --review-root outputs_scratch/review-20261112 \
+  --trajectory-root outputs_scratch/trajectory-review
 ```
 
 该目录由 `review_manifest.json` 和按接口分组的 `interfaces/*/episodes/seed_*` 组成。模型、面字段、结构先验和参数化描述都保存在 episode 的
@@ -31,6 +32,8 @@ uv run python scripts/spraybot_generator_ui_server.py \
 若生成几何、参数曲面、目标面策略或导出契约发生影响产物的改动，先执行
 `python scripts/spraybot_interface_state.py invalidate <interface-id> '<原因>'` 并提交，再重跑该接口的机器门禁与人工审查。
 
+轨迹工作区按 `<trajectory-root>/<interface-id>/seed_0000000000.json` 放置与审查样本配对的轨迹视图数据。同一 seed 加载后可叠加模型与轨迹、逐笔查看喷向及中点射线异常。`native_references/` 保存原生 Chair、OpusChair、CarBumper 的对照样本，不参与接口审查。接口专属轨迹程序位于本仓库 `scripts/spraybot_trajectory/`；轨迹结论独立于生成接口的 `ready`。
+
 本轮 radar 审查服务可通过笔记本 SSH 转发访问：
 
 ```bash
@@ -38,7 +41,8 @@ ssh -N -L 18765:127.0.0.1:8765 radar
 ```
 
 随后打开 <http://127.0.0.1:18765/>。统一审查目录位于 radar 的
-`/home/sentry/ws/infinigen-spray-parametric-v2-output/web-review-100x10-20261114`。
+`/home/sentry/ws/infinigen-spray-parametric-v2-output/web-review-current-20261115`，轨迹目录为
+`/home/sentry/ws/infinigen-spray-parametric-v2-output/web-trajectory-root-20261115`。
 
 若使用上面的本机自定义端口 9000，则打开 <http://127.0.0.1:9000/>。停止服务按 `Ctrl-C`。
 
@@ -52,6 +56,7 @@ ssh -N -L 18765:127.0.0.1:8765 radar
 4. 参数叠层显示采样点与线；`csg_trimmed_face` 的闭合彩线标示裁剪边界和孔洞边界。它是人工概览，不代替独立机器门禁的精确几何与法向检查。
 5. 右侧滚动栏分别展示样本统计、逐面字段、参数化描述、部件图例、可选的 `structure_priors` 与接口级审查。`structure_priors=null` 表示此接口没有专用结构先验，不代表 `parametric` 缺失。
 6. 审查结论以接口为单位，填写审查人并选“待审查”“通过”或“需要修复”。在对应字段的文本框写当前 seed 的问题，保存时自动关联 seed；再次加载该 seed 可修改或清空反馈。未解决问题存在时不能标记通过。结果写入仓库的 `reviews/interfaces/*.json`，界面会标出尚未 Git 提交的结论。
+7. 若该 seed 有轨迹，右栏“喷涂轨迹”可切换笔画、隐藏或显示全部笔画，并跳到下一个异常。左栏“原生轨迹参考”可加载三类原有程序的模型与轨迹配对样本。
 
 字段颜色说明：
 

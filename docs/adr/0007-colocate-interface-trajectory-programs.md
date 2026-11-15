@@ -1,0 +1,5 @@
+# Keep interface trajectory programs with the Infinigen workpiece interface
+
+For each newly reviewed workpiece interface, keep the category-specific trajectory program and its geometric checks in this Infinigen repository. The program consumes exported OBJ, face fields, metadata, and parametric description; it must not depend on the live generator or reconstruct parameters from the mesh. The existing Web review page loads a trajectory artifact for the same interface and seed so model and path can be inspected together. Interface review and trajectory review remain separate conclusions: `ready` certifies the generator interface, while trajectory visibility, robot reachability, and coating quality require their own evidence.
+
+The three original Spraybot programs for Chair, OpusChair, and CarBumper remain reference implementations and may be compared in the Web page. Spraybot continues to own downstream training and model code. This revises the earlier repository boundary that placed all trajectory rules and PaintDS writing in Spraybot.

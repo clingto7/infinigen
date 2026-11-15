@@ -8,7 +8,7 @@
 
 每个拟计入 80+ 的类别都须有明确、可调用的生成接口，能够用不同种子或参数快速批量生成同类实例。类内实例要有可观察的几何差异，同时保持该类别的结构判据；本机在每类产出时抽样验收，服务器只承担通过验收后的大规模实例生产。已有类别与新扩展类别采用同一标准。
 
-现有 Spraybot 的普通椅、OpusChair 和汽车保险杠经同一类别判据与交付标准复核后可计入 80+ 总数。一个随机生成函数若覆盖多种结构，应拆分结构型计数，函数本身不单独占类别名额。制造喷涂需求不明确的候选暂不计入，交由人工核查喷涂任务。本 fork 负责几何与生成侧结构信息；专家轨迹、训练转换和模型仍归 Spraybot，双方通过跨家族样例核验接口。
+现有 Spraybot 的普通椅、OpusChair 和汽车保险杠经同一类别判据与交付标准复核后可计入 80+ 总数。一个随机生成函数若覆盖多种结构，应拆分结构型计数，函数本身不单独占类别名额。制造喷涂需求不明确的候选暂不计入，交由人工核查喷涂任务。本 fork 负责工件生成、结构信息和新接口的专属轨迹程序；既有三类原生轨迹作为参考，训练转换和模型仍归 Spraybot，见 [ADR 0007](../adr/0007-colocate-interface-trajectory-programs.md)。
 
 候选的计数须结合实际可生成构型核查；电竞椅等例子不能仅凭名称计入。我先整理结构、材料与目标表面证据，争议项由用户或指定领域人员复核。各类本机验收不以机器人仿真或膜厚达标为必需条件；可做目标面可见性、喷枪空间等几何检查，完整机器人与喷涂质量验证留待轨迹及工位条件具备时进行，并标明尚未验证的指标。
 
@@ -86,10 +86,11 @@ The final batch adds `side_storage_desk` and `thin_drawer_desk`; the subsequent
 table unification completes all 36 categories in the adopted baseline. The thin-drawer family uses the fixed
 tabletop-plus-open-storage representative selected during review.
 
-The fork owns mesh generation and generation-side structure data: `spray_part`,
-`spray_target`, and optional category-specific priors. Spraybot owns trajectory
-rules, PaintDS output, and training-format conversion. The two repositories are
-connected through exported compatibility data rather than Python imports.
+The fork owns mesh generation, generation-side structure data (`spray_part`,
+`spray_target`, and optional priors), and new interface-specific trajectory
+programs with PaintDS output. Spraybot owns downstream training-format conversion.
+The three original Spraybot trajectory programs remain references. The repositories
+exchange exported data rather than importing each other's Python code (ADR 0007).
 
 ### Interface implementation method standard
 
