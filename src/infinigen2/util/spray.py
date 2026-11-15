@@ -264,16 +264,32 @@ def write_geometry_accessibility(
         )
     normal_lengths = np.linalg.norm(normals, axis=1)
     normals /= np.maximum(normal_lengths[:, None], 1e-12)
-    probes = centers + normals * (1.5 * pitch)
+    # A polygon center can sit directly under an intersecting component while
+    # its triangular regions remain exposed. Sample both the polygon center
+    # and each final triangle, then keep the best exterior access for the face.
+    triangle_vertices = vertices[triangles]
+    triangle_centers = triangle_vertices.mean(axis=1)
+    triangle_normals = np.cross(
+        triangle_vertices[:, 1] - triangle_vertices[:, 0],
+        triangle_vertices[:, 2] - triangle_vertices[:, 0],
+    )
+    triangle_normals /= np.maximum(np.linalg.norm(triangle_normals, axis=1)[:, None], 1e-12)
+    sample_centers = np.concatenate((centers, triangle_centers))
+    sample_normals = np.concatenate((normals, triangle_normals))
+    sample_owners = np.concatenate((
+        np.arange(len(mesh.polygons)),
+        np.asarray([triangle.polygon_index for triangle in mesh.loop_triangles]),
+    ))
+    probes = sample_centers + sample_normals * (1.5 * pitch)
     indices = np.floor((probes - origin) / pitch).astype(np.int64)
     indices = np.clip(indices, 0, np.asarray(shape) - 1)
     accessible = np.zeros(len(mesh.polygons), dtype=bool)
     passable = np.zeros(len(mesh.polygons), dtype=np.float32)
-    for face_index, (index, normal) in enumerate(zip(indices, normals)):
+    for face_index, index, normal in zip(sample_owners, indices, sample_normals):
         x, y, z = index
         if free[x, y, z] and capacity[x, y, z] > 0:
-            accessible[face_index] = exterior[x, y, z]
-            passable[face_index] = capacity[x, y, z]
+            accessible[face_index] |= exterior[x, y, z]
+            passable[face_index] = max(passable[face_index], capacity[x, y, z])
             continue
         best = None
         best_distance = np.inf
@@ -292,8 +308,8 @@ def write_geometry_accessibility(
                     if distance < best_distance:
                         best, best_distance = candidate, distance
         if best is not None:
-            accessible[face_index] = exterior[tuple(best)]
-            passable[face_index] = capacity[tuple(best)]
+            accessible[face_index] |= exterior[tuple(best)]
+            passable[face_index] = max(passable[face_index], capacity[tuple(best)])
 
     pf.ops.attr.write_attribute(
         obj, accessible, "geometry_accessible", domain="FACE", overwrite=True
