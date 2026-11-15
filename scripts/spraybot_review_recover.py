@@ -5,12 +5,14 @@ import json
 from pathlib import Path
 
 from spraybot_generator_ui_worker import payload_from_episode
+from spraybot_generator_ui_server import GENERATORS
 from spraybot_review_batch import existing_status
 from spraybot_review_root import load, save_episode
 
 
 def recover(root: Path, batches: list[Path], count: int) -> dict:
     restored = []
+    labels = {item['id']: item for item in GENERATORS}
     for batch in batches:
         check = json.loads((batch / 'machine-check.json').read_text())
         if (check['geometry_gate']['status'] != 'parametric_geometry_gate_passed'
@@ -34,7 +36,9 @@ def recover(root: Path, batches: list[Path], count: int) -> dict:
             payload = payload_from_episode(episodes[seed], generator, seed)
             if payload['parametric_description_status'] not in ('candidate', 'ready'):
                 raise ValueError(f'machine episode has no complete description: {episodes[seed]}')
-            payload.update(label=entry.get('label', generator), group=entry.get('group', 'Workpieces'))
+            registered = labels.get(generator, {})
+            payload.update(label=entry.get('label', registered.get('label', generator)),
+                           group=entry.get('group', registered.get('group', 'Workpieces')))
             save_episode(root, payload)
             restored.append({'generator': generator, 'seed': seed})
     return {'restored': restored, 'count': len(restored)}

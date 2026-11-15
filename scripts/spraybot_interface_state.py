@@ -145,7 +145,9 @@ def review_for_ui(generator: str, records: Path = RECORDS) -> dict:
     data = read_record(generator, records)
     review = data.get("human_review") or {"interface_id": generator, "status": "pending",
                                            "notes": "", "field_issues": [], "seed_issues": []}
-    return {**review, "interface_status": data["status"], "committed": committed(generator, records)}
+    return {**review, "interface_status": data["status"],
+            "review_history": data.get("review_history", []),
+            "committed": committed(generator, records)}
 
 
 def main() -> None:
