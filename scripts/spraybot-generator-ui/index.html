@@ -26,7 +26,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     // Selected layout A: configuration, interactive model, and face inspector side by side.
-    const state = {generators:[], generator:'', seed:0, field:'geometry_accessible', meshVisible:true, paramVisible:false, trajectoryVisible:true, trajectoryAllVisible:true, trajectory:null, trajectoryStroke:0, reference:null, referenceKey:'', referenceIndex:null, data:null, busy:false, status:'载入生成接口…', statusKind:'', selectedFace:null, reviewRoot:null, reviewIndex:null, reviewInterface:'', reviewEpisode:''};
+    const state = {generators:[], generator:'', seed:0, field:'geometry_accessible', meshVisible:true, paramVisible:false, trajectoryVisible:true, trajectoryAllVisible:false, trajectory:null, trajectoryStroke:0, reference:null, referenceKey:'', referenceIndex:null, data:null, busy:false, status:'载入生成接口…', statusKind:'', selectedFace:null, reviewRoot:null, reviewIndex:null, reviewInterface:'', reviewEpisode:''};
     let reviewLoadRequest=0;
     const app = document.querySelector('#app');
     const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
