@@ -209,7 +209,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         aim = surface - nozzle
         aim /= np.linalg.norm(aim, axis=1, keepdims=True)
         paths.append({"points": (nozzle / 1000).round(6).tolist(), "aims": aim.round(6).tolist()})
-        sources.append({"part": source.get("part", source.get("part_id", kind)),
+        sources.append({"part": source.get("part", str(source.get("reason", kind)).split("_")[0]),
                         "surface": source.get("reason", source.get("line", "source planner"))})
         paintds.append(SimpleNamespace(positions_mm=nozzle, aim=aim))
         surface_points.append(surface)
@@ -243,6 +243,8 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
              "target_centroid_within_threshold_fraction": float((target_gap <= 45).mean()),
              "target_centroid_gap_p95_mm": float(np.percentile(target_gap, 95)),
              "status": "trajectory_review_required"}
+    if kind == "armchair":
+        check["strategy"] = "armchair_native_chair_region_mapping_experimental"
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",
                   "blocked_stroke_ids": blocked, "missed_stroke_ids": missed,
                   "clear_strokes": len(paths) - len(blocked) - len(missed)}

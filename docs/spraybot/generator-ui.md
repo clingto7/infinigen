@@ -32,7 +32,7 @@ uv run python scripts/spraybot_generator_ui_server.py \
 若生成几何、参数曲面、目标面策略或导出契约发生影响产物的改动，先执行
 `python scripts/spraybot_interface_state.py invalidate <interface-id> '<原因>'` 并提交，再重跑该接口的机器门禁与人工审查。
 
-轨迹工作区按 `<trajectory-root>/<interface-id>/seed_0000000000.json` 放置与审查样本配对的轨迹视图数据。加载同一接口和 seed 后，打开“显示轨迹”才读取轨迹，并在模型上叠加、于右栏逐笔查看喷向及中点射线异常。所有工件共用这一入口；尚无配套轨迹时右栏会说明。接口专属轨迹程序位于本仓库 `scripts/spraybot_trajectory/`，规划要求见[轨迹生成流程](trajectory-generation.md)；轨迹结论独立于生成接口的 `ready`。
+轨迹工作区按 `<trajectory-root>/<interface-id>/seed_0000000000.json` 放置与审查样本配对的轨迹视图数据。轨迹包含当前 review root 的 `model.json` SHA-256；哈希不匹配时不会在样本选择器标记，也不能加载。接口栏显示有轨迹的 seed 数，seed 栏标出“有轨迹”。加载同一接口和 seed 后，打开“显示轨迹”才读取轨迹，并在模型上叠加、于右栏逐笔查看喷向及中点射线异常。所有工件共用这一入口；尚无配套轨迹时右栏会说明。接口专属轨迹程序位于本仓库 `scripts/spraybot_trajectory/`，规划要求见[轨迹生成流程](trajectory-generation.md)；轨迹结论独立于生成接口的 `ready`。
 
 本轮 radar 审查服务可通过笔记本 SSH 转发访问：
 
