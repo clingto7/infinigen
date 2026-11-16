@@ -251,6 +251,23 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     if kind == "armchair":
         check["strategy"] = "armchair_native_chair_region_mapping_experimental"
         check["repair"] = repair_metrics
+        from spraybot_trajectory.armchair_repair import clear_rays
+        invalid_strokes = []
+        for index, stroke in enumerate(source_strokes):
+            surface = np.asarray(stroke["surface_points"], dtype=float)
+            nozzle = np.asarray(stroke["nozzle_points"], dtype=float)
+            samples_surface = np.concatenate((surface, (surface[:-1] + surface[1:]) / 2))
+            samples_nozzle = np.concatenate((nozzle, (nozzle[:-1] + nozzle[1:]) / 2))
+            if not np.all(clear_rays(mesh, samples_surface, samples_nozzle)):
+                invalid_strokes.append(index)
+        check["path_ray_check"] = {"method": "all waypoints and segment midpoints",
+                                   "invalid_stroke_ids": invalid_strokes,
+                                   "sample_count": int(sum(2 * len(s["surface_points"]) - 1 for s in source_strokes))}
+        check["machine_gate"] = (
+            "passed" if not invalid_strokes and not blocked and not missed
+            and check["target_centroid_within_threshold_fraction"] >= 0.98
+            and max_gap <= 25 else "failed"
+        )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",
                   "blocked_stroke_ids": blocked, "missed_stroke_ids": missed,
                   "clear_strokes": len(paths) - len(blocked) - len(missed)}
