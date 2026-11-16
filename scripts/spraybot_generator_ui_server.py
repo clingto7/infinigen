@@ -31,6 +31,7 @@ from spraybot_review_root import (  # noqa: E402
     save_episode,
     save_review,
 )
+from spraybot_trajectory_review import read as read_trajectory_review, save as save_trajectory_review  # noqa: E402
 
 from infinigen2.workpieces import CATEGORY_IDS as WORKPIECE_IDS  # noqa: E402
 from infinigen2.objects.spraybot import CATEGORY_IDS as SPRAYBOT_IDS  # noqa: E402
@@ -94,6 +95,12 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, json.dumps(GENERATORS))
         elif path == "/api/review-root":
             self.respond(200, json.dumps(review_index_with_trajectories()))
+        elif path.startswith("/api/trajectory-review/"):
+            interface_id = unquote(path.removeprefix("/api/trajectory-review/"))
+            if interface_id not in ALLOWED:
+                self.respond(404, json.dumps({"error": "trajectory review not found"}))
+            else:
+                self.respond(200, json.dumps(read_trajectory_review(interface_id, REVIEW_ROOT, TRAJECTORY_ROOT)))
         elif path.startswith("/api/trajectory/") and TRAJECTORY_ROOT:
             parts = [unquote(part) for part in path.split("/")]
             if (len(parts) != 5 or parts[3] not in ALLOWED
@@ -116,12 +123,19 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, json.dumps({"error": "not found"}))
 
     def do_POST(self):
-        if self.path not in ("/api/generate", "/api/review"):
+        if self.path not in ("/api/generate", "/api/review", "/api/trajectory-review"):
             self.respond(404, json.dumps({"error": "not found"}))
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
             request = json.loads(self.rfile.read(size))
+            if self.path == "/api/trajectory-review":
+                if not REVIEW_ROOT or not TRAJECTORY_ROOT or request.get("interface_id") not in ALLOWED:
+                    raise ValueError("trajectory review requires configured roots and a known interface")
+                path = save_trajectory_review(request, REVIEW_ROOT, TRAJECTORY_ROOT)
+                self.respond(200, json.dumps({"saved": str(path), "review": read_trajectory_review(
+                    request["interface_id"], REVIEW_ROOT, TRAJECTORY_ROOT)}))
+                return
             if self.path == "/api/review":
                 if not REVIEW_ROOT:
                     raise ValueError("server has no --review-root; start it with SPRAYBOT_REVIEW_ROOT")
