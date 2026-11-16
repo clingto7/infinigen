@@ -93,7 +93,7 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
     normals = mesh.face_normals[ids]
     uncovered = cKDTree(surface_points).query(centers)[0] > 45
     ids, centers, normals = ids[uncovered], centers[uncovered], normals[uncovered]
-    nozzle = centers + normals * 60
+    nozzle = centers + normals * 100
     clear = clear_rays(mesh, centers, nozzle)
     unresolved = int((~clear).sum())
     ids, centers, normals, nozzle = ids[clear], centers[clear], normals[clear], nozzle[clear]
@@ -103,13 +103,9 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
             part_ids[surface["mesh_mapping"]["construction_triangle_ids"]] = index
     if np.any(part_ids[ids] < 0):
         raise ValueError("unmapped Armchair target triangles")
-    # Keep a sweep on one smoothly oriented surface region. A principal-axis
-    # bucket is too broad on curved parts and creates short clipped fragments.
-    orientation = np.rint(normals * 3).astype(int)
-    _, keys = np.unique(np.column_stack((part_ids[ids], orientation)), axis=0, return_inverse=True)
-    from datagen.chair_spray.chair_spray import _raster
+    axes = np.argmax(np.abs(normals), axis=1)
+    keys = part_ids[ids] * 6 + axes * 2 + (normals[np.arange(len(ids)), axes] < 0)
     extra = []
-    regions = 0
     for key in np.unique(keys):
         group = np.flatnonzero(keys == key)
         points = centers[group]
@@ -120,24 +116,43 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
         _, components = connected_components(graph, directed=False)
         for component in np.unique(components):
             members = group[components == component]
-            if len(members) < 4:
-                continue
-            points = centers[members]
-            _, _, basis = np.linalg.svd(points - points.mean(axis=0), full_matrices=False)
-            s = (points - points.mean(axis=0)) @ basis[1]
-            w = (points - points.mean(axis=0)) @ basis[0]
-            candidate = _raster(points, normals[members], s, w, 35, 60, reason="target_region")
-            if not candidate:
-                continue
-            regions += 1
-            surface = np.asarray(candidate[0]["surface_points"])
-            path = np.asarray(candidate[0]["nozzle_points"])
+            order = _order(centers[members])
+            selected = members[order]
+            surface = centers[selected]
+            path = nozzle[selected]
+            part = model["parametric"]["parts"][part_ids[ids[selected[0]]]]["semantic"]
+            if len(selected) == 1:
+                triangle = mesh.vertices[mesh.faces[ids[selected[0]]]]
+                tangent = triangle[1] - triangle[0]
+                surface = np.stack((surface[0] - tangent * 0.2, surface[0] + tangent * 0.2))
+                path = surface + normals[selected[0]] * 100
             valid = clear_rays(mesh, surface, path)
-            part = model["parametric"]["parts"][part_ids[ids[members[0]]]]["semantic"]
-            extra.extend(_split_runs(mesh, surface, path, valid, "target_region", part))
+            extra.extend(_split_runs(mesh, surface, path, valid, "target_patch", part))
     output = retained + extra
+    # The grouped sweep can leave isolated target triangles behind after
+    # clipping. Give each remaining accessible centroid a short local pass.
+    covered = np.vstack([s["surface_points"] for s in output])
+    remaining = np.flatnonzero(target)
+    remaining = remaining[cKDTree(covered).query(mesh.triangles_center[remaining])[0] > 45]
+    patches = 0
+    for face_id in remaining:
+        center = mesh.triangles_center[face_id]
+        normal = mesh.face_normals[face_id]
+        triangle = mesh.vertices[mesh.faces[face_id]]
+        tangent = triangle[1] - triangle[0]
+        tangent /= np.linalg.norm(tangent)
+        tangent *= min(3.0, np.linalg.norm(triangle[1] - triangle[0]) * 0.1)
+        surface = np.stack((center - tangent, center + tangent))
+        for standoff in (100.0, 150.0, 60.0):
+            nozzle = surface + normal * standoff
+            if np.all(clear_rays(mesh, surface, nozzle)) and clear_rays(
+                mesh, np.mean(surface, axis=0)[None], np.mean(nozzle, axis=0)[None]
+            )[0]:
+                output.append(_stroke(surface, nozzle, "target_patch_local", "target"))
+                patches += 1
+                break
     if not output:
         raise ValueError("Armchair repair produced no path")
     return output, {"source_strokes": len(source_strokes), "source_points_clipped": clipped_points,
                     "target_centers_initially_unreachable": unresolved,
-                    "region_count": regions, "repair_strokes": len(extra)}
+                    "repair_strokes": len(extra), "local_patch_strokes": patches}
