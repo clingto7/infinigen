@@ -130,7 +130,9 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     repair_metrics = None
     if kind == "armchair":
         from spraybot_trajectory.armchair import plan
-        source_strokes, repair_metrics = plan(model, mesh)
+        target_labels = np.asarray(model["spray_target"], dtype=bool) & np.asarray(
+            model["geometry_accessible"], dtype=bool)
+        source_strokes, repair_metrics = plan(model["parametric"], target_labels, mesh)
         offset_mm, source_path = np.zeros(3), Path(__file__).with_name("armchair.py")
     else:
         source_strokes, offset_mm, source_path = _source_strokes(kind, model, spraybot, chair_npz)
@@ -171,8 +173,9 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         for i in range(len(paths))])
     blocked = np.flatnonzero(first_hit < intended - 5).tolist()
     missed = np.flatnonzero(np.isnan(first_hit) | (first_hit > intended + 25)).tolist()
-    check = {"schema": "spraybot.paired-native-trajectory.v1", "interface_id": interface_id,
-             "seed": seed, "factory_seed": priors.get("factory_seed"),
+    check = {"schema": "spraybot.paired-trajectory.v1" if kind == "armchair" else
+             "spraybot.paired-native-trajectory.v1", "interface_id": interface_id,
+             "seed": seed, "factory_seed": priors.get("factory_seed") if isinstance(priors, dict) else None,
              "source_planner": str(source_path),
              "source_planner_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
              "stroke_count": len(paths), "waypoint_count": len(surface_points),
@@ -184,6 +187,16 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     if kind == "armchair":
         check["strategy"] = "armchair_parametric_part_planner"
         check["planner"] = repair_metrics
+        check["input_source"] = "parametric surfaces and spray target labels"
+        lengths = np.asarray([np.linalg.norm(np.diff(np.asarray(s["surface_points"]), axis=0),
+                                            axis=1).sum() for s in source_strokes])
+        short_strokes = np.flatnonzero(lengths < 20).tolist()
+        target_area = mesh.area_faces[target]
+        check["stroke_length_min_mm"] = float(lengths.min())
+        check["short_stroke_ids"] = short_strokes
+        check["target_area_within_threshold_fraction"] = float(
+            target_area[target_gap <= 45].sum() / target_area.sum())
+        check["max_strokes_for_review"] = 120
         from spraybot_trajectory.path_checks import clear_rays
         invalid_strokes = []
         for index, stroke in enumerate(source_strokes):
@@ -199,6 +212,8 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["machine_gate"] = (
             "passed" if not invalid_strokes and not blocked and not missed
             and check["target_centroid_within_threshold_fraction"] >= 0.98
+            and check["target_area_within_threshold_fraction"] >= 0.98
+            and not short_strokes and len(paths) <= 120
             and max_gap <= 25 else "failed"
         )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",

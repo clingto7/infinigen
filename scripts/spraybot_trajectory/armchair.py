@@ -101,14 +101,15 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
-def plan(model, mesh):
-    target = np.asarray(model['spray_target'], dtype=bool) & np.asarray(model['geometry_accessible'], dtype=bool)
+def plan(parametric, target, mesh):
+    """Plan from parametric geometry and target labels; mesh checks visibility."""
+    target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
-    all_corners = np.vstack([corners(surface) for part in model['parametric']['parts']
+    all_corners = np.vstack([corners(surface) for part in parametric['parts']
                              for surface in part['surfaces']]) * 1000
     object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
-    for part in model['parametric']['parts']:
+    for part in parametric['parts']:
         for component in surface_components(part):
             points, normals = samples(component, target)
             if len(points) < 2:
