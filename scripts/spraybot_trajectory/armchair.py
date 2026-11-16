@@ -75,7 +75,9 @@ def samples(surfaces, target):
 
 def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason, single_row=False):
     outward = direction / np.linalg.norm(direction)
-    facing = normals @ outward > 0.68
+    alignment = normals @ outward
+    reference_normal = normals[int(np.argmax(alignment))]
+    facing = (alignment > 0.5) & (normals @ reference_normal > 0.85)
     if facing.sum() < 2:
         return []
     surface, surface_normals = points[facing], normals[facing]
