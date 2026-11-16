@@ -16,6 +16,8 @@ import sys
 from types import SimpleNamespace
 
 import numpy as np
+from scipy.optimize import linear_sum_assignment
+from scipy.spatial import cKDTree
 import trimesh
 
 from spraybot_trajectory.paintds import write_paintds
@@ -28,12 +30,13 @@ def _chair_case(model: dict, chair_npz: Path) -> Path:
     """Recover the source Chair labels from this exact reviewed mesh and priors."""
     priors = model["structure_priors"]
     faces = np.asarray(model["triangles"], dtype=np.int32)
+    vertices = np.asarray(model["vertices"], dtype=float)
     tags = np.full(len(faces), -1, dtype=np.int32)
     types = np.full(len(faces), -1, dtype=np.int32)
     constructors = {"make_seat": 0, "make_legs": 1, "make_backs": 2,
                     "make_leg_decors": 3, "make_arms": 4, "make_back_decors": 5}
+    parts = []
     for part in model["parametric"]["parts"]:
-        tag = int(part["id"].removeprefix("instance_"))
         recipe = part.get("source_recipe", "")
         constructor = (recipe.get("constructor") if isinstance(recipe, dict)
                        else (match.group(1) if (match := re.search(r"'constructor': '([^']+)'", recipe)) else None))
@@ -41,14 +44,27 @@ def _chair_case(model: dict, chair_npz: Path) -> Path:
             raise ValueError(f"missing source constructor for {part['id']}")
         ids = np.unique([index for surface in part["surfaces"]
                          for index in surface["mesh_mapping"]["construction_triangle_ids"]])
-        if len(ids) == 0 or np.any(tags[ids] >= 0):
+        if len(ids) == 0:
+            raise ValueError(f"empty source part: {part['id']}")
+        parts.append((part, ids, constructor))
+    centerlines = {int(key): np.asarray(value, dtype=float)
+                   for key, value in priors["centerlines"].items()}
+    keys = list(centerlines)
+    trees = [cKDTree(vertices[np.unique(faces[ids])]) for _, ids, _ in parts]
+    costs = np.asarray([[np.median(tree.query(centerlines[key])[0]) for tree in trees]
+                        for key in keys])
+    rows, columns = linear_sum_assignment(costs)
+    if np.any(costs[rows, columns] > 0.05):
+        raise ValueError("source centerlines do not match reviewed Chair parts")
+    matched = {int(column): keys[row] for row, column in zip(rows, columns)}
+    for index, (part, ids, constructor) in enumerate(parts):
+        tag = matched.get(index, 10000 + index)
+        if np.any(tags[ids] >= 0):
             raise ValueError(f"overlapping or empty source part: {part['id']}")
         tags[ids] = tag
         types[ids] = constructors[constructor]
     if np.any(tags < 0):
         raise ValueError("source part mapping does not cover the reviewed Chair mesh")
-    centerlines = {int(key): np.asarray(value, dtype=float)
-                   for key, value in priors["centerlines"].items()}
     if not set(centerlines) <= set(tags):
         raise ValueError("centerlines refer to missing source parts")
     chair_npz.mkdir(parents=True, exist_ok=True)
