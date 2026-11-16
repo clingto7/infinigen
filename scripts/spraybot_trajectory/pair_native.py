@@ -10,9 +10,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
+import re
 import sys
 from types import SimpleNamespace
 
@@ -25,19 +24,48 @@ from spraybot_trajectory.paintds import write_paintds
 KINDS = ("infinigen_chair", "opus_chair", "car_bumper")
 
 
-def _source_strokes(kind: str, priors: dict, spraybot: Path, chair_npz: Path):
+def _chair_case(model: dict, chair_npz: Path) -> Path:
+    """Recover the source Chair labels from this exact reviewed mesh and priors."""
+    priors = model["structure_priors"]
+    faces = np.asarray(model["triangles"], dtype=np.int32)
+    tags = np.full(len(faces), -1, dtype=np.int32)
+    types = np.full(len(faces), -1, dtype=np.int32)
+    constructors = {"make_seat": 0, "make_legs": 1, "make_backs": 2,
+                    "make_leg_decors": 3, "make_arms": 4, "make_back_decors": 5}
+    for part in model["parametric"]["parts"]:
+        tag = int(part["id"].removeprefix("instance_"))
+        match = re.search(r"'constructor': '([^']+)'", part.get("source_recipe", ""))
+        if match is None or match.group(1) not in constructors:
+            raise ValueError(f"missing source constructor for {part['id']}")
+        ids = np.unique([index for surface in part["surfaces"]
+                         for index in surface["mesh_mapping"]["construction_triangle_ids"]])
+        if len(ids) == 0 or np.any(tags[ids] >= 0):
+            raise ValueError(f"overlapping or empty source part: {part['id']}")
+        tags[ids] = tag
+        types[ids] = constructors[match.group(1)]
+    if np.any(tags < 0):
+        raise ValueError("source part mapping does not cover the reviewed Chair mesh")
+    centerlines = {int(key): np.asarray(value, dtype=float)
+                   for key, value in priors["centerlines"].items()}
+    if not set(centerlines) <= set(tags):
+        raise ValueError("centerlines refer to missing source parts")
+    chair_npz.mkdir(parents=True, exist_ok=True)
+    source = chair_npz / f"PairedChair_{priors['factory_seed']}_{model['seed']}.npz"
+    np.savez_compressed(source, vertices=np.asarray(model["vertices"], dtype=np.float32),
+                        faces=faces, part_id=tags, part_type=types,
+                        centerlines=np.array(centerlines, dtype=object),
+                        back_meta=np.array({key: priors[key] for key in
+                                            ("back_type", "back_profile", "back_vertical_cuts", "back_height")},
+                                           dtype=object))
+    return source
+
+
+def _source_strokes(kind: str, model: dict, spraybot: Path, chair_npz: Path):
+    priors = model["structure_priors"]
     sys.path.insert(0, str(spraybot))
     if kind == "infinigen_chair":
         from datagen.chair_spray.chair_spray import generate_strokes
-        source = chair_npz / f"Chair_{priors['factory_seed']:03d}.npz"
-        if not source.is_file():
-            chair_npz.mkdir(parents=True, exist_ok=True)
-            environment = os.environ.copy()
-            environment["PYTHONPATH"] = str(Path(__file__).resolve().parents[2] / "src")
-            subprocess.run([sys.executable, str(spraybot / "datagen/chair_spray/gen_chairs.py"),
-                            "--n", "1", "--start", str(priors["factory_seed"]),
-                            "--out", str(chair_npz)], check=True,
-                           cwd=Path(__file__).resolve().parents[2], env=environment, timeout=300)
+        source = _chair_case(model, chair_npz)
         with np.load(source, allow_pickle=True) as data:
             source_vertices = np.asarray(data["vertices"])
         center_mm = (source_vertices.min(axis=0) + source_vertices.max(axis=0)) * 500
@@ -64,7 +92,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     priors = model["structure_priors"]
     if not priors or "factory_seed" not in priors:
         raise ValueError(f"missing source factory priors: {model_file}")
-    source_strokes, offset_mm, source_path = _source_strokes(kind, priors, spraybot, chair_npz)
+    source_strokes, offset_mm, source_path = _source_strokes(kind, model, spraybot, chair_npz)
     if not source_strokes:
         raise ValueError(f"source planner returned no strokes: {interface_id} {episode}")
     mesh = trimesh.Trimesh(vertices=np.asarray(model["vertices"]) * 1000,
