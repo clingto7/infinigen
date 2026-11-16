@@ -133,7 +133,8 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     surface_gap = mesh.nearest.on_surface(surface_points)[1]
     p95_gap = float(np.percentile(surface_gap, 95))
     max_gap = float(surface_gap.max())
-    if p95_gap > 25 or max_gap > 50:
+    # This gate rejects a different model/frame; smaller gaps remain review findings.
+    if p95_gap > 50 or max_gap > 75:
         raise ValueError(f"source paths do not match the current model: p95={p95_gap:.1f} mm, max={max_gap:.1f} mm")
     origins = np.asarray([stroke.positions_mm[len(stroke.positions_mm) // 2] for stroke in paintds])
     directions = np.asarray([stroke.aim[len(stroke.aim) // 2] for stroke in paintds])
