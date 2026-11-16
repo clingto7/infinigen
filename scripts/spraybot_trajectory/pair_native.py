@@ -199,6 +199,10 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         raise ValueError(f"source planner returned no strokes: {interface_id} {episode}")
     mesh = trimesh.Trimesh(vertices=np.asarray(model["vertices"]) * 1000,
                            faces=np.asarray(model["triangles"]), process=False)
+    repair_metrics = None
+    if kind == "armchair":
+        from spraybot_trajectory.armchair_repair import repair
+        source_strokes, repair_metrics = repair(model, mesh, source_strokes)
     paths, sources, paintds = [], [], []
     surface_points = []
     for source in source_strokes:
@@ -246,6 +250,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
              "status": "trajectory_review_required"}
     if kind == "armchair":
         check["strategy"] = "armchair_native_chair_region_mapping_experimental"
+        check["repair"] = repair_metrics
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",
                   "blocked_stroke_ids": blocked, "missed_stroke_ids": missed,
                   "clear_strokes": len(paths) - len(blocked) - len(missed)}
