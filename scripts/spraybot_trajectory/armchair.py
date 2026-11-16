@@ -142,10 +142,6 @@ def plan(parametric, target, mesh):
                     inward = min(directions, key=lambda item: float(
                         axes[item[0]] @ outward * item[1]))
                     directions.remove(inward)
-                elif semantic == 'arm':
-                    underside = min(directions, key=lambda item: float(
-                        axes[item[0], 2] * item[1]))
-                    directions.remove(underside)
                 for axis, sign in directions:
                     strokes.extend(sweep(mesh, points, normals, center, axes,
                                           axes[axis]*sign, 2 if axis==1 else 1,
