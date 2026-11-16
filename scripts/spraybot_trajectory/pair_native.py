@@ -93,7 +93,22 @@ def _source_strokes(kind: str, model: dict, spraybot: Path, chair_npz: Path):
         return strokes, center_mm, spraybot / "datagen/chair_spray/chair_spray.py"
     if kind == "opus_chair":
         from datagen.opuschair.opus_spray import generate_strokes
-        return generate_strokes(priors), np.zeros(3), spraybot / "datagen/opuschair/opus_spray.py"
+        record = json.loads(json.dumps(priors))
+        square = record["seat"]["shape"] == "square"
+        if square:
+            # The source factory scales a unit cube by r, making its half-width r/2;
+            # the source planner treats r as the half-width. Match the saved model.
+            record["seat"]["r"] *= 0.5
+        strokes = generate_strokes(record)
+        if square:
+            top_shift = priors["seat"]["t"] * 250  # source cube top = -t/4, mm
+            for stroke in strokes:
+                if stroke["reason"] == "seat_top":
+                    for key in ("surface_points", "nozzle_points"):
+                        points = np.asarray(stroke[key], dtype=float)
+                        points[:, 2] -= top_shift
+                        stroke[key] = points.tolist()
+        return strokes, np.zeros(3), spraybot / "datagen/opuschair/opus_spray.py"
     from datagen.carbumper.bumper_spray import generate_strokes
     return generate_strokes(priors), np.zeros(3), spraybot / "datagen/carbumper/bumper_spray.py"
 
