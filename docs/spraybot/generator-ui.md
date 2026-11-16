@@ -34,6 +34,18 @@ uv run python scripts/spraybot_generator_ui_server.py \
 
 轨迹工作区按 `<trajectory-root>/<interface-id>/seed_0000000000.json` 放置与审查样本配对的轨迹视图数据。轨迹包含当前 review root 的 `model.json` SHA-256；哈希不匹配时不会在样本选择器标记，也不能加载。接口栏显示有轨迹的 seed 数，seed 栏标出“有轨迹”。加载同一接口和 seed 后，打开“显示轨迹”才读取轨迹，并在模型上叠加、于右栏逐笔查看喷向及中点射线异常。所有工件共用这一入口；尚无配套轨迹时右栏会说明。接口专属轨迹程序位于本仓库 `scripts/spraybot_trajectory/`，规划要求见[轨迹生成流程](trajectory-generation.md)；轨迹结论独立于生成接口的 `ready`。
 
+现有三类原生程序及 Armchair 分区试验的配对命令如下；`--chair-npz` 是 Chair 原生规划器所需的临时适配数据缓存：
+
+```bash
+PYTHONPATH=scripts .venv/bin/python scripts/spraybot_trajectory/pair_native.py \
+  --review-root <review-root> --trajectory-root <trajectory-root> \
+  --spraybot <Spraybot-repo> --chair-npz <scratch-chair-npz> \
+  --kinds infinigen_chair opus_chair car_bumper armchair \
+  --seeds 0 1 2 3 4 5 6 7 8 9
+```
+
+该程序调用三类 SprayBot 原生规划函数，并把 Armchair 已记录的部件映射给 Chair 的分区规则。每个输出记录原生规划文件的 SHA-256、模型哈希、笔画来源与几何检查；所有轨迹仍需人工审查。
+
 本轮 radar 审查服务可通过笔记本 SSH 转发访问：
 
 ```bash
