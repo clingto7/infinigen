@@ -23,7 +23,7 @@ import trimesh
 from spraybot_trajectory.paintds import write_paintds
 
 
-KINDS = ("infinigen_chair", "opus_chair", "car_bumper")
+KINDS = ("infinigen_chair", "opus_chair", "car_bumper", "armchair")
 
 
 def _chair_case(model: dict, chair_npz: Path) -> Path:
@@ -81,6 +81,8 @@ def _chair_case(model: dict, chair_npz: Path) -> Path:
 def _source_strokes(kind: str, model: dict, spraybot: Path, chair_npz: Path):
     priors = model["structure_priors"]
     sys.path.insert(0, str(spraybot))
+    if kind == "armchair":
+        return _armchair_strokes(model, spraybot)
     if kind == "infinigen_chair":
         from datagen.chair_spray.chair_spray import generate_strokes
         source = _chair_case(model, chair_npz)
@@ -96,6 +98,73 @@ def _source_strokes(kind: str, model: dict, spraybot: Path, chair_npz: Path):
     return generate_strokes(priors), np.zeros(3), spraybot / "datagen/carbumper/bumper_spray.py"
 
 
+def _armchair_strokes(model: dict, spraybot: Path):
+    """Map Armchair's generated parts to the source Chair's region planners."""
+    from datagen.chair_spray.chair_spray import (
+        generate_seat_serpentine, generate_back_strokes, generate_edge_strokes,
+        generate_arm_strokes, generate_leg_strokes, shrink_nozzles,
+    )
+
+    vertices = np.asarray(model["vertices"], dtype=float) * 1000
+    faces = np.asarray(model["triangles"], dtype=int)
+    types = np.full(len(faces), -1, dtype=int)
+    tags = np.full(len(faces), -1, dtype=int)
+    centerlines = {}
+    semantic_codes = {"seat": 0, "leg_base": 1, "back": 5, "arm": 4}
+    for index, part in enumerate(model["parametric"]["parts"]):
+        ids = np.unique([i for surface in part["surfaces"]
+                         for i in surface["mesh_mapping"]["construction_triangle_ids"]])
+        if not len(ids) or np.any(tags[ids] >= 0):
+            raise ValueError(f"invalid Armchair part mapping: {part['id']}")
+        tags[ids] = index + 1
+        types[ids] = semantic_codes[part["semantic"]]
+        if part["semantic"] == "arm":
+            points = vertices[np.unique(faces[ids])]
+            low, high = points.min(axis=0), points.max(axis=0)
+            axis = int(np.argmax(high - low))
+            start, end = (low + high) * 0.5, (low + high) * 0.5
+            start[axis], end[axis] = low[axis], high[axis]
+            centerlines[index + 1] = np.stack((start, end))
+    if np.any(tags < 0):
+        raise ValueError("Armchair parts do not cover the reviewed model")
+    leg_ids = np.flatnonzero(types == 1)
+    leg_vertices = vertices[np.unique(faces[leg_ids])]
+    mid = np.median(leg_vertices[:, :2], axis=0)
+    centers = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            region = leg_vertices[((leg_vertices[:, 0] - mid[0]) * sx > 0)
+                                  & ((leg_vertices[:, 1] - mid[1]) * sy > 0)]
+            low_z, high_z = np.percentile(region[:, 2], [2, 98])
+            low = region[region[:, 2] <= low_z + 25].mean(axis=0)
+            high = region[region[:, 2] >= high_z - 25].mean(axis=0)
+            centerlines[100 + len(centers)] = np.stack((low, high))
+            centers.append((sx, sy, low, high))
+    tri_centers = vertices[faces[leg_ids]].mean(axis=1)
+    midpoints = np.asarray([(low + high) * 0.5 for _, _, low, high in centers])
+    nearest = cKDTree(midpoints[:, :2]).query(tri_centers[:, :2])[1]
+    tags[leg_ids] = 100 + nearest
+    tess = SimpleNamespace(placed=SimpleNamespace(vertices=vertices, faces=faces), cad_face_tags=tags)
+    seat = generate_seat_serpentine(tess, types)
+    back = generate_back_strokes(tess, types, {"back_type": "whole"})
+    edges = generate_edge_strokes(tess, types)
+    arms = generate_arm_strokes(tess, centerlines, types)
+    legs = generate_leg_strokes(tess, centerlines, types)
+    shrink_nozzles(seat, 0.72)
+    shrink_nozzles([stroke for stroke in back if not stroke["reason"].endswith("_rear")], 0.72)
+    shrink_nozzles([stroke for stroke in back if stroke["reason"].endswith("_rear")], 0.72)
+    # The original Chair program keeps each arm's upper passes together.
+    arm_groups = {}
+    for stroke in arms:
+        arm_groups.setdefault(stroke["part_id"], []).append(stroke)
+    for group in arm_groups.values():
+        shrink_nozzles(group, 0.72)
+    strokes = seat + back + edges + arms + legs
+    for index, stroke in enumerate(strokes):
+        stroke["stroke_id"] = index
+    return strokes, np.zeros(3), spraybot / "datagen/chair_spray/chair_spray.py"
+
+
 def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
          chair_npz: Path, kind: str, seed: int) -> dict:
     if kind not in KINDS:
@@ -108,7 +177,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     if model["generator"] != interface_id or model["seed"] != seed:
         raise ValueError(f"review episode identity mismatch: {model_file}")
     priors = model["structure_priors"]
-    if not priors or "factory_seed" not in priors:
+    if not priors or (kind != "armchair" and "factory_seed" not in priors):
         raise ValueError(f"missing source factory priors: {model_file}")
     source_strokes, offset_mm, source_path = _source_strokes(kind, model, spraybot, chair_npz)
     if not source_strokes:
@@ -148,7 +217,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     blocked = np.flatnonzero(first_hit < intended - 5).tolist()
     missed = np.flatnonzero(np.isnan(first_hit) | (first_hit > intended + 25)).tolist()
     check = {"schema": "spraybot.paired-native-trajectory.v1", "interface_id": interface_id,
-             "seed": seed, "factory_seed": priors["factory_seed"],
+             "seed": seed, "factory_seed": priors.get("factory_seed"),
              "source_planner": str(source_path),
              "stroke_count": len(paths), "waypoint_count": len(surface_points),
              "model_surface_gap_p95_mm": round(p95_gap, 3), "model_surface_gap_max_mm": round(max_gap, 3),
