@@ -60,17 +60,23 @@ def read(interface_id: str, review_root: Path | None, trajectory_root: Path | No
     fresh = bool(current and current == data.get("evidence"))
     git_status = subprocess.run(["git", "status", "--porcelain", "--", str(path)],
                                 cwd=PROJECT, capture_output=True, text=True, check=True).stdout
-    return {**data, "machine_gate": "passed" if current else "failed",
+    return {**data, "status": "pending" if data["status"] == "accepted" and not fresh else data["status"],
+            "machine_gate": "passed" if current else "failed",
             "machine_gate_error": gate_error, "evidence_current": fresh,
             "committed": path.exists() and not git_status.strip()}
 
 
 def save(request: dict, review_root: Path, trajectory_root: Path) -> Path:
     interface_id = request["interface_id"]
-    current = artifact_evidence(interface_id, review_root, trajectory_root)
     status = request["status"]
     if status not in {"pending", "accepted", "needs_fix"}:
         raise ValueError("unknown trajectory review status")
+    try:
+        current = artifact_evidence(interface_id, review_root, trajectory_root)
+    except ValueError:
+        if status == "accepted":
+            raise
+        current = []
     reviewer = str(request.get("reviewer", "")).strip()
     if not reviewer:
         raise ValueError("reviewer is required")
