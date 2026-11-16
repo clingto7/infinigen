@@ -1,0 +1,82 @@
+{
+  "schema": "spraybot.trajectory-review.v1",
+  "interface_id": "workpiece:armchair",
+  "status": "needs_fix",
+  "reviewer": "hqb",
+  "notes": "笔画太多了，且有很多不明意义的极小的笔画存在，感觉完全没有按照要求来生成轨迹",
+  "seed_issues": [],
+  "evidence": [
+    {
+      "seed": 0,
+      "trajectory_sha256": "d729ece049a6cb0f24273d7fb059c7f4b0f593b6afad74f3f9409e6ee2f5f6eb",
+      "model_sha256": "90fd6ab54ea978e60009c1fa40bcf705694d8daab2d40495174cc74cdbd7b747",
+      "coverage_fraction": 0.9953632148377125,
+      "ray_samples": 1432
+    },
+    {
+      "seed": 1,
+      "trajectory_sha256": "e9c2f6e271f9f4ab4ba2ffd3ff22daf6dafb5511a52f0c05bc41c831c19dcd4b",
+      "model_sha256": "b8d4d50e9249db8df0d918c9853d47976792c846db4db422f6b6e7b23e6df97b",
+      "coverage_fraction": 1.0,
+      "ray_samples": 1184
+    },
+    {
+      "seed": 2,
+      "trajectory_sha256": "66759f6d45e078133a8324394a4b0e64e3c178dc96d8a9bfa78f69af0f57d2a9",
+      "model_sha256": "f0c6ba6028fd3767169115c0affb6e68ea9133c58c7ce3d77d48f007ef97cdba",
+      "coverage_fraction": 1.0,
+      "ray_samples": 1396
+    },
+    {
+      "seed": 3,
+      "trajectory_sha256": "490ce5715884a2fdd0945f282da2e234096b135b2e27197cf8d0a600bfcf69f8",
+      "model_sha256": "c6c32b973eee01b57f3bd9de33b54eb84788e94f52e5f6917102b3095b73e339",
+      "coverage_fraction": 0.9984886649874055,
+      "ray_samples": 2198
+    },
+    {
+      "seed": 4,
+      "trajectory_sha256": "9d1b403621cbd3da2a50e05430f766f3261b51d65c69957070f4c2478d046c38",
+      "model_sha256": "bfe48b9b32e82a9591eafb45be48f6be19901e551cb6d9e5c155016317fd5e15",
+      "coverage_fraction": 1.0,
+      "ray_samples": 1410
+    },
+    {
+      "seed": 5,
+      "trajectory_sha256": "5161a390ab219c5e69d91b4ac1966c21b6c04ec7913212b5e62b82225533cd31",
+      "model_sha256": "d0cc20999ed6599d725ad52b881955adbf8fc138aa78cb474c236c164aec31de",
+      "coverage_fraction": 1.0,
+      "ray_samples": 1746
+    },
+    {
+      "seed": 6,
+      "trajectory_sha256": "f7e93a61028522dafd53c4b7586cae3e1fe2bd27980876b4ef7851369be61025",
+      "model_sha256": "1d6da4798e12e28a64a3fe967f30cee67fb2287e1cbd760a61e23a57ffd8fb46",
+      "coverage_fraction": 1.0,
+      "ray_samples": 1416
+    },
+    {
+      "seed": 7,
+      "trajectory_sha256": "8c637b3d8b772815e460018fc74a8c5918f2baa2506532c7079219e569eaa0be",
+      "model_sha256": "2f6f67826bab67612d747021b1cf932a6f486eadcdc96d3849667e61ae26aa20",
+      "coverage_fraction": 1.0,
+      "ray_samples": 3828
+    },
+    {
+      "seed": 8,
+      "trajectory_sha256": "07b16904c26769fbb0008f071853f22c12f01e86bb15540bbaf55b71c9c93424",
+      "model_sha256": "5750abbe03226658a9f644fdd6dca6b7abead07dc9661e270714c7b187e05d4c",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2031
+    },
+    {
+      "seed": 9,
+      "trajectory_sha256": "8d6e2526e26daee281aaa4dead85661fdd7b4f763d14361994bd43f64f7465da",
+      "model_sha256": "16e92cf80410412b6dd9aa058be63669f269bfeff1297327184a8183ae0e54b1",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2310
+    }
+  ],
+  "history": [],
+  "reviewed_at": "2026-11-16T10:35:20.702706+00:00"
+}
