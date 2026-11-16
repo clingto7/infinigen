@@ -6,6 +6,7 @@ Run from the repository root with:
 
 import json
 import gzip
+import hashlib
 import os
 import subprocess
 import sys
@@ -44,6 +45,25 @@ REVIEW_ROOT = Path(os.environ["SPRAYBOT_REVIEW_ROOT"]).resolve() if os.environ.g
 TRAJECTORY_ROOT = Path(os.environ["SPRAYBOT_TRAJECTORY_ROOT"]).resolve() if os.environ.get("SPRAYBOT_TRAJECTORY_ROOT") else None
 
 
+def paired_trajectory(interface_id: str, episode: str) -> Path | None:
+    if not REVIEW_ROOT or not TRAJECTORY_ROOT or interface_id not in ALLOWED:
+        return None
+    model = REVIEW_ROOT / "interfaces" / interface_id / "episodes" / episode / "model.json"
+    artifact = TRAJECTORY_ROOT / interface_id / f"{episode}.json"
+    if not model.is_file() or not artifact.is_file():
+        return None
+    data = json.loads(artifact.read_text())
+    return artifact if data.get("model_sha256") == hashlib.sha256(model.read_bytes()).hexdigest() else None
+
+
+def review_index_with_trajectories() -> dict:
+    result = review_index(REVIEW_ROOT) if REVIEW_ROOT else {"root": None, "interfaces": []}
+    for item in result["interfaces"]:
+        item["trajectory_episodes"] = [episode for episode in item["episodes"]
+                                        if paired_trajectory(item["id"], episode)]
+    return result
+
+
 class Handler(BaseHTTPRequestHandler):
     def respond(self, status, body, content_type="application/json; charset=utf-8"):
         encoded = body if isinstance(body, bytes) else body.encode("utf-8")
@@ -73,7 +93,7 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/generators":
             self.respond(200, json.dumps(GENERATORS))
         elif path == "/api/review-root":
-            self.respond(200, json.dumps(review_index(REVIEW_ROOT) if REVIEW_ROOT else {"root": None, "interfaces": []}))
+            self.respond(200, json.dumps(review_index_with_trajectories()))
         elif path.startswith("/api/trajectory/") and TRAJECTORY_ROOT:
             parts = [unquote(part) for part in path.split("/")]
             if (len(parts) != 5 or parts[3] not in ALLOWED
@@ -81,9 +101,9 @@ class Handler(BaseHTTPRequestHandler):
                     or not parts[4][5:].isdigit()):
                 self.respond(404, json.dumps({"error": "trajectory artifact not found"}))
             else:
-                artifact = TRAJECTORY_ROOT / parts[3] / f"{parts[4]}.json"
-                self.respond(200, artifact.read_bytes()) if artifact.is_file() else self.respond(
-                    404, json.dumps({"error": "trajectory artifact not found"}))
+                artifact = paired_trajectory(parts[3], parts[4])
+                self.respond(200, artifact.read_bytes()) if artifact else self.respond(
+                    404, json.dumps({"error": "paired trajectory artifact not found"}))
         elif path.startswith("/api/review/") and REVIEW_ROOT:
             parts = [unquote(part) for part in path.split("/")]
             if len(parts) == 5 and parts[4] == "review":

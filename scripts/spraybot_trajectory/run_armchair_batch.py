@@ -11,7 +11,7 @@ from spraybot_trajectory.check_visibility import evaluate
 from spraybot_trajectory.prepare_viewer import package
 
 
-def run(batch: Path, review_record: Path, output: Path, count: int = 10) -> dict:
+def run(batch: Path, review_record: Path, review_root: Path, output: Path, count: int = 10) -> dict:
     if output.exists():
         raise FileExistsError(f"output must be new: {output}")
     episodes = {}
@@ -30,7 +30,7 @@ def run(batch: Path, review_record: Path, output: Path, count: int = 10) -> dict
         checks.append(evaluate(directory))
     result = {"schema": "spraybot.parametric-armchair-batch.v1", "episodes": checks}
     (output / "batch-check.json").write_text(json.dumps(result, indent=2) + "\n")
-    package(output)
+    package(output, review_root)
     return result
 
 
@@ -39,11 +39,12 @@ if __name__ == "__main__":
     parser.add_argument("machine_batch", type=Path)
     parser.add_argument("review_record", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--review-root", type=Path, required=True)
     parser.add_argument("--count", type=int, default=10)
     args = parser.parse_args()
     if args.count < 1:
         parser.error("count must be positive")
-    result = run(args.machine_batch, args.review_record, args.output, args.count)
+    result = run(args.machine_batch, args.review_record, args.review_root, args.output, args.count)
     print(json.dumps({"episodes": len(result["episodes"]),
                       "strokes": sum(x["stroke_count"] for x in result["episodes"]),
                       "waypoints": sum(x["waypoint_count"] for x in result["episodes"])}))
