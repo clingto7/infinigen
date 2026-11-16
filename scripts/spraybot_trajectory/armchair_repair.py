@@ -129,7 +129,30 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
             valid = clear_rays(mesh, surface, path)
             extra.extend(_split_runs(mesh, surface, path, valid, "target_patch", part))
     output = retained + extra
+    # The grouped sweep can leave isolated target triangles behind after
+    # clipping. Give each remaining accessible centroid a short local pass.
+    covered = np.vstack([s["surface_points"] for s in output])
+    remaining = np.flatnonzero(target)
+    remaining = remaining[cKDTree(covered).query(mesh.triangles_center[remaining])[0] > 45]
+    patches = 0
+    for face_id in remaining:
+        center = mesh.triangles_center[face_id]
+        normal = mesh.face_normals[face_id]
+        triangle = mesh.vertices[mesh.faces[face_id]]
+        tangent = triangle[1] - triangle[0]
+        tangent /= np.linalg.norm(tangent)
+        tangent *= min(3.0, np.linalg.norm(triangle[1] - triangle[0]) * 0.1)
+        surface = np.stack((center - tangent, center + tangent))
+        for standoff in (100.0, 150.0, 60.0):
+            nozzle = surface + normal * standoff
+            if np.all(clear_rays(mesh, surface, nozzle)) and clear_rays(
+                mesh, np.mean(surface, axis=0)[None], np.mean(nozzle, axis=0)[None]
+            )[0]:
+                output.append(_stroke(surface, nozzle, "target_patch_local", "target"))
+                patches += 1
+                break
     if not output:
         raise ValueError("Armchair repair produced no path")
     return output, {"source_strokes": len(source_strokes), "source_points_clipped": clipped_points,
-                    "target_centers_unresolved": unresolved, "repair_strokes": len(extra)}
+                    "target_centers_initially_unreachable": unresolved,
+                    "repair_strokes": len(extra), "local_patch_strokes": patches}
