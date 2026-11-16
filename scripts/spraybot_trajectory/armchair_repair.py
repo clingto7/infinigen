@@ -103,8 +103,10 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
             part_ids[surface["mesh_mapping"]["construction_triangle_ids"]] = index
     if np.any(part_ids[ids] < 0):
         raise ValueError("unmapped Armchair target triangles")
-    axes = np.argmax(np.abs(normals), axis=1)
-    keys = part_ids[ids] * 6 + axes * 2 + (normals[np.arange(len(ids)), axes] < 0)
+    # Keep a sweep on one smoothly oriented surface region. A principal-axis
+    bucket is too broad on curved parts and creates short clipped fragments.
+    orientation = np.rint(normals * 3).astype(int)
+    _, keys = np.unique(np.column_stack((part_ids[ids], orientation)), axis=0, return_inverse=True)
     from datagen.chair_spray.chair_spray import _raster
     extra = []
     regions = 0
