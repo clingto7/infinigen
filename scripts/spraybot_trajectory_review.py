@@ -90,6 +90,8 @@ def save(request: dict, review_root: Path, trajectory_root: Path) -> Path:
     if status == "accepted" and issues:
         raise ValueError("clear unresolved seed issues before accepting")
     old = read(interface_id, review_root, trajectory_root)
+    if status == "accepted" and old["status"] == "needs_fix" and old.get("evidence") == current:
+        raise ValueError("needs_fix requires a revised trajectory before acceptance")
     history = old.get("history", [])
     if old.get("reviewed_at"):
         history = [*history, {key: old.get(key) for key in
