@@ -34,15 +34,17 @@ def _chair_case(model: dict, chair_npz: Path) -> Path:
                     "make_leg_decors": 3, "make_arms": 4, "make_back_decors": 5}
     for part in model["parametric"]["parts"]:
         tag = int(part["id"].removeprefix("instance_"))
-        match = re.search(r"'constructor': '([^']+)'", part.get("source_recipe", ""))
-        if match is None or match.group(1) not in constructors:
+        recipe = part.get("source_recipe", "")
+        constructor = (recipe.get("constructor") if isinstance(recipe, dict)
+                       else (match.group(1) if (match := re.search(r"'constructor': '([^']+)'", recipe)) else None))
+        if constructor not in constructors:
             raise ValueError(f"missing source constructor for {part['id']}")
         ids = np.unique([index for surface in part["surfaces"]
                          for index in surface["mesh_mapping"]["construction_triangle_ids"]])
         if len(ids) == 0 or np.any(tags[ids] >= 0):
             raise ValueError(f"overlapping or empty source part: {part['id']}")
         tags[ids] = tag
-        types[ids] = constructors[match.group(1)]
+        types[ids] = constructors[constructor]
     if np.any(tags < 0):
         raise ValueError("source part mapping does not cover the reviewed Chair mesh")
     centerlines = {int(key): np.asarray(value, dtype=float)
