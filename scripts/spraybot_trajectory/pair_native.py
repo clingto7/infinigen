@@ -1,4 +1,4 @@
-"""Pair the three established SprayBot planners with Infinigen review episodes.
+"""Pair SprayBot reference planners and a dedicated Armchair planner with review episodes.
 
 The original planners remain in SprayBot. This adapter uses the factory priors
 saved with each Infinigen interface seed, validates the path against that exact
@@ -190,9 +190,15 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["input_source"] = "parametric surfaces and spray target labels"
         lengths = np.asarray([np.linalg.norm(np.diff(np.asarray(s["surface_points"]), axis=0),
                                             axis=1).sum() for s in source_strokes])
+        member_ratios = [float(length / max(1.0, np.linalg.norm(
+            np.asarray(source_strokes[index]["surface_points"])[-1]
+            - np.asarray(source_strokes[index]["surface_points"])[0])))
+            for index, length in enumerate(lengths)
+            if source_strokes[index]["reason"].endswith("_length")]
         short_strokes = np.flatnonzero(lengths < 20).tolist()
         target_area = mesh.area_faces[target]
         check["stroke_length_min_mm"] = float(lengths.min())
+        check["member_path_max_length_to_chord_ratio"] = max(member_ratios)
         check["short_stroke_ids"] = short_strokes
         check["target_area_within_threshold_fraction"] = float(
             target_area[target_gap <= 45].sum() / target_area.sum())
@@ -214,6 +220,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
             and check["target_centroid_within_threshold_fraction"] >= 0.98
             and check["target_area_within_threshold_fraction"] >= 0.98
             and not short_strokes and len(paths) <= 120
+            and check["member_path_max_length_to_chord_ratio"] <= 1.15
             and max_gap <= 25 else "failed"
         )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",
