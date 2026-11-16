@@ -91,8 +91,15 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     selected = []
     for row, u in enumerate(rows):
         for v in (columns[::-1] if row % 2 else columns):
-            distance, index = tree.query([u, v])
-            if distance <= 25 and (not selected or selected[-1] != index):
+            candidates = tree.query_ball_point([u, v], 25)
+            if not candidates:
+                continue
+            if single_row:
+                index = max(candidates, key=lambda i: float(
+                    surface[i] @ outward - 0.25*np.linalg.norm(plane[i]-[u,v])))
+            else:
+                index = min(candidates, key=lambda i: float(np.linalg.norm(plane[i]-[u,v])))
+            if not selected or selected[-1] != index:
                 selected.append(int(index))
     if len(selected) < 2:
         return []
