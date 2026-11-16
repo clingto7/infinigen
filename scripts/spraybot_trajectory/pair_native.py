@@ -205,6 +205,9 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
     # This gate rejects a different model/frame; smaller gaps remain review findings.
     if p95_gap > 50 or max_gap > 75:
         raise ValueError(f"source paths do not match the current model: p95={p95_gap:.1f} mm, max={max_gap:.1f} mm")
+    target = np.asarray(model["spray_target"], dtype=bool) & np.asarray(model["geometry_accessible"], dtype=bool)
+    centroids = np.asarray(model["vertices"])[np.asarray(model["triangles"])[target]].mean(axis=1) * 1000
+    target_gap = cKDTree(surface_points).query(centroids)[0]
     origins = np.asarray([stroke.positions_mm[len(stroke.positions_mm) // 2] for stroke in paintds])
     directions = np.asarray([stroke.aim[len(stroke.aim) // 2] for stroke in paintds])
     hits, ray_ids, _ = mesh.ray.intersects_location(origins, directions, multiple_hits=False)
@@ -221,6 +224,9 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
              "source_planner": str(source_path),
              "stroke_count": len(paths), "waypoint_count": len(surface_points),
              "model_surface_gap_p95_mm": round(p95_gap, 3), "model_surface_gap_max_mm": round(max_gap, 3),
+             "coverage_threshold_mm": 45.0,
+             "target_centroid_within_threshold_fraction": float((target_gap <= 45).mean()),
+             "target_centroid_gap_p95_mm": float(np.percentile(target_gap, 95)),
              "status": "trajectory_review_required"}
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",
                   "blocked_stroke_ids": blocked, "missed_stroke_ids": missed,
