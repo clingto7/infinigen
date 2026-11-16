@@ -77,10 +77,14 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     outward = direction / np.linalg.norm(direction)
     alignment = normals @ outward
     reference_normal = normals[int(np.argmax(alignment))]
-    facing = (alignment > 0.5) & (normals @ reference_normal > 0.85)
+    facing = (alignment > 0.5) & (normals @ reference_normal > 0.99)
     if facing.sum() < 2:
         return []
     surface, surface_normals = points[facing], normals[facing]
+    visible = clear_rays(mesh, surface, surface + surface_normals * STANDOFF_MM)
+    surface, surface_normals = surface[visible], surface_normals[visible]
+    if len(surface) < 2:
+        return []
     coords = (surface - center) @ axes.T
     plane = coords[:, [across, along]]
     tree = cKDTree(plane)
