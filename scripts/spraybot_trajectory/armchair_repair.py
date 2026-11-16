@@ -104,7 +104,7 @@ def repair(model: dict, mesh, source_strokes: list[dict]) -> tuple[list[dict], d
     if np.any(part_ids[ids] < 0):
         raise ValueError("unmapped Armchair target triangles")
     # Keep a sweep on one smoothly oriented surface region. A principal-axis
-    bucket is too broad on curved parts and creates short clipped fragments.
+    # bucket is too broad on curved parts and creates short clipped fragments.
     orientation = np.rint(normals * 3).astype(int)
     _, keys = np.unique(np.column_stack((part_ids[ids], orientation)), axis=0, return_inverse=True)
     from datagen.chair_spray.chair_spray import _raster
