@@ -11,3 +11,7 @@ Use the five default triage labels. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Use the single-context layout: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+
+### Spray trajectory programs
+
+When adding or changing a workpiece trajectory generator, follow `docs/spraybot/trajectory-generation.md` before implementing paths or publishing review data.

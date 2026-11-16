@@ -74,16 +74,6 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, json.dumps(GENERATORS))
         elif path == "/api/review-root":
             self.respond(200, json.dumps(review_index(REVIEW_ROOT) if REVIEW_ROOT else {"root": None, "interfaces": []}))
-        elif path == "/api/trajectory-references":
-            reference = TRAJECTORY_ROOT / "native_references" / "index.json" if TRAJECTORY_ROOT else None
-            self.respond(200, reference.read_bytes() if reference and reference.is_file() else json.dumps({"entries": []}))
-        elif path.startswith("/api/trajectory-reference/") and TRAJECTORY_ROOT:
-            key = unquote(path.rsplit("/", 1)[-1])
-            reference = TRAJECTORY_ROOT / "native_references" / f"{key}.json"
-            if key in {"chair", "opus", "bumper"} and reference.is_file():
-                self.respond(200, reference.read_bytes())
-            else:
-                self.respond(404, json.dumps({"error": "native reference not found"}))
         elif path.startswith("/api/trajectory/") and TRAJECTORY_ROOT:
             parts = [unquote(part) for part in path.split("/")]
             if (len(parts) != 5 or parts[3] not in ALLOWED
