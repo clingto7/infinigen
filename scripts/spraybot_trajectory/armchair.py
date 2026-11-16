@@ -105,6 +105,9 @@ def plan(model, mesh):
     target = np.asarray(model['spray_target'], dtype=bool) & np.asarray(model['geometry_accessible'], dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
+    all_corners = np.vstack([corners(surface) for part in model['parametric']['parts']
+                             for surface in part['surfaces']]) * 1000
+    object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
     for part in model['parametric']['parts']:
         for component in surface_components(part):
             points, normals = samples(component, target)
@@ -123,9 +126,20 @@ def plan(model, mesh):
                         strokes.extend(sweep(mesh, points, normals, center, axes, axes[side]*sign, across, along, semantic, f'{semantic}_edge', single_row=True))
             else:
                 component_counts['member'] += 1
-                for axis in (1,2):
-                    for sign in (1,-1):
-                        strokes.extend(sweep(mesh, points, normals, center, axes, axes[axis]*sign, 2 if axis==1 else 1, 0, semantic, f'{semantic}_length', single_row=True))
+                directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
+                if semantic == 'leg_base':
+                    outward = center-object_center
+                    inward = min(directions, key=lambda item: float(
+                        axes[item[0]] @ outward * item[1]))
+                    directions.remove(inward)
+                elif semantic == 'arm':
+                    underside = min(directions, key=lambda item: float(
+                        axes[item[0], 2] * item[1]))
+                    directions.remove(underside)
+                for axis, sign in directions:
+                    strokes.extend(sweep(mesh, points, normals, center, axes,
+                                          axes[axis]*sign, 2 if axis==1 else 1,
+                                          0, semantic, f'{semantic}_length', single_row=True))
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
     return strokes, {'strategy':'parametric panel raster and member lengthwise passes', 'component_counts':component_counts, 'standoff_mm':STANDOFF_MM, 'pass_spacing_mm':PASS_SPACING_MM}
