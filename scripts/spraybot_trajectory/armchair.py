@@ -77,7 +77,8 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     outward = direction / np.linalg.norm(direction)
     alignment = normals @ outward
     reference_normal = normals[int(np.argmax(alignment))]
-    facing = (alignment > 0.5) & (normals @ reference_normal > 0.99)
+    normal_band = 0.99 if reason.endswith('_length') else 0.85
+    facing = (alignment > 0.5) & (normals @ reference_normal > normal_band)
     if facing.sum() < 2:
         return []
     surface, surface_normals = points[facing], normals[facing]
