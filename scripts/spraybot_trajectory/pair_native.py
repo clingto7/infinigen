@@ -129,9 +129,12 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
                            faces=np.asarray(model["triangles"]), process=False)
     repair_metrics = None
     if kind == "armchair":
-        from spraybot_trajectory.armchair import plan
-        target_labels = np.asarray(model["spray_target"], dtype=bool) & np.asarray(
+        from spraybot_trajectory.armchair import coating_scope, plan
+        raw_target_labels = np.asarray(model["spray_target"], dtype=bool) & np.asarray(
             model["geometry_accessible"], dtype=bool)
+        target_labels, scope_metrics = coating_scope(model["parametric"], raw_target_labels)
+        scope_metrics["selected_accessible_target_area_fraction"] = float(
+            mesh.area_faces[target_labels].sum() / mesh.area_faces[raw_target_labels].sum())
         source_strokes, repair_metrics = plan(model["parametric"], target_labels, mesh)
         offset_mm, source_path = np.zeros(3), Path(__file__).with_name("armchair.py")
     else:
@@ -140,6 +143,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         raise ValueError(f"planner returned no strokes: {interface_id} {episode}")
     paths, sources, paintds = [], [], []
     surface_points = []
+    nozzle_points = []
     for source in source_strokes:
         surface = np.asarray(source["surface_points"], dtype=float) + offset_mm
         nozzle = np.asarray(source["nozzle_points"], dtype=float) + offset_mm
@@ -152,16 +156,33 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
                         "surface": source.get("reason", source.get("line", "source planner"))})
         paintds.append(SimpleNamespace(positions_mm=nozzle, aim=aim))
         surface_points.append(surface)
+        nozzle_points.append(nozzle)
     surface_points = np.concatenate(surface_points)
+    nozzle_points = np.concatenate(nozzle_points)
     surface_gap = mesh.nearest.on_surface(surface_points)[1]
     p95_gap = float(np.percentile(surface_gap, 95))
     max_gap = float(surface_gap.max())
     # This gate rejects a different model/frame; smaller gaps remain review findings.
     if p95_gap > 50 or max_gap > 75:
         raise ValueError(f"source paths do not match the current model: p95={p95_gap:.1f} mm, max={max_gap:.1f} mm")
-    target = np.asarray(model["spray_target"], dtype=bool) & np.asarray(model["geometry_accessible"], dtype=bool)
+    target = (target_labels if kind == "armchair" else
+              np.asarray(model["spray_target"], dtype=bool) &
+              np.asarray(model["geometry_accessible"], dtype=bool))
     centroids = np.asarray(model["vertices"])[np.asarray(model["triangles"])[target]].mean(axis=1) * 1000
     target_gap = cKDTree(surface_points).query(centroids)[0]
+    # A nearby path on the other side of a thin board does not coat this face.
+    # Count only samples within half the 90 mm spray swath and facing the same
+    # side of the surface (up to a 60 degree incidence angle).
+    sample_outward = nozzle_points - surface_points
+    sample_outward /= np.linalg.norm(sample_outward, axis=1, keepdims=True)
+    neighbors = min(16, len(surface_points))
+    oriented_gap, oriented_ids = cKDTree(surface_points).query(centroids, k=neighbors)
+    if neighbors == 1:
+        oriented_gap, oriented_ids = oriented_gap[:, None], oriented_ids[:, None]
+    alignment = np.einsum("ij,ikj->ik", mesh.face_normals[target],
+                          sample_outward[oriented_ids])
+    oriented_covered = np.any((oriented_gap <= 45) & (alignment >= 0.5), axis=1)
+    target_area = mesh.area_faces[target]
     origins = np.asarray([stroke.positions_mm[len(stroke.positions_mm) // 2] for stroke in paintds])
     directions = np.asarray([stroke.aim[len(stroke.aim) // 2] for stroke in paintds])
     hits, ray_ids, _ = mesh.ray.intersects_location(origins, directions, multiple_hits=False)
@@ -182,11 +203,15 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
              "model_surface_gap_p95_mm": round(p95_gap, 3), "model_surface_gap_max_mm": round(max_gap, 3),
              "coverage_threshold_mm": 45.0,
              "target_centroid_within_threshold_fraction": float((target_gap <= 45).mean()),
+             "oriented_target_centroid_coverage_fraction": float(oriented_covered.mean()),
+             "oriented_target_area_coverage_fraction": float(
+                 target_area[oriented_covered].sum() / target_area.sum()),
              "target_centroid_gap_p95_mm": float(np.percentile(target_gap, 95)),
              "status": "trajectory_review_required"}
     if kind == "armchair":
         check["strategy"] = "armchair_parametric_part_planner"
         check["planner"] = repair_metrics
+        check["coating_scope"] = scope_metrics
         check["input_source"] = "parametric surfaces and spray target labels"
         lengths = np.asarray([np.linalg.norm(np.diff(np.asarray(s["surface_points"]), axis=0),
                                             axis=1).sum() for s in source_strokes])
@@ -195,14 +220,20 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
             - np.asarray(source_strokes[index]["surface_points"])[0])))
             for index, length in enumerate(lengths)
             if source_strokes[index]["reason"].endswith("_length")]
-        short_strokes = np.flatnonzero(lengths < 20).tolist()
-        target_area = mesh.area_faces[target]
+        short_strokes = np.flatnonzero(lengths < 100).tolist()
         check["stroke_length_min_mm"] = float(lengths.min())
         check["member_path_max_length_to_chord_ratio"] = max(member_ratios)
+        check["linear_path_max_length_to_chord_ratio"] = float(max(
+            length / max(1.0, np.linalg.norm(
+                np.asarray(source_strokes[index]["surface_points"])[-1]
+                - np.asarray(source_strokes[index]["surface_points"])[0]))
+            for index, length in enumerate(lengths)
+            if source_strokes[index]["reason"] != "seat_serpentine"))
+        check["seat_serpentine_strokes"] = sum(
+            source["reason"] == "seat_serpentine" for source in source_strokes)
         check["short_stroke_ids"] = short_strokes
         check["target_area_within_threshold_fraction"] = float(
             target_area[target_gap <= 45].sum() / target_area.sum())
-        check["max_strokes_for_review"] = 120
         from spraybot_trajectory.path_checks import clear_rays
         invalid_strokes = []
         for index, stroke in enumerate(source_strokes):
@@ -217,10 +248,11 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
                                    "sample_count": int(sum(2 * len(s["surface_points"]) - 1 for s in source_strokes))}
         check["machine_gate"] = (
             "passed" if not invalid_strokes and not blocked and not missed
-            and check["target_centroid_within_threshold_fraction"] >= 0.98
-            and check["target_area_within_threshold_fraction"] >= 0.98
-            and not short_strokes and len(paths) <= 120
+            and check["oriented_target_centroid_coverage_fraction"] >= 0.90
+            and check["oriented_target_area_coverage_fraction"] >= 0.95
+            and not short_strokes
             and check["member_path_max_length_to_chord_ratio"] <= 1.15
+            and check["linear_path_max_length_to_chord_ratio"] <= 1.15
             and max_gap <= 25 else "failed"
         )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",

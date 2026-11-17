@@ -18,14 +18,15 @@ def _stroke(surface: np.ndarray, nozzle: np.ndarray, reason: str, part: str) -> 
 
 
 def split_runs(mesh, surface: np.ndarray, nozzle: np.ndarray,
-                valid: np.ndarray, reason: str, part: str) -> list[dict]:
+               valid: np.ndarray, reason: str, part: str,
+               max_step_mm: float = 90.0) -> list[dict]:
     if len(surface) < 2:
         return []
     step = np.linalg.norm(np.diff(nozzle, axis=0), axis=1)
     aim = surface - nozzle
     aim /= np.linalg.norm(aim, axis=1)[:, None]
     turn = (aim[:-1] * aim[1:]).sum(axis=1)
-    joined = valid[:-1] & valid[1:] & (step <= 90) & (turn >= 0.75)
+    joined = valid[:-1] & valid[1:] & (step <= max_step_mm) & (turn >= 0.75)
     candidates = np.flatnonzero(joined)
     if len(candidates):
         middle_surface = (surface[candidates] + surface[candidates + 1]) * 0.5

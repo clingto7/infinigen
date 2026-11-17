@@ -14,7 +14,58 @@ from spraybot_trajectory.path_checks import clear_rays, split_runs
 STANDOFF_MM = 120.0
 PASS_SPACING_MM = 90.0
 SAMPLE_STEP_MM = 20.0
-MIN_STROKE_MM = 20.0
+MIN_STROKE_MM = 100.0
+
+
+def coating_scope(parametric, target):
+    """Pick exposed chair faces from the described parts before planning paths.
+
+    ``spray_target`` describes the manufactured body, including the seat
+    underside and under-seat bracing. It is broader than the faces a robot
+    should coat in this chair setup.
+    """
+    target = np.asarray(target, dtype=bool)
+    selected = np.zeros_like(target)
+    all_corners = np.vstack([corners(surface) for part in parametric['parts']
+                             for surface in part['surfaces']])
+    object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
+    included = defaultdict(int)
+    for part in parametric['parts']:
+        semantic = part['semantic']
+        for component in surface_components(part):
+            bounds = np.vstack([corners(surface) for surface in component])
+            extent = np.ptp(bounds, axis=0)
+            center = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
+            if semantic == 'leg_base' and extent[2] < 1.5 * max(extent[:2]):
+                # Horizontal stretchers lie below the seat, between the legs.
+                continue
+            for surface in component:
+                _, _, _, evaluate = sampler(surface)
+                _, normal = evaluate(0.5, 0.5)
+                normal = np.asarray(normal, dtype=float)
+                if semantic == 'seat':
+                    keep = normal[2] > 0.65
+                elif semantic == 'back':
+                    keep = abs(normal[0]) > 0.75 and abs(normal[2]) < 0.65
+                elif semantic == 'leg_base':
+                    radial = center[:2] - object_center[:2]
+                    keep = np.dot(normal[:2], radial) > 0.45 * np.linalg.norm(radial)
+                elif semantic == 'arm':
+                    outside = np.sign(center[1] - object_center[1])
+                    horizontal = extent[2] < 0.5 * max(extent[:2])
+                    keep = normal[2] > 0.7 if horizontal else normal[1] * outside > 0.7
+                else:
+                    keep = False
+                if keep:
+                    ids = surface['mesh_mapping']['construction_triangle_ids']
+                    selected[ids] = target[ids]
+                    included[semantic] += int(np.count_nonzero(target[ids]))
+    if not selected.any():
+        raise ValueError('Armchair coating scope is empty')
+    return selected, {'policy': 'seat top; back front and rear; outer legs and arms; no under-seat braces',
+                      'target_triangles': int(selected.sum()),
+                      'excluded_triangles': int((target & ~selected).sum()),
+                      'selected_surface_triangle_mappings': dict(included)}
 
 
 def corners(surface):
@@ -73,7 +124,8 @@ def samples(surfaces, target):
     return np.asarray(points), np.asarray(normals)
 
 
-def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason, single_row=False):
+def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason,
+          single_row=False, serpentine=False):
     outward = direction / np.linalg.norm(direction)
     alignment = normals @ outward
     reference_normal = normals[int(np.argmax(alignment))]
@@ -90,11 +142,14 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     plane = coords[:, [across, along]]
     tree = cKDTree(plane)
     (u0, v0), (u1, v1) = plane.min(axis=0), plane.max(axis=0)
-    rows = np.asarray([(u0+u1)/2]) if single_row else np.linspace(
-        u0, u1, max(1, int(np.ceil((u1-u0)/PASS_SPACING_MM))+1))
+    pass_count = 1 if single_row else max(1, int(np.ceil((u1-u0)/PASS_SPACING_MM)))
+    row_pitch = (u1-u0) / pass_count
+    rows = u0 + (np.arange(pass_count) + 0.5) * row_pitch
     columns = np.linspace(v0, v1, max(2, int(np.ceil((v1-v0)/SAMPLE_STEP_MM))+1))
-    selected = []
+    strokes = []
+    connected_rows = []
     for row, u in enumerate(rows):
+        selected = []
         for v in (columns[::-1] if row % 2 else columns):
             candidates = tree.query_ball_point([u, v], 25)
             if not candidates:
@@ -106,12 +161,21 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
                 index = min(candidates, key=lambda i: float(np.linalg.norm(plane[i]-[u,v])))
             if not selected or selected[-1] != index:
                 selected.append(int(index))
-    if len(selected) < 2:
-        return []
-    landing = surface[selected]
-    nozzle = landing + surface_normals[selected] * STANDOFF_MM
-    valid = clear_rays(mesh, landing, nozzle)
-    strokes = split_runs(mesh, landing, nozzle, valid, reason, semantic)
+        if len(selected) < 2:
+            continue
+        if serpentine:
+            connected_rows.extend(selected)
+            continue
+        landing = surface[selected]
+        nozzle = landing + surface_normals[selected] * STANDOFF_MM
+        valid = clear_rays(mesh, landing, nozzle)
+        strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic))
+    if connected_rows:
+        landing = surface[connected_rows]
+        nozzle = landing + surface_normals[connected_rows] * STANDOFF_MM
+        valid = clear_rays(mesh, landing, nozzle)
+        strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
+                                  max_step_mm=120.0))
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
@@ -120,9 +184,6 @@ def plan(parametric, target, mesh):
     target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
-    all_corners = np.vstack([corners(surface) for part in parametric['parts']
-                             for surface in part['surfaces']]) * 1000
-    object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
     for part in parametric['parts']:
         for component in surface_components(part):
             points, normals = samples(component, target)
@@ -130,23 +191,23 @@ def plan(parametric, target, mesh):
                 continue
             center = points.mean(axis=0)
             _, _, axes = np.linalg.svd(points-center, full_matrices=False)
-            widths = np.ptp((points-center) @ axes.T, axis=0)
             semantic = part['semantic']
-            if widths[1] > 2.2*max(widths[2], 1):
+            if semantic == 'seat':
                 component_counts['panel'] += 1
-                for sign in (1,-1):
-                    strokes.extend(sweep(mesh, points, normals, center, axes, axes[2]*sign, 1, 0, semantic, f'{semantic}_broad'))
-                for side, across, along in ((0,2,1), (1,2,0)):
-                    for sign in (1,-1):
-                        strokes.extend(sweep(mesh, points, normals, center, axes, axes[side]*sign, across, along, semantic, f'{semantic}_edge', single_row=True))
+                strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
+                                      np.array([0., 0., 1.]), 1, 0, semantic,
+                                      'seat_serpentine', serpentine=True))
+            elif semantic == 'back':
+                component_counts['panel'] += 1
+                extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
+                across, along = (1, 2) if extent[2] >= extent[1] else (2, 1)
+                for sign in (1, -1):
+                    strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
+                                          np.array([float(sign), 0., 0.]), across, along,
+                                          semantic, 'back_broad'))
             else:
                 component_counts['member'] += 1
                 directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
-                if semantic == 'leg_base':
-                    outward = center-object_center
-                    inward = min(directions, key=lambda item: float(
-                        axes[item[0]] @ outward * item[1]))
-                    directions.remove(inward)
                 for axis, sign in directions:
                     strokes.extend(sweep(mesh, points, normals, center, axes,
                                           axes[axis]*sign, 2 if axis==1 else 1,
