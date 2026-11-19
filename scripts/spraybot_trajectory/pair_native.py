@@ -209,6 +209,16 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
                  target_area[oriented_covered].sum() / target_area.sum()),
              "target_centroid_gap_p95_mm": float(np.percentile(target_gap, 95)),
              "status": "trajectory_review_required"}
+    from spraybot_trajectory.path_checks import check_exported_motion, check_exported_rays
+    check["exported_ray_check"] = check_exported_rays(
+        mesh, paths, sources, 120.0 if kind == "armchair" else None,
+        model["part_id"] if kind == "armchair" else None,
+        model["part_legend"] if kind == "armchair" else None)
+    check["exported_motion_check"] = check_exported_motion(mesh, paths)
+    check["geometry_gate"] = (
+        "passed" if not check["exported_ray_check"]["invalid_stroke_ids"]
+        and not check["exported_motion_check"]["invalid_stroke_ids"] else "failed"
+    )
     if kind == "armchair":
         check["strategy"] = "armchair_parametric_part_planner"
         check["planner"] = repair_metrics
@@ -235,7 +245,7 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["short_stroke_ids"] = short_strokes
         check["target_area_within_threshold_fraction"] = float(
             target_area[target_gap <= 45].sum() / target_area.sum())
-        from spraybot_trajectory.path_checks import clear_rays, check_exported_rays
+        from spraybot_trajectory.path_checks import clear_rays
         invalid_strokes = []
         sampled_rays = 0
         semantic_ids = {name: int(index) for index, name in model["part_legend"].items()}
@@ -264,12 +274,10 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["path_ray_check"] = {"method": "ray to intended part every 5 mm of nozzle travel",
                                    "invalid_stroke_ids": invalid_strokes,
                                    "sample_count": sampled_rays}
-        check["exported_ray_check"] = check_exported_rays(
-            mesh, paths, sources, model["part_id"], model["part_legend"], 120.0)
         check["machine_gate_scope"] = "model pairing and sampled ray safety only; coating quality requires human review"
         check["machine_gate"] = (
             "passed" if not invalid_strokes and not blocked and not missed
-            and not check["exported_ray_check"]["invalid_stroke_ids"]
+            and check["geometry_gate"] == "passed"
             and seat_arm_clearance >= 30
             and max_gap <= 25 else "failed"
         )

@@ -85,10 +85,12 @@ def split_runs(mesh, surface: np.ndarray, nozzle: np.ndarray,
 
 
 def check_exported_rays(mesh, paths: list[dict], sources: list[dict],
-                        face_parts: np.ndarray, part_legend: dict,
-                        standoff_mm: float) -> dict:
+                        standoff_mm: float | list[float] | None,
+                        face_parts: np.ndarray | None = None,
+                        part_legend: dict | None = None) -> dict:
     """Validate the rounded path/aim vectors that the Web page actually receives."""
-    semantic_ids = {name: int(index) for index, name in part_legend.items()}
+    semantic_ids = ({name: int(index) for index, name in part_legend.items()}
+                    if part_legend is not None else {})
     invalid, count = [], 0
     for index, (path, source) in enumerate(zip(paths, sources)):
         positions = np.asarray(path['points'], dtype=float) * 1000
@@ -104,11 +106,37 @@ def check_exported_rays(mesh, paths: list[dict], sources: list[dict],
         nozzles = np.asarray(nozzles)
         directions = np.asarray(directions)
         count += len(nozzles)
-        intended = nozzles + directions * standoff_mm
-        allowed = np.asarray(face_parts) == semantic_ids[source['part']]
-        if not np.all(clear_rays(mesh, intended, nozzles, allowed)):
+        allowed = (np.asarray(face_parts) == semantic_ids[source['part']]
+                   if face_parts is not None and source['part'] in semantic_ids else None)
+        if standoff_mm is None:
+            hits, ray_ids, faces = mesh.ray.intersects_location(
+                nozzles, directions, multiple_hits=False)
+            valid = np.zeros(len(nozzles), dtype=bool)
+            if len(ray_ids):
+                distance = np.linalg.norm(hits - nozzles[ray_ids], axis=1)
+                valid[ray_ids] = distance <= 300
+                if allowed is not None:
+                    valid[ray_ids] &= allowed[faces]
+        else:
+            distance = standoff_mm[index] if isinstance(standoff_mm, list) else standoff_mm
+            intended = nozzles + directions * distance
+            valid = clear_rays(mesh, intended, nozzles, allowed)
+        if not np.all(valid):
             invalid.append(index)
-    return {'method': 'rounded exported aims to intended part every 5 mm',
+    return {'method': 'rounded exported aims every 5 mm; intended part when labelled',
             'invalid_stroke_ids': invalid, 'sample_count': count}
+
+
+def check_exported_motion(mesh, paths: list[dict], clearance_mm: float = 1.0) -> dict:
+    """Check that each rounded nozzle path stays outside the workpiece."""
+    invalid, closest = [], np.inf
+    for index, path in enumerate(paths):
+        nozzle = np.asarray(path['points'], dtype=float) * 1000
+        distances = mesh.nearest.on_surface(nozzle)[1]
+        closest = min(closest, float(distances.min()))
+        if np.any(distances < clearance_mm) or not np.all(clear_motion(mesh, nozzle)):
+            invalid.append(index)
+    return {'method': 'nozzle position clearance and segment intersection',
+            'invalid_stroke_ids': invalid, 'min_clearance_mm': closest}
 
 

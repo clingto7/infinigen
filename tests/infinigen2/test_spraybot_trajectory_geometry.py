@@ -9,7 +9,9 @@ import trimesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
-from spraybot_trajectory.path_checks import check_exported_rays, clear_motion, clear_rays
+from spraybot_trajectory.path_checks import (
+    check_exported_motion, check_exported_rays, clear_motion, clear_rays,
+)
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
@@ -48,9 +50,20 @@ class TrajectoryGeometryChecks(unittest.TestCase):
                "aims": [[0, 0, 1], [0, 0, 1]]}]
 
         for paths in (down, up):
-            check = check_exported_rays(mesh, paths, sources, labels,
-                                        {"0": "seat", "1": "arm"}, 120.0)
+            check = check_exported_rays(mesh, paths, sources, 120.0, labels,
+                                        {"0": "seat", "1": "arm"})
             self.assertEqual(check["invalid_stroke_ids"], [0])
+
+    def test_generic_exported_geometry_rejects_empty_ray_and_crossing_path(self):
+        mesh = trimesh.creation.box(extents=[20, 20, 20])
+        wrong_direction = [{"points": [[0, 0, 0.12], [0.005, 0, 0.12]],
+                            "aims": [[0, 0, 1], [0, 0, 1]]}]
+        crossing = [{"points": [[-0.05, 0, 0], [0.05, 0, 0]],
+                     "aims": [[0, 0, -1], [0, 0, -1]]}]
+
+        self.assertEqual(check_exported_rays(mesh, wrong_direction,
+                                             [{"part": "unknown"}], None)["invalid_stroke_ids"], [0])
+        self.assertEqual(check_exported_motion(mesh, crossing)["invalid_stroke_ids"], [0])
 
 
 if __name__ == "__main__":
