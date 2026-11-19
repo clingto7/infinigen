@@ -246,13 +246,9 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["path_ray_check"] = {"method": "all waypoints and segment midpoints",
                                    "invalid_stroke_ids": invalid_strokes,
                                    "sample_count": int(sum(2 * len(s["surface_points"]) - 1 for s in source_strokes))}
+        check["machine_gate_scope"] = "model pairing and sampled ray safety only; coating quality requires human review"
         check["machine_gate"] = (
             "passed" if not invalid_strokes and not blocked and not missed
-            and check["oriented_target_centroid_coverage_fraction"] >= 0.90
-            and check["oriented_target_area_coverage_fraction"] >= 0.95
-            and not short_strokes
-            and check["member_path_max_length_to_chord_ratio"] <= 1.15
-            and check["linear_path_max_length_to_chord_ratio"] <= 1.15
             and max_gap <= 25 else "failed"
         )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",

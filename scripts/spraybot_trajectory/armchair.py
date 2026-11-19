@@ -21,8 +21,7 @@ def coating_scope(parametric, target):
     """Pick exposed chair faces from the described parts before planning paths.
 
     ``spray_target`` describes the manufactured body, including the seat
-    underside and under-seat bracing. It is broader than the faces a robot
-    should coat in this chair setup.
+    underside. It is broader than the faces a robot should coat in this setup.
     """
     target = np.asarray(target, dtype=bool)
     selected = np.zeros_like(target)
@@ -36,9 +35,7 @@ def coating_scope(parametric, target):
             bounds = np.vstack([corners(surface) for surface in component])
             extent = np.ptp(bounds, axis=0)
             center = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
-            if semantic == 'leg_base' and extent[2] < 1.5 * max(extent[:2]):
-                # Horizontal stretchers lie below the seat, between the legs.
-                continue
+            stretcher = semantic == 'leg_base' and extent[2] < 1.5 * max(extent[:2])
             for surface in component:
                 _, _, _, evaluate = sampler(surface)
                 _, normal = evaluate(0.5, 0.5)
@@ -48,8 +45,11 @@ def coating_scope(parametric, target):
                 elif semantic == 'back':
                     keep = abs(normal[0]) > 0.75 and abs(normal[2]) < 0.65
                 elif semantic == 'leg_base':
-                    radial = center[:2] - object_center[:2]
-                    keep = np.dot(normal[:2], radial) > 0.45 * np.linalg.norm(radial)
+                    if stretcher:
+                        keep = normal[2] > 0.65 or np.dot(normal[:2], center[:2] - object_center[:2]) > 0
+                    else:
+                        radial = center[:2] - object_center[:2]
+                        keep = np.dot(normal[:2], radial) > 0.45 * np.linalg.norm(radial)
                 elif semantic == 'arm':
                     outside = np.sign(center[1] - object_center[1])
                     horizontal = extent[2] < 0.5 * max(extent[:2])
@@ -62,7 +62,7 @@ def coating_scope(parametric, target):
                     included[semantic] += int(np.count_nonzero(target[ids]))
     if not selected.any():
         raise ValueError('Armchair coating scope is empty')
-    return selected, {'policy': 'seat top; back front and rear; outer legs and arms; no under-seat braces',
+    return selected, {'policy': 'seat top; back front and rear; outer legs and arms; upper/outward stretchers',
                       'target_triangles': int(selected.sum()),
                       'excluded_triangles': int((target & ~selected).sum()),
                       'selected_surface_triangle_mappings': dict(included)}
@@ -105,11 +105,11 @@ def surface_components(part):
     return list(result.values())
 
 
-def samples(surfaces, target):
+def samples(surfaces, target=None):
     points, normals = [], []
     for surface in surfaces:
         ids = surface['mesh_mapping']['construction_triangle_ids']
-        if not np.any(target[ids]):
+        if target is not None and not np.any(target[ids]):
             continue
         kind, nu, nv, evaluate = sampler(surface)
         for i in range(nu + 1):
@@ -122,6 +122,46 @@ def samples(surfaces, target):
                 points.append(np.asarray(p) * 1000)
                 normals.append(n)
     return np.asarray(points), np.asarray(normals)
+
+
+def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0):
+    """Follow one parameterized member face along its long axis, with stable side selection."""
+    points, normals = samples(component)
+    if len(points) < 2:
+        return []
+    bounds = np.vstack([corners(s) for s in component]) * 1000
+    axis = int(np.argmax(np.ptp(bounds, axis=0)))
+    lo, hi = bounds[:, axis].min() + trim_mm, bounds[:, axis].max() - trim_mm
+    if hi - lo < MIN_STROKE_MM:
+        return []
+    outward = direction / np.linalg.norm(direction)
+    columns = np.linspace(lo, hi, max(6, int((hi-lo) / SAMPLE_STEP_MM) + 1))
+    chosen = []
+    side_axis = np.cross(np.eye(3)[axis], outward)
+    side_axis /= np.linalg.norm(side_axis)
+    for value in columns:
+        indices = np.flatnonzero((np.abs(points[:, axis] - value) < 18)
+                                 & (normals @ outward > 0.6))
+        if not len(indices):
+            continue
+        if chosen:
+            same_side = indices[np.abs((points[indices] - points[chosen[0]]) @ side_axis) < 15]
+            if not len(same_side):
+                continue
+            indices = same_side
+        # Stay on the same outward side. Prefer the face most exposed in that direction.
+        index = max(indices, key=lambda i: float(points[i] @ outward
+                    - 0.15 * abs(points[i, axis] - value)
+                    - (2.0 * abs((points[i] - points[chosen[-1]]) @ side_axis)
+                       if chosen else 0.0)))
+        chosen.append(index)
+    if len(chosen) < 2:
+        return []
+    landing = points[chosen]
+    nozzle = landing + outward * STANDOFF_MM
+    valid = clear_rays(mesh, landing, nozzle)
+    return [s for s in split_runs(mesh, landing, nozzle, valid, reason, semantic)
+            if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
 def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason,
@@ -175,7 +215,7 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
         nozzle = landing + surface_normals[connected_rows] * STANDOFF_MM
         valid = clear_rays(mesh, landing, nozzle)
         strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
-                                  max_step_mm=120.0))
+                                  max_step_mm=180.0))
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
@@ -184,6 +224,11 @@ def plan(parametric, target, mesh):
     target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
+    all_corners = np.vstack([corners(s) for p in parametric['parts'] for s in p['surfaces']])
+    object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
+    arm_corners = np.vstack([corners(s) for p in parametric['parts'] if p['semantic'] == 'arm'
+                             for s in p['surfaces']]) * 1000
+    arm_tree = cKDTree(arm_corners)
     for part in parametric['parts']:
         for component in surface_components(part):
             points, normals = samples(component, target)
@@ -193,6 +238,12 @@ def plan(parametric, target, mesh):
             _, _, axes = np.linalg.svd(points-center, full_matrices=False)
             semantic = part['semantic']
             if semantic == 'seat':
+                seat_min_x = min(corners(s)[:, 0].min() for s in component) * 1000
+                clear = ((points[:, 0] >= seat_min_x + 60)
+                         & (arm_tree.query(points + np.array([0., 0., STANDOFF_MM]))[0] >= 90))
+                points, normals = points[clear], normals[clear]
+                if len(points) < 2:
+                    continue
                 component_counts['panel'] += 1
                 strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
                                       np.array([0., 0., 1.]), 1, 0, semantic,
@@ -200,18 +251,39 @@ def plan(parametric, target, mesh):
             elif semantic == 'back':
                 component_counts['panel'] += 1
                 extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
+                if extent[2] > 2 * extent[1] and extent[1] < 0.08:
+                    for sign in (1, -1):
+                        strokes.extend(member_line(mesh, component, np.array([float(sign), 0., 0.]),
+                                                   semantic, 'back_post_length'))
+                    continue
                 across, along = (1, 2) if extent[2] >= extent[1] else (2, 1)
                 for sign in (1, -1):
                     strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
                                           np.array([float(sign), 0., 0.]), across, along,
-                                          semantic, 'back_broad'))
+                                          semantic, 'back_broad', serpentine=True))
             else:
                 component_counts['member'] += 1
-                directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
-                for axis, sign in directions:
-                    strokes.extend(sweep(mesh, points, normals, center, axes,
-                                          axes[axis]*sign, 2 if axis==1 else 1,
-                                          0, semantic, f'{semantic}_length', single_row=True))
+                bounds = np.vstack([corners(surface) for surface in component])
+                extent = np.ptp(bounds, axis=0)
+                location = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
+                if semantic == 'leg_base' and extent[2] > 1.5 * max(extent[:2]):
+                    for axis in (0, 1):
+                        sign = 1.0 if location[axis] >= object_center[axis] else -1.0
+                        direction = np.eye(3)[axis] * sign
+                        strokes.extend(member_line(mesh, component, direction, semantic, 'leg_outer_length'))
+                elif semantic == 'leg_base':
+                    axis = int(np.argmax(extent[:2]))
+                    side = 1 - axis
+                    sign = 1.0 if location[side] >= object_center[side] else -1.0
+                    direction = 2 * np.eye(3)[2] + np.eye(3)[side] * sign
+                    strokes.extend(member_line(mesh, component, direction, semantic,
+                                               'stretcher_upper_outward', trim_mm=25.0))
+                else:
+                    directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
+                    for axis, sign in directions:
+                        strokes.extend(sweep(mesh, points, normals, center, axes,
+                                              axes[axis]*sign, 2 if axis==1 else 1,
+                                              0, semantic, f'{semantic}_length', single_row=True))
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
     return strokes, {'strategy':'parametric panel raster and member lengthwise passes', 'component_counts':component_counts, 'standoff_mm':STANDOFF_MM, 'pass_spacing_mm':PASS_SPACING_MM}
