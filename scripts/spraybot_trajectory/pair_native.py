@@ -135,7 +135,8 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         target_labels, scope_metrics = coating_scope(model["parametric"], raw_target_labels)
         scope_metrics["selected_accessible_target_area_fraction"] = float(
             mesh.area_faces[target_labels].sum() / mesh.area_faces[raw_target_labels].sum())
-        source_strokes, repair_metrics = plan(model["parametric"], target_labels, mesh)
+        source_strokes, repair_metrics = plan(model["parametric"], target_labels, mesh,
+                                              model["part_id"], model["part_legend"])
         offset_mm, source_path = np.zeros(3), Path(__file__).with_name("armchair.py")
     else:
         source_strokes, offset_mm, source_path = _source_strokes(kind, model, spraybot, chair_npz)
@@ -234,21 +235,42 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
         check["short_stroke_ids"] = short_strokes
         check["target_area_within_threshold_fraction"] = float(
             target_area[target_gap <= 45].sum() / target_area.sum())
-        from spraybot_trajectory.path_checks import clear_rays
+        from spraybot_trajectory.path_checks import clear_rays, check_exported_rays
         invalid_strokes = []
+        sampled_rays = 0
+        semantic_ids = {name: int(index) for index, name in model["part_legend"].items()}
+        arm_mesh = mesh.submesh([np.flatnonzero(np.asarray(model["part_id"]) == semantic_ids["arm"])],
+                                append=True, repair=False)
+        seat_arm_clearance = np.inf
         for index, stroke in enumerate(source_strokes):
             surface = np.asarray(stroke["surface_points"], dtype=float)
             nozzle = np.asarray(stroke["nozzle_points"], dtype=float)
-            samples_surface = np.concatenate((surface, (surface[:-1] + surface[1:]) / 2))
-            samples_nozzle = np.concatenate((nozzle, (nozzle[:-1] + nozzle[1:]) / 2))
-            if not np.all(clear_rays(mesh, samples_surface, samples_nozzle)):
+            probe_surface, probe_nozzle = [surface[0]], [nozzle[0]]
+            for i in range(len(surface) - 1):
+                count = max(1, int(np.ceil(np.linalg.norm(nozzle[i + 1] - nozzle[i]) / 5)))
+                for t in np.arange(1, count + 1) / count:
+                    probe_surface.append((1 - t) * surface[i] + t * surface[i + 1])
+                    probe_nozzle.append((1 - t) * nozzle[i] + t * nozzle[i + 1])
+            samples_surface = np.asarray(probe_surface)
+            samples_nozzle = np.asarray(probe_nozzle)
+            sampled_rays += len(samples_surface)
+            allowed = np.asarray(model["part_id"]) == semantic_ids[stroke["part"]]
+            if not np.all(clear_rays(mesh, samples_surface, samples_nozzle, allowed)):
                 invalid_strokes.append(index)
-        check["path_ray_check"] = {"method": "all waypoints and segment midpoints",
+            if stroke["part"] == "seat":
+                seat_arm_clearance = min(seat_arm_clearance, float(
+                    arm_mesh.nearest.on_surface(samples_nozzle)[1].min()))
+        check["nozzle_arm_clearance_min_mm"] = seat_arm_clearance
+        check["path_ray_check"] = {"method": "ray to intended part every 5 mm of nozzle travel",
                                    "invalid_stroke_ids": invalid_strokes,
-                                   "sample_count": int(sum(2 * len(s["surface_points"]) - 1 for s in source_strokes))}
+                                   "sample_count": sampled_rays}
+        check["exported_ray_check"] = check_exported_rays(
+            mesh, paths, sources, model["part_id"], model["part_legend"], 120.0)
         check["machine_gate_scope"] = "model pairing and sampled ray safety only; coating quality requires human review"
         check["machine_gate"] = (
             "passed" if not invalid_strokes and not blocked and not missed
+            and not check["exported_ray_check"]["invalid_stroke_ids"]
+            and seat_arm_clearance >= 30
             and max_gap <= 25 else "failed"
         )
     visibility = {"schema": "spraybot.stroke-visibility.v1", "method": "one midpoint ray per stroke",

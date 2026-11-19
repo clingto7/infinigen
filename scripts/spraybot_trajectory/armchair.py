@@ -15,6 +15,7 @@ STANDOFF_MM = 120.0
 PASS_SPACING_MM = 90.0
 SAMPLE_STEP_MM = 20.0
 MIN_STROKE_MM = 100.0
+SEAT_ARM_CLEARANCE_MM = 30.0
 
 
 def coating_scope(parametric, target):
@@ -124,7 +125,15 @@ def samples(surfaces, target=None):
     return np.asarray(points), np.asarray(normals)
 
 
-def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0):
+def face_mask(mesh, surfaces):
+    mask = np.zeros(len(mesh.faces), dtype=bool)
+    for surface in surfaces:
+        mask[surface['mesh_mapping']['construction_triangle_ids']] = True
+    return mask
+
+
+def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
+                allowed_faces=None):
     """Follow one parameterized member face along its long axis, with stable side selection."""
     points, normals = samples(component)
     if len(points) < 2:
@@ -159,13 +168,16 @@ def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0):
         return []
     landing = points[chosen]
     nozzle = landing + outward * STANDOFF_MM
-    valid = clear_rays(mesh, landing, nozzle)
-    return [s for s in split_runs(mesh, landing, nozzle, valid, reason, semantic)
+    if allowed_faces is None:
+        allowed_faces = face_mask(mesh, component)
+    valid = clear_rays(mesh, landing, nozzle, allowed_faces)
+    return [s for s in split_runs(mesh, landing, nozzle, valid, reason, semantic,
+                                  allowed_faces=allowed_faces)
             if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
 def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason,
-          single_row=False, serpentine=False):
+          single_row=False, serpentine=False, allowed_faces=None, clearance_mesh=None):
     outward = direction / np.linalg.norm(direction)
     alignment = normals @ outward
     reference_normal = normals[int(np.argmax(alignment))]
@@ -174,7 +186,7 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     if facing.sum() < 2:
         return []
     surface, surface_normals = points[facing], normals[facing]
-    visible = clear_rays(mesh, surface, surface + surface_normals * STANDOFF_MM)
+    visible = clear_rays(mesh, surface, surface + surface_normals * STANDOFF_MM, allowed_faces)
     surface, surface_normals = surface[visible], surface_normals[visible]
     if len(surface) < 2:
         return []
@@ -208,27 +220,30 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
             continue
         landing = surface[selected]
         nozzle = landing + surface_normals[selected] * STANDOFF_MM
-        valid = clear_rays(mesh, landing, nozzle)
-        strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic))
+        valid = clear_rays(mesh, landing, nozzle, allowed_faces)
+        strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
+                                  allowed_faces=allowed_faces))
     if connected_rows:
         landing = surface[connected_rows]
         nozzle = landing + surface_normals[connected_rows] * STANDOFF_MM
-        valid = clear_rays(mesh, landing, nozzle)
+        valid = clear_rays(mesh, landing, nozzle, allowed_faces)
         strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
-                                  max_step_mm=180.0))
+                                  max_step_mm=180.0, allowed_faces=allowed_faces,
+                                  clearance_mesh=clearance_mesh,
+                                  min_clearance_mm=SEAT_ARM_CLEARANCE_MM if clearance_mesh is not None else 0.0))
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
-def plan(parametric, target, mesh):
+def plan(parametric, target, mesh, face_parts=None, part_legend=None):
     """Plan from parametric geometry and target labels; mesh checks visibility."""
     target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
     all_corners = np.vstack([corners(s) for p in parametric['parts'] for s in p['surfaces']])
     object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
-    arm_corners = np.vstack([corners(s) for p in parametric['parts'] if p['semantic'] == 'arm'
-                             for s in p['surfaces']]) * 1000
-    arm_tree = cKDTree(arm_corners)
+    arm_faces = np.flatnonzero(face_mask(mesh, [s for p in parametric['parts']
+                                           if p['semantic'] == 'arm' for s in p['surfaces']]))
+    arm_mesh = mesh.submesh([arm_faces], append=True, repair=False)
     for part in parametric['parts']:
         for component in surface_components(part):
             points, normals = samples(component, target)
@@ -237,30 +252,38 @@ def plan(parametric, target, mesh):
             center = points.mean(axis=0)
             _, _, axes = np.linalg.svd(points-center, full_matrices=False)
             semantic = part['semantic']
+            allowed_faces = face_mask(mesh, component)
+            if face_parts is not None:
+                semantic_id = next(int(k) for k, v in part_legend.items() if v == semantic)
+                allowed_faces &= np.asarray(face_parts) == semantic_id
             if semantic == 'seat':
                 seat_min_x = min(corners(s)[:, 0].min() for s in component) * 1000
                 clear = ((points[:, 0] >= seat_min_x + 60)
-                         & (arm_tree.query(points + np.array([0., 0., STANDOFF_MM]))[0] >= 90))
+                         & (arm_mesh.nearest.on_surface(
+                             points + np.array([0., 0., STANDOFF_MM]))[1] >= SEAT_ARM_CLEARANCE_MM))
                 points, normals = points[clear], normals[clear]
                 if len(points) < 2:
                     continue
                 component_counts['panel'] += 1
                 strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
                                       np.array([0., 0., 1.]), 1, 0, semantic,
-                                      'seat_serpentine', serpentine=True))
+                                      'seat_serpentine', serpentine=True,
+                                      allowed_faces=allowed_faces, clearance_mesh=arm_mesh))
             elif semantic == 'back':
                 component_counts['panel'] += 1
                 extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
                 if extent[2] > 2 * extent[1] and extent[1] < 0.08:
                     for sign in (1, -1):
                         strokes.extend(member_line(mesh, component, np.array([float(sign), 0., 0.]),
-                                                   semantic, 'back_post_length'))
+                                                   semantic, 'back_post_length',
+                                                   allowed_faces=allowed_faces))
                     continue
                 across, along = (1, 2) if extent[2] >= extent[1] else (2, 1)
                 for sign in (1, -1):
                     strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
                                           np.array([float(sign), 0., 0.]), across, along,
-                                          semantic, 'back_broad', serpentine=True))
+                                          semantic, 'back_broad', serpentine=True,
+                                          allowed_faces=allowed_faces))
             else:
                 component_counts['member'] += 1
                 bounds = np.vstack([corners(surface) for surface in component])
@@ -270,20 +293,29 @@ def plan(parametric, target, mesh):
                     for axis in (0, 1):
                         sign = 1.0 if location[axis] >= object_center[axis] else -1.0
                         direction = np.eye(3)[axis] * sign
-                        strokes.extend(member_line(mesh, component, direction, semantic, 'leg_outer_length'))
+                        strokes.extend(member_line(mesh, component, direction, semantic,
+                                                   'leg_outer_length', allowed_faces=allowed_faces))
                 elif semantic == 'leg_base':
                     axis = int(np.argmax(extent[:2]))
                     side = 1 - axis
                     sign = 1.0 if location[side] >= object_center[side] else -1.0
                     direction = 2 * np.eye(3)[2] + np.eye(3)[side] * sign
                     strokes.extend(member_line(mesh, component, direction, semantic,
-                                               'stretcher_upper_outward', trim_mm=25.0))
+                                               'stretcher_upper_outward', trim_mm=25.0,
+                                               allowed_faces=allowed_faces))
                 else:
                     directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
                     for axis, sign in directions:
-                        strokes.extend(sweep(mesh, points, normals, center, axes,
-                                              axes[axis]*sign, 2 if axis==1 else 1,
-                                              0, semantic, f'{semantic}_length', single_row=True))
+                        planned = sweep(mesh, points, normals, center, axes,
+                                        axes[axis]*sign, 2 if axis==1 else 1,
+                                        0, semantic, f'{semantic}_length', single_row=True,
+                                        allowed_faces=allowed_faces)
+                        for stroke in planned:
+                            # The arm meets the seat at both ends; avoid grazing that seam.
+                            if len(stroke['surface_points']) > 4:
+                                stroke['surface_points'] = stroke['surface_points'][1:-1]
+                                stroke['nozzle_points'] = stroke['nozzle_points'][1:-1]
+                                strokes.append(stroke)
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
     return strokes, {'strategy':'parametric panel raster and member lengthwise passes', 'component_counts':component_counts, 'standoff_mm':STANDOFF_MM, 'pass_spacing_mm':PASS_SPACING_MM}
