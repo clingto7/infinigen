@@ -140,6 +140,8 @@ inventory of missing target faces by part; it cannot confer readiness.
 
 ## Current ready interfaces (2026-11-11)
 
+2026-11-20 补充：`backed_bench`、`backless_bench`、`bar_chair`、`armchair`、`ladder_back_chair`、`windsor_chair`、`corner_desk`、`trestle_table` 各通过 20-seed 导出文件独立校验与捕获不变性检查，已加入参数化就绪清单。几何修改后的 `staggered_display_shelf` 也用新源码重跑并通过同样检查。证据批次位于 `spraybot` 服务器 `/home/ma-user/ws/spray-review/pretrajectory-20seed-b4ec2575`；正式就绪集合以 `scripts/spraybot_parametric_readiness.json` 为准。
+
 The ready set is declared in `scripts/spraybot_mass_worker.py`. Each row below
 passed a 20-seed exported-file gate, source-independent sampling, and a
 20-seed capture-on/off comparison of vertices, triangle order, and target mask

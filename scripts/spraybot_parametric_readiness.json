@@ -1,29 +1,133 @@
 {
   "schema": "spraybot.parametric-readiness.v1",
   "certified": {
-    "workpiece:coat_rack": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:stepped_platform": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:serving_cart": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:park_bench": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:folding_chair": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:bunk_bed": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:crib": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:four_poster_bed": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:ladder_shelf": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:high_chair": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:drafting_table": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:lounge_chair": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:tilt_out_shoe_cabinet": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:hairpin_leg_table": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:workbench": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:school_desk": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:cabriole_leg_table": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:folding_table": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:metal_shelving": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:staggered_display_shelf": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:storage_chest": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:wine_rack": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:window_casing": {"parametric_schema": "spraybot.parametric.v1", "tested_seeds": 20},
-    "workpiece:corner_shelf": {"parametric_schema": "spraybot.parametric.v2", "tested_seeds": 20}
+    "workpiece:coat_rack": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:stepped_platform": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:serving_cart": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:park_bench": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:folding_chair": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:bunk_bed": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:crib": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:four_poster_bed": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:ladder_shelf": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:high_chair": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:drafting_table": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:lounge_chair": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:tilt_out_shoe_cabinet": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:hairpin_leg_table": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:workbench": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:school_desk": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:cabriole_leg_table": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:folding_table": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:metal_shelving": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:staggered_display_shelf": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:storage_chest": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:wine_rack": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:window_casing": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:corner_shelf": {
+      "parametric_schema": "spraybot.parametric.v2",
+      "tested_seeds": 20
+    },
+    "workpiece:backed_bench": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:backless_bench": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:bar_chair": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:armchair": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:ladder_back_chair": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:windsor_chair": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:corner_desk": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    },
+    "workpiece:trestle_table": {
+      "parametric_schema": "spraybot.parametric.v1",
+      "tested_seeds": 20
+    }
   }
 }

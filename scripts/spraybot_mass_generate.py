@@ -70,8 +70,8 @@ def main() -> None:
     dataset_root.mkdir(parents=True, exist_ok=True)
     log_root.mkdir(parents=True, exist_ok=True)
 
-    from infinigen2.objects.spraybot import CATEGORY_IDS as SPRAYBOT_IDS
     from infinigen2.workpieces import CATEGORY_IDS as WORKPIECE_IDS
+    from infinigen2.objects.spraybot import CATEGORY_IDS as SPRAYBOT_IDS
 
     missing = [
         category
