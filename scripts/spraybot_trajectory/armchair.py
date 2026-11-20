@@ -132,6 +132,34 @@ def face_mask(mesh, surfaces):
     return mask
 
 
+def repair_seam_endpoints(mesh, stroke, allowed_faces):
+    """Move ambiguous seam samples onto the same exposed face, retaining the pass."""
+    surface = np.asarray(stroke['surface_points'], dtype=float)
+    nozzle = np.asarray(stroke['nozzle_points'], dtype=float)
+    for end, neighbor in ((0, 1), (-1, -2)):
+        span = np.linalg.norm(surface[end] - surface[neighbor])
+        if span <= 0:
+            raise ValueError('Armchair stroke has a zero-length endpoint segment')
+        for shift_mm in (0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0):
+            fraction = shift_mm / span
+            candidate_surface = (1 - fraction) * surface[end] + fraction * surface[neighbor]
+            candidate_nozzle = (1 - fraction) * nozzle[end] + fraction * nozzle[neighbor]
+            exported_nozzle = np.round(candidate_nozzle / 1000, 6) * 1000
+            aim = candidate_surface - candidate_nozzle
+            aim /= np.linalg.norm(aim)
+            exported_aim = np.round(aim, 6)
+            exported_aim /= np.linalg.norm(exported_aim)
+            landing = exported_nozzle + exported_aim * STANDOFF_MM
+            if clear_rays(mesh, landing[None], exported_nozzle[None], allowed_faces)[0]:
+                surface[end], nozzle[end] = candidate_surface, candidate_nozzle
+                break
+        else:
+            raise ValueError('Armchair seam endpoint cannot be repaired within 2 mm')
+    stroke['surface_points'] = surface.tolist()
+    stroke['nozzle_points'] = nozzle.tolist()
+    return stroke
+
+
 def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
                 allowed_faces=None):
     """Follow one parameterized member face along its long axis, with stable side selection."""
@@ -239,6 +267,7 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
     target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
+    seam_adjustments = []
     all_corners = np.vstack([corners(s) for p in parametric['parts'] for s in p['surfaces']])
     object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
     arm_faces = np.flatnonzero(face_mask(mesh, [s for p in parametric['parts']
@@ -311,11 +340,17 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                                         0, semantic, f'{semantic}_length', single_row=True,
                                         allowed_faces=allowed_faces)
                         for stroke in planned:
-                            # The arm meets the seat at both ends; avoid grazing that seam.
-                            if len(stroke['surface_points']) > 4:
-                                stroke['surface_points'] = stroke['surface_points'][1:-1]
-                                stroke['nozzle_points'] = stroke['nozzle_points'][1:-1]
-                                strokes.append(stroke)
+                            original_ends = np.asarray(stroke['surface_points'])[[0, -1]].copy()
+                            repaired = repair_seam_endpoints(mesh, stroke, allowed_faces)
+                            shifts = np.linalg.norm(
+                                np.asarray(repaired['surface_points'])[[0, -1]] - original_ends,
+                                axis=1)
+                            seam_adjustments.extend(shifts.tolist())
+                            strokes.append(repaired)
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
-    return strokes, {'strategy':'parametric panel raster and member lengthwise passes', 'component_counts':component_counts, 'standoff_mm':STANDOFF_MM, 'pass_spacing_mm':PASS_SPACING_MM}
+    return strokes, {'strategy':'parametric panel raster and member lengthwise passes',
+                     'component_counts':component_counts, 'standoff_mm':STANDOFF_MM,
+                     'pass_spacing_mm':PASS_SPACING_MM,
+                     'seam_endpoint_shift_max_mm':max(seam_adjustments, default=0.0),
+                     'seam_endpoint_shifted_count':sum(shift > 0 for shift in seam_adjustments)}

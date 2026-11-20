@@ -12,9 +12,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from spraybot_trajectory.path_checks import (
     check_exported_motion, check_exported_rays, clear_motion, clear_rays,
 )
+from spraybot_trajectory.armchair import repair_seam_endpoints
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
+    def test_seam_repair_moves_endpoint_without_dropping_spray_samples(self):
+        seat = trimesh.creation.box(extents=[20, 20, 10])
+        seat.apply_translation([-10, 0, -5])
+        arm = trimesh.creation.box(extents=[100, 20, 10])
+        arm.apply_translation([50, 0, -5])
+        mesh = trimesh.util.concatenate([seat, arm])
+        allowed = np.zeros(len(mesh.faces), dtype=bool)
+        allowed[len(seat.faces):] = True
+        surface = [[0.0, 0.0, 0.0], [20.0, 0.0, 0.0],
+                   [40.0, 0.0, 0.0], [80.0, 0.0, 0.0], [100.0, 0.0, 0.0]]
+        stroke = {"surface_points": surface,
+                  "nozzle_points": [[x, y, z + 120] for x, y, z in surface]}
+
+        repaired = repair_seam_endpoints(mesh, stroke, allowed)
+
+        self.assertEqual(len(repaired["surface_points"]), len(surface))
+        self.assertGreater(repaired["surface_points"][0][0], 0)
+        self.assertLessEqual(repaired["surface_points"][0][0], 2)
+        self.assertEqual(repaired["surface_points"][1:-1], surface[1:-1])
+        self.assertTrue(clear_rays(mesh, np.asarray(repaired["surface_points"]),
+                                   np.asarray(repaired["nozzle_points"]), allowed).all())
+
     def test_ray_to_wrong_part_is_rejected_even_at_expected_distance(self):
         seat = trimesh.creation.box(extents=[40, 40, 10])
         seat.apply_translation([0, 0, -5])  # target surface z=0
