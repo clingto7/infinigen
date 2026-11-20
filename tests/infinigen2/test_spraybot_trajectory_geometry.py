@@ -11,12 +11,22 @@ import trimesh
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 from spraybot_trajectory.path_checks import (
-    check_exported_motion, check_exported_rays, clear_motion, clear_rays,
+    check_exported_motion, check_exported_rays, check_exported_smoothness,
+    clear_motion, clear_rays,
 )
 from spraybot_trajectory.armchair import coating_scope, relocate_stroke
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
+    def test_exported_smoothness_flags_a_sharp_turn(self):
+        paths = [
+            {'points': [[0., 0., 0.], [0.02, 0., 0.], [0.02, 0.02, 0.]]},
+            {'points': [[0., 0., 0.], [0.02, 0., 0.], [0.04, 0.005, 0.]]},
+        ]
+        result = check_exported_smoothness(paths)
+        self.assertEqual(result['invalid_stroke_ids'], [0])
+        self.assertAlmostEqual(result['observed_max_turn_deg'], 90.)
+
     def test_armchair_scope_includes_seat_front_and_side_rim(self):
         normals = ([0., 0., 1.], [1., 0., 0.],
                    [0., -1., 0.], [-1., 0., 0.])

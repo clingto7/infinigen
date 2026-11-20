@@ -209,15 +209,18 @@ def pair(review_root: Path, trajectory_root: Path, spraybot: Path,
                  target_area[oriented_covered].sum() / target_area.sum()),
              "target_centroid_gap_p95_mm": float(np.percentile(target_gap, 95)),
              "status": "trajectory_review_required"}
-    from spraybot_trajectory.path_checks import check_exported_motion, check_exported_rays
+    from spraybot_trajectory.path_checks import (check_exported_motion, check_exported_rays,
+                                                  check_exported_smoothness)
     check["exported_ray_check"] = check_exported_rays(
         mesh, paths, sources, 120.0 if kind == "armchair" else None,
         model["part_id"] if kind == "armchair" else None,
         model["part_legend"] if kind == "armchair" else None)
     check["exported_motion_check"] = check_exported_motion(mesh, paths)
+    check["exported_smoothness_check"] = check_exported_smoothness(paths)
     check["geometry_gate"] = (
         "passed" if not check["exported_ray_check"]["invalid_stroke_ids"]
-        and not check["exported_motion_check"]["invalid_stroke_ids"] else "failed"
+        and not check["exported_motion_check"]["invalid_stroke_ids"]
+        and not check["exported_smoothness_check"]["invalid_stroke_ids"] else "failed"
     )
     if kind == "armchair":
         check["strategy"] = "armchair_parametric_part_planner"

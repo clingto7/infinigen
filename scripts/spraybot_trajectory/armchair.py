@@ -49,7 +49,9 @@ def coating_scope(parametric, target):
                             (abs(normal[2]) < 0.35 and
                              (normal[0] > 0.65 or abs(normal[1]) > 0.65)))
                 elif semantic == 'back':
-                    keep = abs(normal[0]) > 0.75 and abs(normal[2]) < 0.65
+                    horizontal_beam = extent[1] > 2 * extent[2] and extent[1] > 2 * extent[0]
+                    keep = (abs(normal[0]) > 0.75 and abs(normal[2]) < 0.65
+                            or horizontal_beam and normal[2] > 0.65)
                 elif semantic == 'leg_base':
                     if stretcher:
                         keep = normal[2] > 0.65 or np.dot(normal[:2], center[:2] - object_center[:2]) > 0
@@ -71,7 +73,7 @@ def coating_scope(parametric, target):
                     included[semantic] += int(np.count_nonzero(target[ids]))
     if not selected.any():
         raise ValueError('Armchair coating scope is empty')
-    return selected, {'policy': 'seat top/front/side rim; back front and rear; outer legs and arm contour/top; upper/outward stretchers',
+    return selected, {'policy': 'seat top/front/side rim; back front, rear and horizontal beam top; outer legs and arm contour/top; upper/outward stretchers',
                       'target_triangles': int(selected.sum()),
                       'excluded_triangles': int((target & ~selected).sum()),
                       'selected_surface_triangle_mappings': dict(included)}
@@ -138,6 +140,34 @@ def face_mask(mesh, surfaces):
     for surface in surfaces:
         mask[surface['mesh_mapping']['construction_triangle_ids']] = True
     return mask
+
+
+def smooth_stroke(stroke, passes=16, landing=True):
+    """Round the nozzle and landing polyline together, preserving every sample."""
+    surface = np.asarray(stroke['surface_points'], dtype=float)
+    nozzle = np.asarray(stroke['nozzle_points'], dtype=float)
+    for _ in range(passes):
+        if landing:
+            surface[1:-1] = (surface[:-2] + 2 * surface[1:-1] + surface[2:]) / 4
+        nozzle[1:-1] = (nozzle[:-2] + 2 * nozzle[1:-1] + nozzle[2:]) / 4
+    aim_out = nozzle - surface
+    aim_out /= np.linalg.norm(aim_out, axis=1, keepdims=True)
+    nozzle += aim_out * 7
+    return {**stroke, 'surface_points': surface.tolist(), 'nozzle_points': nozzle.tolist()}
+
+
+def straighten_seat_rim(stroke, edge):
+    """Fit one continuous parametric rim line instead of hopping between mesh samples."""
+    surface = np.asarray(stroke['surface_points'], dtype=float)
+    along, transverse = (1, 0) if edge == 'front' else (0, 1)
+    degree = 3 if edge == 'front' else 1
+    surface[:, transverse] = np.polyval(
+        np.polyfit(surface[:, along], surface[:, transverse], degree), surface[:, along])
+    surface[:, 2] = np.median(surface[:, 2])
+    direction = {'front': [1., 0., 0.], 'left': [0., -1., 0.],
+                 'right': [0., 1., 0.]}[edge]
+    nozzle = surface + np.asarray(direction) * STANDOFF_MM
+    return {**stroke, 'surface_points': surface.tolist(), 'nozzle_points': nozzle.tolist()}
 
 
 def relocate_stroke(mesh, stroke, allowed_faces, clearance_mesh=None):
@@ -436,7 +466,7 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                         side_strokes.append(repaired)
                 center_strokes = [stroke for stroke in safe_strokes
                                   if np.ptp(np.asarray(stroke['surface_points'])[:, 1]) >= SEAT_SIDE_ROW_SPAN_MM]
-                strokes.extend(sorted(side_strokes + center_strokes,
+                strokes.extend(sorted(side_strokes + [smooth_stroke(s) for s in center_strokes],
                                       key=lambda stroke: np.mean(
                                           np.asarray(stroke['surface_points'])[:, 1])))
                 rim_mid_z = (points[:, 2].min() + points[:, 2].max()) / 2
@@ -457,21 +487,31 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                                 allowed_faces=allowed_faces)
                     if len(rim) != 1:
                         raise ValueError(f'Armchair seat {edge} rim is not one pass')
-                    strokes.extend(rim)
+                    strokes.append(straighten_seat_rim(rim[0], edge))
             elif semantic == 'back':
                 component_counts['panel'] += 1
                 extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
+                if face_parts is not None:
+                    allowed_faces = np.asarray(face_parts) == semantic_id
                 if extent[2] > 2 * extent[1] and extent[1] < 0.08:
                     for sign in (1, -1):
                         strokes.extend(member_line(mesh, component, np.array([float(sign), 0., 0.]),
                                                    semantic, 'back_post_length',
                                                    allowed_faces=allowed_faces))
                     continue
+                if extent[1] > 2 * extent[2] and extent[1] > 2 * extent[0]:
+                    for name, direction in (('front', [1., 0., 0.]),
+                                            ('rear', [-1., 0., 0.]),
+                                            ('top', [0., 0., 1.])):
+                        strokes.extend(member_line(mesh, component, np.asarray(direction),
+                                                   semantic, f'back_beam_{name}',
+                                                   allowed_faces=allowed_faces))
+                    continue
                 across, along = (1, 2) if extent[2] >= extent[1] else (2, 1)
                 for sign in (1, -1):
-                    strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
+                    strokes.extend(smooth_stroke(s, passes=8, landing=False) for s in sweep(mesh, points, normals, center, np.eye(3),
                                           np.array([float(sign), 0., 0.]), across, along,
-                                          semantic, 'back_broad', serpentine=True,
+                                          semantic, 'back_broad', serpentine=False,
                                           allowed_faces=allowed_faces))
             elif semantic == 'arm':
                 continue

@@ -140,3 +140,25 @@ def check_exported_motion(mesh, paths: list[dict], clearance_mm: float = 1.0) ->
             'invalid_stroke_ids': invalid, 'min_clearance_mm': closest}
 
 
+def check_exported_smoothness(paths: list[dict], max_turn_deg: float = 45.0) -> dict:
+    """Screen abrupt changes in the exported nozzle travel direction."""
+    invalid, worst = [], 0.0
+    for index, path in enumerate(paths):
+        points = np.asarray(path['points'], dtype=float)
+        steps = np.diff(points, axis=0)
+        lengths = np.linalg.norm(steps, axis=1)
+        if np.any(lengths < 1e-6):
+            invalid.append(index)
+            continue
+        if len(steps) < 2:
+            continue
+        unit = steps / lengths[:, None]
+        angles = np.degrees(np.arccos(np.clip(np.sum(unit[:-1] * unit[1:], axis=1), -1, 1)))
+        worst = max(worst, float(np.max(angles)))
+        if np.any(angles > max_turn_deg):
+            invalid.append(index)
+    return {'method': 'adjacent exported nozzle segments heading change',
+            'max_turn_deg': max_turn_deg, 'observed_max_turn_deg': worst,
+            'invalid_stroke_ids': invalid}
+
+
