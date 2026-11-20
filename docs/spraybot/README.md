@@ -1,5 +1,7 @@
 # Spraybot 工件生成扩展
 
+新增或修改单个接口时，从[接口实现与审查流程](interface-workflow.md)开始；该流程串联模型、参数化描述、机器门禁、Web 人工审查、轨迹和经验回流。Agent 的项目入口见 [Skill](../../.agents/skills/spraybot-interface/SKILL.md)。
+
 本机交互式生成界面的启动和操作方法见[交互式工件生成器](generator-ui.md)。
 
 本 fork 用于开发和验证 Spraybot 的程序化工件生成器。目标是在本机做出并少量验证 80+ 个有喷涂结构差异的工件类别，不限于家具；大规模实例生成留给服务器。规划文档中的时间节点不作为当前约束。类别与喷涂任务的定义见 [CONTEXT.md](../../CONTEXT.md)。
