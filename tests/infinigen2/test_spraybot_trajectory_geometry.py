@@ -39,6 +39,28 @@ class TrajectoryGeometryChecks(unittest.TestCase):
                                          np.ones(4, dtype=bool))
         self.assertEqual(selected.tolist(), [True, True, True, False])
 
+    def test_armchair_scope_includes_front_post_face_for_L_pass(self):
+        specs = (
+            ([[0., -20., 100.], [100., -20., 100.],
+              [100., 0., 100.], [0., 0., 100.]], [0., 0., 1.]),
+            ([[100., -20., 0.], [100., 0., 0.],
+              [100., 0., 100.], [100., -20., 100.]], [1., 0., 0.]),
+            ([[0., -20., 0.], [0., 0., 0.],
+              [0., 0., 100.], [0., -20., 100.]], [1., 0., 0.]),
+        )
+        parts = []
+        for index, (corners, normal) in enumerate(specs):
+            surface = {'geometry': {'corners': corners}, 'normal': normal,
+                       'mesh_mapping': {'construction_triangle_ids': [index]}}
+            parts.append({'semantic': 'arm', 'surfaces': [surface]})
+
+        def fake_sampler(surface):
+            return 'plane_rectangle', 1, 1, lambda u, v: (np.zeros(3), surface['normal'])
+
+        with patch('spraybot_trajectory.armchair.sampler', side_effect=fake_sampler):
+            selected, _ = coating_scope({'parts': parts}, np.ones(3, dtype=bool))
+        self.assertEqual(selected.tolist(), [True, True, False])
+
     def test_seam_repair_moves_entire_stroke_without_changing_its_shape(self):
         seat = trimesh.creation.box(extents=[20, 20, 10])
         seat.apply_translation([-10, 0, -5])

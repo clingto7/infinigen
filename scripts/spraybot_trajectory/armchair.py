@@ -59,7 +59,10 @@ def coating_scope(parametric, target):
                 elif semantic == 'arm':
                     outside = np.sign(center[1] - object_center[1])
                     horizontal = extent[2] < 0.5 * max(extent[:2])
-                    keep = (normal[2] > 0.7 or normal[1] * outside > 0.7) if horizontal else normal[1] * outside > 0.7
+                    keep = ((normal[2] > 0.7 or normal[1] * outside > 0.7)
+                            if horizontal else
+                            (normal[1] * outside > 0.7 or
+                             (center[0] > object_center[0] and normal[0] > 0.7)))
                 else:
                     keep = False
                 if keep:
@@ -290,7 +293,7 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
 
 
 def arm_frame_strokes(parametric, target, mesh, face_parts, part_legend, object_center):
-    """One outer U contour and one top pass per rectangular three-member arm."""
+    """One outer U contour and one top-to-front L pass per arm frame."""
     grouped = {-1: [], 1: []}
     for part in parametric['parts']:
         if part['semantic'] != 'arm':
@@ -354,7 +357,32 @@ def arm_frame_strokes(parametric, target, mesh, face_parts, part_legend, object_
                     single_row=True, allowed_faces=allowed)
         if len(top) != 1:
             raise ValueError('Armchair rail top did not produce one continuous pass')
-        repaired, mode, shift_mm = relocate_stroke(mesh, top[0], allowed)
+        top_surface = np.asarray(top[0]['surface_points'])
+        top_nozzle = np.asarray(top[0]['nozzle_points'])
+        front_x = right[2][0]
+        front_y = right[3][1]
+        corner = np.array([front_x, front_y, right[2][2]])
+        angles = np.deg2rad(np.arange(5, 91, 5))
+        outward = np.column_stack((np.sin(angles), np.zeros(len(angles)),
+                                   np.cos(angles)))
+        anchors = np.array([(1 - angle / (np.pi / 2)) * top_surface[-1]
+                            + (angle / (np.pi / 2)) * corner for angle in angles])
+        origins = anchors + outward * STANDOFF_MM
+        hits, ray_ids, faces = mesh.ray.intersects_location(
+            origins, -outward, multiple_hits=False)
+        if len(ray_ids) != len(angles) or not np.all(allowed[faces]):
+            raise ValueError('Armchair L turn does not face the arm at every point')
+        turn_surface = np.empty_like(origins)
+        turn_surface[ray_ids] = hits
+        turn_nozzle = turn_surface + outward * STANDOFF_MM
+        post_surface = line(corner, [front_x, front_y, right[1][2] + 15])[1:]
+        post_nozzle = post_surface + np.array([STANDOFF_MM, 0.0, 0.0])
+        l_stroke = {
+            'surface_points': np.concatenate((top_surface, turn_surface, post_surface)).tolist(),
+            'nozzle_points': np.concatenate((top_nozzle, turn_nozzle, post_nozzle)).tolist(),
+            'reason': 'arm_top_front_L', 'part': 'arm',
+        }
+        repaired, mode, shift_mm = relocate_stroke(mesh, l_stroke, allowed)
         strokes.append(repaired)
         adjustments.append((mode, shift_mm))
     return strokes, adjustments
