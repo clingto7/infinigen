@@ -10,7 +10,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 from spraybot_parametric_consumer import sampler
 from spraybot_trajectory.path_checks import (
-    check_exported_motion, check_exported_rays, clear_rays, split_runs,
+    check_exported_motion, check_exported_rays, clear_motion, clear_rays, split_runs,
 )
 
 STANDOFF_MM = 120.0
@@ -18,6 +18,7 @@ PASS_SPACING_MM = 90.0
 SAMPLE_STEP_MM = 20.0
 MIN_STROKE_MM = 100.0
 SEAT_ARM_CLEARANCE_MM = 30.0
+SEAT_SIDE_ROW_SPAN_MM = 20.0
 
 
 def coating_scope(parametric, target):
@@ -134,7 +135,7 @@ def face_mask(mesh, surfaces):
     return mask
 
 
-def relocate_stroke(mesh, stroke, allowed_faces):
+def relocate_stroke(mesh, stroke, allowed_faces, clearance_mesh=None):
     """Solve one rigid stroke adjustment; never remove or edit individual samples."""
     surface = np.asarray(stroke['surface_points'], dtype=float)
     nozzle = np.asarray(stroke['nozzle_points'], dtype=float)
@@ -148,11 +149,28 @@ def relocate_stroke(mesh, stroke, allowed_faces):
         ray_check = check_exported_rays(
             mesh, [path], [{'part': 'target'}], STANDOFF_MM,
             labels, {'1': 'target'})
-        return (not ray_check['invalid_stroke_ids']
-                and not check_exported_motion(mesh, [path])['invalid_stroke_ids'])
+        if ray_check['invalid_stroke_ids'] or check_exported_motion(mesh, [path])['invalid_stroke_ids']:
+            return False
+        if clearance_mesh is not None:
+            rounded_nozzle = np.asarray(path['points']) * 1000
+            if np.min(clearance_mesh.nearest.on_surface(rounded_nozzle)[1]) < SEAT_ARM_CLEARANCE_MM:
+                return False
+            if not np.all(clear_motion(mesh, rounded_nozzle, clearance_mesh,
+                                       SEAT_ARM_CLEARANCE_MM)):
+                return False
+        return True
 
     if valid(surface, nozzle):
         return stroke, 'none', 0.0
+    if clearance_mesh is not None:
+        side = np.sign(np.mean(surface[:, 1]))
+        for shift_mm in range(5, 71, 5):
+            for sign in (-side, side):
+                candidate_nozzle = nozzle + np.array([0.0, sign * shift_mm, 0.0])
+                if valid(surface, candidate_nozzle):
+                    stroke['nozzle_points'] = candidate_nozzle.tolist()
+                    return stroke, 'lateral_nozzle', float(shift_mm)
+        raise ValueError('Armchair seat stroke has no whole-path arm clearance within 70 mm')
     for shift_mm in (0.05, 0.1, 0.2, 0.5, 1.0, 2.0):
         for mode in ('nozzle', 'rigid'):
             for axis in range(3):
@@ -294,17 +312,32 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                 allowed_faces &= np.asarray(face_parts) == semantic_id
             if semantic == 'seat':
                 seat_min_x = min(corners(s)[:, 0].min() for s in component) * 1000
-                clear = ((points[:, 0] >= seat_min_x + 60)
-                         & (arm_mesh.nearest.on_surface(
-                             points + np.array([0., 0., STANDOFF_MM]))[1] >= SEAT_ARM_CLEARANCE_MM))
-                points, normals = points[clear], normals[clear]
-                if len(points) < 2:
+                in_scope = points[:, 0] >= seat_min_x + 60
+                raw_points, raw_normals = points[in_scope], normals[in_scope]
+                if len(raw_points) < 2:
                     continue
                 component_counts['panel'] += 1
-                strokes.extend(sweep(mesh, points, normals, center, np.eye(3),
-                                      np.array([0., 0., 1.]), 1, 0, semantic,
-                                      'seat_serpentine', serpentine=True,
-                                      allowed_faces=allowed_faces, clearance_mesh=arm_mesh))
+                sweep_args = (mesh, raw_points, raw_normals, center, np.eye(3),
+                              np.array([0., 0., 1.]), 1, 0, semantic, 'seat_serpentine')
+                raw_strokes = sweep(*sweep_args, serpentine=True, allowed_faces=allowed_faces)
+                safe = arm_mesh.nearest.on_surface(
+                    raw_points + np.array([0., 0., STANDOFF_MM]))[1] >= SEAT_ARM_CLEARANCE_MM
+                safe_strokes = sweep(mesh, raw_points[safe], raw_normals[safe], center,
+                                     np.eye(3), np.array([0., 0., 1.]), 1, 0, semantic,
+                                     'seat_serpentine', serpentine=True,
+                                     allowed_faces=allowed_faces, clearance_mesh=arm_mesh)
+                side_strokes = []
+                for stroke in raw_strokes:
+                    if np.ptp(np.asarray(stroke['surface_points'])[:, 1]) < SEAT_SIDE_ROW_SPAN_MM:
+                        repaired, mode, shift_mm = relocate_stroke(
+                            mesh, stroke, allowed_faces, clearance_mesh=arm_mesh)
+                        stroke_adjustments.append((mode, shift_mm))
+                        side_strokes.append(repaired)
+                center_strokes = [stroke for stroke in safe_strokes
+                                  if np.ptp(np.asarray(stroke['surface_points'])[:, 1]) >= SEAT_SIDE_ROW_SPAN_MM]
+                strokes.extend(sorted(side_strokes + center_strokes,
+                                      key=lambda stroke: np.mean(
+                                          np.asarray(stroke['surface_points'])[:, 1])))
             elif semantic == 'back':
                 component_counts['panel'] += 1
                 extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
@@ -359,4 +392,4 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                      'whole_stroke_shifted_count':sum(shift > 0 for _, shift in stroke_adjustments),
                      'whole_stroke_shift_modes':{
                          mode:sum(candidate == mode for candidate, _ in stroke_adjustments)
-                         for mode in ('none', 'nozzle', 'rigid')}}
+                         for mode in ('none', 'nozzle', 'rigid', 'lateral_nozzle')}}

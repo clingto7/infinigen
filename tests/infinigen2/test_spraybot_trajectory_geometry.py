@@ -47,6 +47,28 @@ class TrajectoryGeometryChecks(unittest.TestCase):
         np.testing.assert_allclose(np.ptp(shifted_nozzle-original_nozzle, axis=0), 0,
                                    atol=1e-10)
 
+    def test_seat_repair_moves_entire_nozzle_path_away_from_arm(self):
+        seat = trimesh.creation.box(extents=[200, 200, 10])
+        seat.apply_translation([0, 0, -5])
+        arm = trimesh.creation.box(extents=[120, 20, 20])
+        arm.apply_translation([0, 80, 120])
+        mesh = trimesh.util.concatenate([seat, arm])
+        allowed = np.zeros(len(mesh.faces), dtype=bool)
+        allowed[:len(seat.faces)] = True
+        surface = np.array([[-50., 80., 0.], [0., 80., 0.], [50., 80., 0.]])
+        nozzle = surface + [0., 0., 120.]
+        stroke = {"surface_points": surface.tolist(), "nozzle_points": nozzle.tolist()}
+
+        repaired, mode, shift_mm = relocate_stroke(mesh, stroke, allowed, arm)
+
+        self.assertEqual(mode, 'lateral_nozzle')
+        self.assertGreaterEqual(shift_mm, 30)
+        np.testing.assert_allclose(repaired['surface_points'], surface)
+        shifted = np.asarray(repaired['nozzle_points'])
+        np.testing.assert_allclose(np.diff(shifted, axis=0), np.diff(nozzle, axis=0))
+        np.testing.assert_allclose(np.ptp(shifted-nozzle, axis=0), 0, atol=1e-10)
+        self.assertGreaterEqual(arm.nearest.on_surface(shifted)[1].min(), 30)
+
     def test_ray_to_wrong_part_is_rejected_even_at_expected_distance(self):
         seat = trimesh.creation.box(extents=[40, 40, 10])
         seat.apply_translation([0, 0, -5])  # target surface z=0
