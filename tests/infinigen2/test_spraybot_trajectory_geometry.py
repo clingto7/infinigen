@@ -12,11 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from spraybot_trajectory.path_checks import (
     check_exported_motion, check_exported_rays, clear_motion, clear_rays,
 )
-from spraybot_trajectory.armchair import repair_seam_endpoints
+from spraybot_trajectory.armchair import relocate_stroke
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
-    def test_seam_repair_moves_endpoint_without_dropping_spray_samples(self):
+    def test_seam_repair_moves_entire_stroke_without_changing_its_shape(self):
         seat = trimesh.creation.box(extents=[20, 20, 10])
         seat.apply_translation([-10, 0, -5])
         arm = trimesh.creation.box(extents=[100, 20, 10])
@@ -25,18 +25,27 @@ class TrajectoryGeometryChecks(unittest.TestCase):
         allowed = np.zeros(len(mesh.faces), dtype=bool)
         allowed[len(seat.faces):] = True
         surface = [[0.0, 0.0, 0.0], [20.0, 0.0, 0.0],
-                   [40.0, 0.0, 0.0], [80.0, 0.0, 0.0], [100.0, 0.0, 0.0]]
+                   [40.0, 0.0, 0.0], [60.0, 0.0, 0.0], [80.0, 0.0, 0.0]]
         stroke = {"surface_points": surface,
                   "nozzle_points": [[x, y, z + 120] for x, y, z in surface]}
+        original_surface = np.asarray(stroke["surface_points"])
+        original_nozzle = np.asarray(stroke["nozzle_points"])
 
-        repaired = repair_seam_endpoints(mesh, stroke, allowed)
+        repaired, mode, shift_mm = relocate_stroke(mesh, stroke, allowed)
 
         self.assertEqual(len(repaired["surface_points"]), len(surface))
-        self.assertGreater(repaired["surface_points"][0][0], 0)
-        self.assertLessEqual(repaired["surface_points"][0][0], 2)
-        self.assertEqual(repaired["surface_points"][1:-1], surface[1:-1])
-        self.assertTrue(clear_rays(mesh, np.asarray(repaired["surface_points"]),
-                                   np.asarray(repaired["nozzle_points"]), allowed).all())
+        self.assertIn(mode, ("nozzle", "rigid"))
+        self.assertLessEqual(shift_mm, 2)
+        shifted_surface = np.asarray(repaired["surface_points"])
+        shifted_nozzle = np.asarray(repaired["nozzle_points"])
+        np.testing.assert_allclose(np.diff(shifted_surface, axis=0),
+                                   np.diff(original_surface, axis=0), atol=1e-10)
+        np.testing.assert_allclose(np.diff(shifted_nozzle, axis=0),
+                                   np.diff(original_nozzle, axis=0), atol=1e-10)
+        np.testing.assert_allclose(np.ptp(shifted_surface-original_surface, axis=0), 0,
+                                   atol=1e-10)
+        np.testing.assert_allclose(np.ptp(shifted_nozzle-original_nozzle, axis=0), 0,
+                                   atol=1e-10)
 
     def test_ray_to_wrong_part_is_rejected_even_at_expected_distance(self):
         seat = trimesh.creation.box(extents=[40, 40, 10])

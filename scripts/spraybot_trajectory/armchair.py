@@ -9,7 +9,9 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial import cKDTree
 from spraybot_parametric_consumer import sampler
-from spraybot_trajectory.path_checks import clear_rays, split_runs
+from spraybot_trajectory.path_checks import (
+    check_exported_motion, check_exported_rays, clear_rays, split_runs,
+)
 
 STANDOFF_MM = 120.0
 PASS_SPACING_MM = 90.0
@@ -132,32 +134,37 @@ def face_mask(mesh, surfaces):
     return mask
 
 
-def repair_seam_endpoints(mesh, stroke, allowed_faces):
-    """Move ambiguous seam samples onto the same exposed face, retaining the pass."""
+def relocate_stroke(mesh, stroke, allowed_faces):
+    """Solve one rigid stroke adjustment; never remove or edit individual samples."""
     surface = np.asarray(stroke['surface_points'], dtype=float)
     nozzle = np.asarray(stroke['nozzle_points'], dtype=float)
-    for end, neighbor in ((0, 1), (-1, -2)):
-        span = np.linalg.norm(surface[end] - surface[neighbor])
-        if span <= 0:
-            raise ValueError('Armchair stroke has a zero-length endpoint segment')
-        for shift_mm in (0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0):
-            fraction = shift_mm / span
-            candidate_surface = (1 - fraction) * surface[end] + fraction * surface[neighbor]
-            candidate_nozzle = (1 - fraction) * nozzle[end] + fraction * nozzle[neighbor]
-            exported_nozzle = np.round(candidate_nozzle / 1000, 6) * 1000
-            aim = candidate_surface - candidate_nozzle
-            aim /= np.linalg.norm(aim)
-            exported_aim = np.round(aim, 6)
-            exported_aim /= np.linalg.norm(exported_aim)
-            landing = exported_nozzle + exported_aim * STANDOFF_MM
-            if clear_rays(mesh, landing[None], exported_nozzle[None], allowed_faces)[0]:
-                surface[end], nozzle[end] = candidate_surface, candidate_nozzle
-                break
-        else:
-            raise ValueError('Armchair seam endpoint cannot be repaired within 2 mm')
-    stroke['surface_points'] = surface.tolist()
-    stroke['nozzle_points'] = nozzle.tolist()
-    return stroke
+    labels = np.asarray(allowed_faces, dtype=np.int8)
+
+    def valid(candidate_surface, candidate_nozzle):
+        aim = candidate_surface - candidate_nozzle
+        aim /= np.linalg.norm(aim, axis=1, keepdims=True)
+        path = {'points': np.round(candidate_nozzle / 1000, 6).tolist(),
+                'aims': np.round(aim, 6).tolist()}
+        ray_check = check_exported_rays(
+            mesh, [path], [{'part': 'target'}], STANDOFF_MM,
+            labels, {'1': 'target'})
+        return (not ray_check['invalid_stroke_ids']
+                and not check_exported_motion(mesh, [path])['invalid_stroke_ids'])
+
+    if valid(surface, nozzle):
+        return stroke, 'none', 0.0
+    for shift_mm in (0.05, 0.1, 0.2, 0.5, 1.0, 2.0):
+        for mode in ('nozzle', 'rigid'):
+            for axis in range(3):
+                for sign in (-1, 1):
+                    shift = np.eye(3)[axis] * (sign * shift_mm)
+                    candidate_surface = surface + shift if mode == 'rigid' else surface
+                    candidate_nozzle = nozzle + shift
+                    if valid(candidate_surface, candidate_nozzle):
+                        stroke['surface_points'] = candidate_surface.tolist()
+                        stroke['nozzle_points'] = candidate_nozzle.tolist()
+                        return stroke, mode, shift_mm
+    raise ValueError('Armchair stroke has no whole-path collision-free adjustment within 2 mm')
 
 
 def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
@@ -267,7 +274,7 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
     target = np.asarray(target, dtype=bool)
     strokes = []
     component_counts = {'panel': 0, 'member': 0}
-    seam_adjustments = []
+    stroke_adjustments = []
     all_corners = np.vstack([corners(s) for p in parametric['parts'] for s in p['surfaces']])
     object_center = (all_corners.min(axis=0) + all_corners.max(axis=0)) / 2
     arm_faces = np.flatnonzero(face_mask(mesh, [s for p in parametric['parts']
@@ -340,17 +347,16 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                                         0, semantic, f'{semantic}_length', single_row=True,
                                         allowed_faces=allowed_faces)
                         for stroke in planned:
-                            original_ends = np.asarray(stroke['surface_points'])[[0, -1]].copy()
-                            repaired = repair_seam_endpoints(mesh, stroke, allowed_faces)
-                            shifts = np.linalg.norm(
-                                np.asarray(repaired['surface_points'])[[0, -1]] - original_ends,
-                                axis=1)
-                            seam_adjustments.extend(shifts.tolist())
+                            repaired, mode, shift_mm = relocate_stroke(mesh, stroke, allowed_faces)
+                            stroke_adjustments.append((mode, shift_mm))
                             strokes.append(repaired)
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
     return strokes, {'strategy':'parametric panel raster and member lengthwise passes',
                      'component_counts':component_counts, 'standoff_mm':STANDOFF_MM,
                      'pass_spacing_mm':PASS_SPACING_MM,
-                     'seam_endpoint_shift_max_mm':max(seam_adjustments, default=0.0),
-                     'seam_endpoint_shifted_count':sum(shift > 0 for shift in seam_adjustments)}
+                     'whole_stroke_shift_max_mm':max((shift for _, shift in stroke_adjustments), default=0.0),
+                     'whole_stroke_shifted_count':sum(shift > 0 for _, shift in stroke_adjustments),
+                     'whole_stroke_shift_modes':{
+                         mode:sum(candidate == mode for candidate, _ in stroke_adjustments)
+                         for mode in ('none', 'nozzle', 'rigid')}}
