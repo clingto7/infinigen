@@ -17,7 +17,7 @@ from spraybot_interface_state import read_committed_record, review_for_ui, save_
 SCHEMA = "spraybot.review-root.v1"
 REVIEW_FIELDS = frozenset({
     "model", "spray_part", "spray_target", "spray_target_reason",
-    "geometry_accessible", "max_passable_radius_m", "structure_priors", "parametric",
+    "geometry_accessible", "structure_priors", "parametric",
 })
 
 

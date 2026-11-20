@@ -33,7 +33,6 @@ def build(rng: pf.RNG) -> pf.MeshObject:
     parts.append(placed((depth, t, height - mid), (0.0, width * upper_split, mid), material, "shelf"))
     parts.append(placed((depth, width, t), (0.0, 0.0, low), material, "shelf"))
     parts.append(placed((depth, width * lower_split, t), (0.0, 0.0, mid), material, "shelf"))
-    parts.append(placed((depth, width * (1.0 - lower_split), t), (0.0, width * lower_split, mid * 0.55), material, "shelf"))
     parts.append(placed((depth, width, t), (0.0, 0.0, high), material, "shelf"))
     return join_tagged(parts)
 

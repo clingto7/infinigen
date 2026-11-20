@@ -64,7 +64,7 @@ ssh -N -L 18765:127.0.0.1:8765 radar
 
 1. 从“加载已有审查样本”选接口和 seed；选中 seed 后自动加载，逐个查看一个接口的十个样本。额外抽样时再用“现场生成新样本”。
 2. 在模型上拖动旋转、滚轮缩放，点“重置视角”恢复取景。用“显示模型”与“显示参数化描述”分别切换网格和参数叠层，可单独看其中之一，也可叠加比较。
-3. 用“面字段”选择默认外观、`spray_target`、`spray_target_reason`、`geometry_accessible`、`max_passable_radius_m` 或 `spray_part` 着色。显示模型时点击三角面，可看该面的部件、目标状态、排除原因、外部连通状态及通路半径。
+3. 用“面字段”选择默认外观、`spray_target`、`spray_target_reason`、`geometry_accessible` 或 `spray_part` 着色。显示模型时点击三角面，可看该面的部件、目标状态、排除原因及外部连通状态。`max_passable_radius_m` 已停用，不参与审查。
 4. 参数叠层显示采样点与线；`csg_trimmed_face` 的闭合彩线标示裁剪边界和孔洞边界。它是人工概览，不代替独立机器门禁的精确几何与法向检查。
 5. 右侧滚动栏分别展示样本统计、逐面字段、参数化描述、部件图例、可选的 `structure_priors` 与接口级审查。`structure_priors=null` 表示此接口没有专用结构先验，不代表 `parametric` 缺失。
 6. 审查结论以接口为单位，填写审查人并选“待审查”“通过”或“需要修复”。在对应字段的文本框写当前 seed 的问题，保存时自动关联 seed；再次加载该 seed 可修改或清空反馈。未解决问题存在时不能标记通过。结果写入仓库的 `reviews/interfaces/*.json`，界面会标出尚未 Git 提交的结论。
@@ -75,7 +75,6 @@ ssh -N -L 18765:127.0.0.1:8765 radar
 - `spray_target`：灰为非目标，红为目标。
 - `spray_target_reason`：绿为目标，黄为非喷涂材料，紫为部件策略排除，蓝为内部空腔/流道排除。点击面可查看稳定类别名。
 - `geometry_accessible`：橙为邻接自由空间不连通外部，青为连通。
-- `max_passable_radius_m`：蓝到红对应 0 到该模型半径 p95；高于 p95 的值按红色显示。点击面可读取原始米制数值。
 - `spray_part`：不同颜色区分语义部件编号；具体名称见右侧图例。
 
 `spray_target` 由接口的喷涂任务策略和材料标签决定，不从外部连通性推断。例如 `valve_housing`、`tee_pipe` 内腔和管道内壁设为非目标；它们仍可能 `geometry_accessible=True`，可达性与目标意图分别表达。

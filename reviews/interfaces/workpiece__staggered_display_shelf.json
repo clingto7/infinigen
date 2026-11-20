@@ -1,14 +1,11 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:staggered_display_shelf",
-  "status": "awaiting_review",
-  "machine_gate": {
-    "status": "passed",
-    "sha256": "c9b9a778aec0be82105a4e2bbaef709eb60913b74df0470437997fdc52c35f99",
-    "source_commit": null,
-    "geometry_episodes": 20,
-    "invariance_seeds": 20,
-    "recorded_at": "2026-11-15T12:31:56.719952+00:00"
-  },
-  "human_review": null
+  "status": "developing",
+  "machine_gate": null,
+  "human_review": null,
+  "invalidation": {
+    "reason": "Removed redundant right-side shelf board that formed an uncoatable narrow gap with the full-width lower board; previous model evidence is stale.",
+    "recorded_at": "2026-11-20T14:05:11.959731+00:00"
+  }
 }

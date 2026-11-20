@@ -43,7 +43,7 @@ from `spray_target`. The agreed per-face fields are:
 | `spray_target` | boolean, one value per face | Whether the face belongs to the coating task under that interface's task and material policy. This is independent from geometric access. For `valve_housing` and `tee_pipe`, internal cavity and bore walls are explicitly non-target, though their free space may connect to the exterior. |
 | `spray_target_reason` | integer, one value per face | Stable reason code: `0=target`, `1=non_spray_material` (for example glass), `2=component_policy` (for example handles or closed drawer boxes), `3=internal_cavity` (for example valve/tee flow passages). Target faces use 0; non-target faces use a nonzero reason. |
 | `geometry_accessible` | boolean, one value per face | Whether free space adjacent to the face connects to exterior free space along a path that does not cross the workpiece. This reports geometric point connectivity only; it does not decide coating intent or guarantee sprayability. |
-| `max_passable_radius_m` | float in meters, one value per face | Largest spherical probe radius that can travel from exterior free space to the face along an unobstructed path. Narrow openings lower the value even when the interior connects to the exterior. |
+| `max_passable_radius_m` | deprecated legacy field | The current estimate is unreliable across workpieces. It is no longer a required export or a valid input to trajectory planning, validation gates, review decisions, or downstream consumption. Existing artifacts may still contain it for compatibility; consumers must ignore it. |
 
 Direction probes may support computation, but the result is face-aligned; a
 small set of probe directions alone is not the face-level contract. The existing
@@ -51,19 +51,17 @@ small set of probe directions alone is not the face-level contract. The existing
 currently available. It does not replace connectivity or passage clearance.
 
 The current Infinigen implementation voxelizes the final joined mesh at 96 cells
-per longest bounding-box dimension. It flood-fills exterior free cells and uses
-clearance-constrained grid propagation for `max_passable_radius_m`. These fields
-are geometric estimates at voxel resolution: openings narrower than a voxel can
-be closed by discretization, and clearances are quantized. `scripts/spraybot_validate_one.py`
-checks the per-face schema and writes `face_fields.png`, which shows two views
-each for target intent, exclusion reason, exterior connectivity, and passage radius. The validation
-contact-sheet command also builds a per-category face-field sheet.
+per longest bounding-box dimension and flood-fills exterior free cells. The legacy
+clearance propagation still may emit `max_passable_radius_m`, but its result is
+unreliable and must be ignored. `scripts/spraybot_validate_one.py` checks the
+active per-face schema; review should use target intent, exclusion reason, and
+exterior connectivity, not passage radius.
 
 `spray_target` is assigned from the interface's task policy and material labels;
 it is never inferred from `geometry_accessible`. For example, internal walls in
 `valve_housing` and `tee_pipe` are deliberately excluded from the coating target.
 Their `geometry_accessible` value can still be true because the bores open to the
-exterior, and `max_passable_radius_m` still describes their geometric clearance.
+exterior; no usable passage-width value is currently supplied.
 
 ## Existing Spraybot precedents
 

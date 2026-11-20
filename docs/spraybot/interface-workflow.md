@@ -6,7 +6,7 @@
 
 本仓库是 Infinigen 的 Spraybot 工件生成 fork。它公开 `spraybot:` 与 `workpiece:` 工件接口，按接口 ID 和 seed 生成完整模型，保留逐面语义与目标面字段，并从生成过程导出参数化描述或结构先验。本仓库还保存新接口的专属喷涂轨迹程序、配对模型的 PaintDS/Web 轨迹，以及机器检查和人工审查记录。Spraybot 仓库负责后续训练格式转换和模型；两仓库通过导出数据交接，不相互导入运行时代码。详见 [兼容契约](compatibility-contract.md)和 [ADR 0007](../adr/0007-colocate-interface-trajectory-programs.md)。
 
-生成接口的职责是提供同类多 seed 的稳定结构与可观察变体，不是把任意 Infinigen Object 函数计为新工件类别。`spray_target` 表示本次喷涂任务的目标面；`geometry_accessible` 和 `max_passable_radius_m` 描述几何连通与净空，不决定涂装意图，也不证明喷枪或机器人可达。参数化描述、生成接口审查、轨迹审查分别给出结论。
+生成接口的职责是提供同类多 seed 的稳定结构与可观察变体，不是把任意 Infinigen Object 函数计为新工件类别。`spray_target` 表示本次喷涂任务的目标面；`geometry_accessible` 仅描述外部自由空间的点连通，不决定涂装意图，也不证明喷枪或机器人可达。`max_passable_radius_m` 的现有估计在多类工件上不可靠，已停用：不得将其用于轨迹规划、机器门禁、人工验收或下游交付。旧样本中如仍有该字段，只视为历史数据。参数化描述、生成接口审查、轨迹审查分别给出结论。
 
 | 结论 | 权威依据 | 证明范围 |
 | --- | --- | --- |

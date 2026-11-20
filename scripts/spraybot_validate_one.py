@@ -49,24 +49,16 @@ def _visibility_stats(mesh: bpy.types.Mesh) -> dict | None:
 
 def _accessibility_metrics(mesh: bpy.types.Mesh) -> dict:
     accessible = mesh.attributes.get("geometry_accessible")
-    radius = mesh.attributes.get("max_passable_radius_m")
-    if accessible is None or radius is None:
-        return {"geometry_accessible": None, "max_passable_radius_m": None}
-    values = np.asarray([item.value for item in radius.data], dtype=np.float64)
+    if accessible is None:
+        return {"geometry_accessible": None}
     flags = np.asarray([item.value for item in accessible.data], dtype=bool)
-    if len(values) == 0:
-        return {"geometry_accessible": None, "max_passable_radius_m": None}
+    if len(flags) == 0:
+        return {"geometry_accessible": None}
     return {
         "geometry_accessible": {
             "accessible_faces": int(flags.sum()),
             "inaccessible_faces": int((~flags).sum()),
             "fraction_accessible": float(flags.mean()),
-        },
-        "max_passable_radius_m": {
-            "min": float(values.min()),
-            "median": float(np.median(values)),
-            "p95": float(np.percentile(values, 95)),
-            "max": float(values.max()),
         },
     }
 
@@ -181,15 +173,6 @@ def _spray_checks(mesh: bpy.types.Mesh, legend: dict[int, str] | None) -> dict:
         issues.append("geometry_accessible_must_be_boolean_face_attribute")
     elif len(accessible.data) != len(mesh.polygons):
         issues.append("geometry_accessible_length_mismatch")
-    radius = mesh.attributes.get("max_passable_radius_m")
-    if radius is None:
-        issues.append("max_passable_radius_m_missing")
-    elif radius.domain != "FACE" or radius.data_type != "FLOAT":
-        issues.append("max_passable_radius_must_be_float_face_attribute")
-    elif len(radius.data) != len(mesh.polygons):
-        issues.append("max_passable_radius_m_length_mismatch")
-    elif any(not np.isfinite(item.value) or item.value < 0 for item in radius.data):
-        issues.append("max_passable_radius_m_values_invalid")
     return {
         "passed": not issues,
         "issues": issues,
@@ -279,9 +262,6 @@ def _render_face_fields(
         ],
         "geometry_accessible": [(0.91, 0.30, 0.17, 1), (0.16, 0.72, 0.45, 1)],
     }
-    radius_attr = mesh.attributes["max_passable_radius_m"]
-    radius_values = np.asarray([item.value for item in radius_attr.data], dtype=float)
-    radius_max = max(float(np.percentile(radius_values, 95)), 1e-9)
     radius_palette = [
         (0.16, 0.23, 0.55, 1), (0.16, 0.43, 0.72, 1),
         (0.12, 0.63, 0.69, 1), (0.22, 0.75, 0.48, 1),
@@ -292,7 +272,6 @@ def _render_face_fields(
         ("spray_target", "spray_target", "False", "True", None),
         ("spray_target_reason", "spray_target_reason", "target / material / component / cavity", "see compatibility contract", None),
         ("geometry_accessible", "geometry_accessible", "No", "Yes", None),
-        ("max_passable_radius_m", "max_passable_radius_m", "0 m", f"{radius_max:.4f} m (p95)", radius_max),
     ]
     try:
         for attr_name, filename, _, _, scale_max in specs:
