@@ -1,4 +1,4 @@
-"""Whole-face raster paths for planar boards in open shelving workpieces.
+"""Whole-face raster paths for planar boards and members in furniture.
 
 Each row belongs to one generation-time surface, not to a mesh triangle. A row
 that cannot be sprayed continuously is reported as blocked for interface-specific
@@ -128,8 +128,8 @@ def _triangle_rows(surface: dict) -> list[np.ndarray]:
     return rows
 
 
-def plan_open_shelf(model: dict, mesh) -> tuple[list[dict], dict]:
-    """Plan visible complete board-face rows and report any obstructed rows."""
+def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
+    """Plan visible board-face rows and report any obstructed rows."""
     category = model["generator"].split(":", 1)[1]
     if category not in PLANAR_WORKPIECES:
         raise ValueError(f"unsupported planar workpiece: {category}")
@@ -169,7 +169,7 @@ def plan_open_shelf(model: dict, mesh) -> tuple[list[dict], dict]:
             normal = np.asarray(surface["geometry"]["normal"], dtype=float)
             edge_trim = (10.0 if category in {"cabriole_leg_table", "trestle_table"}
                          and semantic == "leg_base" else EDGE_TRIM_MM)
-            minimum_segment = (45.0 if category in {"cabriole_leg_table", "trestle_table"}
+            minimum_segment = (30.0 if category in {"cabriole_leg_table", "trestle_table"}
                                and semantic == "leg_base" else MIN_ROW_MM)
             rows = (_rectangle_rows(surface, edge_trim,
                                     category == "crib" and semantic in {"slat", "leg_base"})

@@ -16,7 +16,7 @@ from spraybot_trajectory.paintds import euler_zyx_to_aim, write_paintds
 from spraybot_trajectory.path_checks import (
     check_exported_motion, check_exported_rays, check_exported_smoothness,
 )
-from spraybot_trajectory.planar import PLANAR_WORKPIECES, STANDOFF_MM, plan_open_shelf
+from spraybot_trajectory.planar import PLANAR_WORKPIECES, STANDOFF_MM, plan_planar_faces
 from spraybot_trajectory.round_members import plan_round_members
 from spraybot_trajectory.curved_members import CURVED_WORKPIECES, plan_curved_members
 
@@ -82,6 +82,30 @@ def _check_paintds(path: Path, web_paths: list[dict]) -> dict:
             "max_aim_vector_delta": worst_aim}
 
 
+def _row_covered_by_same_face(row: dict, model: dict, mesh, paths: list[dict],
+                              sources: list[dict]) -> bool:
+    """A short missing row is harmless only if another row coats that same face."""
+    surface = next((surface for part in model["parametric"]["parts"]
+                    if part["id"] == row["part"] for surface in part["surfaces"]
+                    if surface["id"] == row["surface"]), None)
+    if surface is None:
+        return False
+    prefix = f"{row['part']}:{row['surface']}:"
+    same_face = [path for path, source in zip(paths, sources)
+                 if source["surface"].startswith(prefix)]
+    if not same_face:
+        return False
+    nozzles = np.concatenate([np.asarray(path["points"]) * 1000 for path in same_face])
+    aims = np.concatenate([np.asarray(path["aims"]) for path in same_face])
+    landings = nozzles + aims * STANDOFF_MM
+    face_ids = surface["mesh_mapping"]["construction_triangle_ids"]
+    for center, normal in zip(mesh.triangles_center[face_ids], mesh.face_normals[face_ids]):
+        distance = np.linalg.norm(landings - center, axis=1)
+        if not np.any((distance <= 45) & ((-aims) @ normal >= 0.5)):
+            return False
+    return True
+
+
 def pair(model_path: Path, output_root: Path) -> dict:
     model_path = model_path.resolve()
     model_bytes = model_path.read_bytes()
@@ -98,7 +122,7 @@ def pair(model_path: Path, output_root: Path) -> dict:
     mesh = trimesh.Trimesh(vertices=np.asarray(model["vertices"], dtype=float) * 1000,
                            faces=np.asarray(model["triangles"], dtype=int), process=False)
     if category in PLANAR_WORKPIECES:
-        strokes, diagnostics = plan_open_shelf(model, mesh)
+        strokes, diagnostics = plan_planar_faces(model, mesh)
     else:
         strokes, diagnostics = [], {"blocked_rows": [], "selected_surfaces": 0}
     curved_strokes, curved_diagnostics = plan_curved_members(model, mesh)
@@ -132,8 +156,11 @@ def pair(model_path: Path, output_root: Path) -> dict:
                                model["part_id"], model["part_legend"])
     motion = check_exported_motion(mesh, paths)
     smoothness = check_exported_smoothness(paths)
-    unplanned = [row for row in diagnostics["blocked_rows"]
-                 if row["valid_samples"] > 0 and not row["retained_segments"]]
+    unplanned_candidates = [row for row in diagnostics["blocked_rows"]
+                            if row["valid_samples"] > 0 and not row["retained_segments"]]
+    covered_rows = [row for row in unplanned_candidates
+                    if _row_covered_by_same_face(row, model, mesh, paths, sources)]
+    unplanned = [row for row in unplanned_candidates if row not in covered_rows]
     occluded = [row for row in diagnostics["blocked_rows"]
                 if row["valid_samples"] == 0 and not row["retained_segments"]]
     target = np.asarray(model["spray_target"], dtype=bool) & np.asarray(
@@ -153,6 +180,8 @@ def pair(model_path: Path, output_root: Path) -> dict:
     oriented = np.any((gaps <= 45) & (aligned >= 0.5), axis=1)
     area = mesh.area_faces[target]
     surface_gap = mesh.nearest.on_surface(landing_points)[1]
+    stroke_lengths = [float(np.linalg.norm(np.diff(np.asarray(path["points"]) * 1000,
+                                              axis=0), axis=1).sum()) for path in paths]
     blocked_midpoints, missed_midpoints = [], []
     semantic_ids = {name: int(index) for index, name in model["part_legend"].items()}
     for index, (path, source) in enumerate(zip(paths, sources)):
@@ -190,6 +219,10 @@ def pair(model_path: Path, output_root: Path) -> dict:
         "standoff_mm": STANDOFF_MM,
         "stroke_count": len(strokes),
         "waypoint_count": sum(len(path["points"]) for path in paths),
+        "stroke_length_min_mm": min(stroke_lengths),
+        "stroke_length_median_mm": float(np.median(stroke_lengths)),
+        "short_stroke_threshold_mm": 50.0,
+        "short_stroke_ids": [index for index, length in enumerate(stroke_lengths) if length < 50],
         "coverage_threshold_mm": 45.0,
         "target_centroid_within_threshold_fraction": float(within.mean()),
         "target_area_within_threshold_fraction": float(area[within].sum() / area.sum()),
@@ -199,6 +232,7 @@ def pair(model_path: Path, output_root: Path) -> dict:
         "coverage_diagnostic_scope": "all accessible spray_target faces; this is broader than the planned coating scope",
         "coating_scope": diagnostics,
         "fully_occluded_rows": len(occluded),
+        "same_face_covered_rows": len(covered_rows),
         "visible_unplanned_rows": len(unplanned),
         "whole_stroke_repairs": repairs,
         "exported_ray_check": rays,
