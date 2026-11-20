@@ -1,7 +1,7 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:backed_bench",
-  "status": "awaiting_review",
+  "status": "ready",
   "machine_gate": {
     "status": "passed",
     "sha256": "d0d51a6b4adc186afe2671aefefedcef55099cbed2e12ce0e537839da6b7c94f",
@@ -10,5 +10,13 @@
     "invariance_seeds": 20,
     "recorded_at": "2026-11-15T12:31:56.715160+00:00"
   },
-  "human_review": null
+  "human_review": {
+    "status": "accepted",
+    "reviewer": "hqb",
+    "notes": "2026-11-20 用户确认本轮20个接口的模型与参数化描述均通过人工审核。结论限于模型与面字段；喷涂轨迹另行审查。",
+    "field_issues": [],
+    "seed_issues": [],
+    "interface_id": "workpiece:backed_bench",
+    "reviewed_at": "2026-11-20T15:02:04.736210+00:00"
+  }
 }
