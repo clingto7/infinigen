@@ -3,6 +3,7 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import trimesh
@@ -12,10 +13,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from spraybot_trajectory.path_checks import (
     check_exported_motion, check_exported_rays, clear_motion, clear_rays,
 )
-from spraybot_trajectory.armchair import relocate_stroke
+from spraybot_trajectory.armchair import coating_scope, relocate_stroke
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
+    def test_armchair_scope_includes_seat_front_and_side_rim(self):
+        normals = ([0., 0., 1.], [1., 0., 0.],
+                   [0., -1., 0.], [-1., 0., 0.])
+        surfaces = []
+        for index, normal in enumerate(normals):
+            x = float(index * 10)
+            surfaces.append({
+                'normal': normal,
+                'geometry': {'corners': [[x, 0., 0.], [x + 1, 0., 0.],
+                                         [x + 1, 1., 0.], [x, 1., 0.]]},
+                'mesh_mapping': {'construction_triangle_ids': [index]},
+            })
+
+        def fake_sampler(surface):
+            return 'plane_rectangle', 1, 1, lambda u, v: (np.zeros(3), surface['normal'])
+
+        with patch('spraybot_trajectory.armchair.sampler', side_effect=fake_sampler):
+            selected, _ = coating_scope({'parts': [{'semantic': 'seat',
+                                                     'surfaces': surfaces}]},
+                                         np.ones(4, dtype=bool))
+        self.assertEqual(selected.tolist(), [True, True, True, False])
+
     def test_seam_repair_moves_entire_stroke_without_changing_its_shape(self):
         seat = trimesh.creation.box(extents=[20, 20, 10])
         seat.apply_translation([-10, 0, -5])

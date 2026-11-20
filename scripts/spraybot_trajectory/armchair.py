@@ -45,7 +45,9 @@ def coating_scope(parametric, target):
                 _, normal = evaluate(0.5, 0.5)
                 normal = np.asarray(normal, dtype=float)
                 if semantic == 'seat':
-                    keep = normal[2] > 0.65
+                    keep = (normal[2] > 0.65 or
+                            (abs(normal[2]) < 0.35 and
+                             (normal[0] > 0.65 or abs(normal[1]) > 0.65)))
                 elif semantic == 'back':
                     keep = abs(normal[0]) > 0.75 and abs(normal[2]) < 0.65
                 elif semantic == 'leg_base':
@@ -57,7 +59,7 @@ def coating_scope(parametric, target):
                 elif semantic == 'arm':
                     outside = np.sign(center[1] - object_center[1])
                     horizontal = extent[2] < 0.5 * max(extent[:2])
-                    keep = normal[2] > 0.7 if horizontal else normal[1] * outside > 0.7
+                    keep = (normal[2] > 0.7 or normal[1] * outside > 0.7) if horizontal else normal[1] * outside > 0.7
                 else:
                     keep = False
                 if keep:
@@ -66,7 +68,7 @@ def coating_scope(parametric, target):
                     included[semantic] += int(np.count_nonzero(target[ids]))
     if not selected.any():
         raise ValueError('Armchair coating scope is empty')
-    return selected, {'policy': 'seat top; back front and rear; outer legs and arms; upper/outward stretchers',
+    return selected, {'policy': 'seat top/front/side rim; back front and rear; outer legs and arm contour/top; upper/outward stretchers',
                       'target_triangles': int(selected.sum()),
                       'excluded_triangles': int((target & ~selected).sum()),
                       'selected_surface_triangle_mappings': dict(included)}
@@ -287,6 +289,77 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 
+def arm_frame_strokes(parametric, target, mesh, face_parts, part_legend, object_center):
+    """One outer U contour and one top pass per rectangular three-member arm."""
+    grouped = {-1: [], 1: []}
+    for part in parametric['parts']:
+        if part['semantic'] != 'arm':
+            continue
+        bounds = np.vstack([corners(surface) for surface in part['surfaces']]) * 1000
+        lo, hi = bounds.min(axis=0), bounds.max(axis=0)
+        center = (lo + hi) / 2
+        side = int(np.sign(center[1] - object_center[1] * 1000))
+        if side not in grouped:
+            raise ValueError('Armchair arm has no left/right side')
+        grouped[side].append((part, lo, hi, center))
+    semantic_id = next(int(k) for k, v in part_legend.items() if v == 'arm')
+    allowed = np.asarray(face_parts) == semantic_id
+    strokes, adjustments = [], []
+
+    def line(start, end):
+        length = np.linalg.norm(np.asarray(end) - start)
+        return np.linspace(start, end, max(2, int(np.ceil(length / SAMPLE_STEP_MM)) + 1))
+
+    def round_nozzle_corners(points):
+        points = points.copy()
+        for _ in range(5):
+            points[1:-1] = (points[:-2] + 2 * points[1:-1] + points[2:]) / 4
+        return points
+
+    for side, members in grouped.items():
+        if len(members) != 3:
+            raise ValueError('Armchair outer contour requires one rail and two posts per side')
+        rail = max(members, key=lambda member: member[2][0] - member[1][0])
+        posts = sorted((member for member in members if member is not rail),
+                       key=lambda member: member[3][0])
+        if (rail[2][0] - rail[1][0] <= rail[2][2] - rail[1][2] or
+                any(post[2][2] - post[1][2] <= post[2][0] - post[1][0]
+                    for post in posts)):
+            raise ValueError('Armchair arm frame is not the expected right-angle structure')
+        left, right = posts
+        outer_y = lambda member: member[1][1] if side < 0 else member[2][1]
+        rail_z = rail[3][2]
+        surface = np.concatenate((
+            line([left[3][0], outer_y(left), left[1][2] + 15],
+                 [left[3][0], outer_y(left), rail_z]),
+            line([left[3][0], outer_y(rail), rail_z],
+                 [right[3][0], outer_y(rail), rail_z]),
+            line([right[3][0], outer_y(right), rail_z],
+                 [right[3][0], outer_y(right), right[1][2] + 15]),
+        ))
+        outer = np.array([0.0, float(side), 0.0])
+        nozzle = round_nozzle_corners(surface + outer * STANDOFF_MM)
+        contour = {'surface_points': surface.tolist(),
+                   'nozzle_points': nozzle.tolist(),
+                   'reason': 'arm_outer_contour', 'part': 'arm'}
+        repaired, mode, shift_mm = relocate_stroke(mesh, contour, allowed)
+        strokes.append(repaired)
+        adjustments.append((mode, shift_mm))
+
+        rail_points, rail_normals = samples(rail[0]['surfaces'], target)
+        rail_center = rail_points.mean(axis=0)
+        _, _, axes = np.linalg.svd(rail_points - rail_center, full_matrices=False)
+        top = sweep(mesh, rail_points, rail_normals, rail_center, axes,
+                    np.array([0.0, 0.0, 1.0]), 1, 0, 'arm', 'arm_top_length',
+                    single_row=True, allowed_faces=allowed)
+        if len(top) != 1:
+            raise ValueError('Armchair rail top did not produce one continuous pass')
+        repaired, mode, shift_mm = relocate_stroke(mesh, top[0], allowed)
+        strokes.append(repaired)
+        adjustments.append((mode, shift_mm))
+    return strokes, adjustments
+
+
 def plan(parametric, target, mesh, face_parts=None, part_legend=None):
     """Plan from parametric geometry and target labels; mesh checks visibility."""
     target = np.asarray(target, dtype=bool)
@@ -338,6 +411,25 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                 strokes.extend(sorted(side_strokes + center_strokes,
                                       key=lambda stroke: np.mean(
                                           np.asarray(stroke['surface_points'])[:, 1])))
+                rim_mid_z = (points[:, 2].min() + points[:, 2].max()) / 2
+                for edge, direction, along in (
+                    ('front', np.array([1.0, 0.0, 0.0]), 1),
+                    ('left', np.array([0.0, -1.0, 0.0]), 0),
+                    ('right', np.array([0.0, 1.0, 0.0]), 0),
+                ):
+                    edge_mask = ((np.abs(points[:, 2] - rim_mid_z) < 10)
+                                 & (normals @ direction > 0.65)
+                                 & (np.abs(normals[:, 2]) < 0.35))
+                    edge_points, edge_normals = points[edge_mask], normals[edge_mask]
+                    if len(edge_points) < 2:
+                        raise ValueError(f'Armchair seat {edge} rim has no samples')
+                    rim = sweep(mesh, edge_points, edge_normals,
+                                edge_points.mean(axis=0), np.eye(3), direction, 2,
+                                along, semantic, f'seat_edge_{edge}', single_row=True,
+                                allowed_faces=allowed_faces)
+                    if len(rim) != 1:
+                        raise ValueError(f'Armchair seat {edge} rim is not one pass')
+                    strokes.extend(rim)
             elif semantic == 'back':
                 component_counts['panel'] += 1
                 extent = np.ptp(np.vstack([corners(surface) for surface in component]), axis=0)
@@ -353,6 +445,8 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                                           np.array([float(sign), 0., 0.]), across, along,
                                           semantic, 'back_broad', serpentine=True,
                                           allowed_faces=allowed_faces))
+            elif semantic == 'arm':
+                continue
             else:
                 component_counts['member'] += 1
                 bounds = np.vstack([corners(surface) for surface in component])
@@ -372,17 +466,11 @@ def plan(parametric, target, mesh, face_parts=None, part_legend=None):
                     strokes.extend(member_line(mesh, component, direction, semantic,
                                                'stretcher_upper_outward', trim_mm=25.0,
                                                allowed_faces=allowed_faces))
-                else:
-                    directions = [(axis, sign) for axis in (1,2) for sign in (1,-1)]
-                    for axis, sign in directions:
-                        planned = sweep(mesh, points, normals, center, axes,
-                                        axes[axis]*sign, 2 if axis==1 else 1,
-                                        0, semantic, f'{semantic}_length', single_row=True,
-                                        allowed_faces=allowed_faces)
-                        for stroke in planned:
-                            repaired, mode, shift_mm = relocate_stroke(mesh, stroke, allowed_faces)
-                            stroke_adjustments.append((mode, shift_mm))
-                            strokes.append(repaired)
+    arm_strokes, arm_adjustments = arm_frame_strokes(
+        parametric, target, mesh, face_parts, part_legend, object_center)
+    strokes.extend(arm_strokes)
+    stroke_adjustments.extend(arm_adjustments)
+    component_counts['member'] += 6
     if not strokes:
         raise ValueError('Armchair parametric planner produced no paths')
     return strokes, {'strategy':'parametric panel raster and member lengthwise passes',
