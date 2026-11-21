@@ -14,3 +14,10 @@
 - 根因：通用平面规划把窄面当成需多行覆盖。
 - 修复：窄面用居中单行，外露板边补齐；同面且路径安全时连接成 S 形。 实现提交 `c98a211d`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 28–42，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 0 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:ladder_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。
+
+## 2026-11-21：第三轮人工审查与轨迹修复
+
+- 症状及证据：层板附近有喷枪难以执行的短净空路径。 人工审查提交 `8c28cdc8`，详见 [`workpiece__ladder_shelf.json`](../../../reviews/trajectories/workpiece__ladder_shelf.json)。
+- 根因：局部射线可命中层板，但喷枪仍靠近相邻构件。
+- 修复：层板行增加整模型喷枪净空约束，只保留最长的连续安全区段。 实现提交 `23a38bad`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 34–50，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:ladder_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。

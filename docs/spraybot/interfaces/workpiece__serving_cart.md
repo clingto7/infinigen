@@ -14,3 +14,10 @@
 - 根因：窄面按通用栅格分行，外露边与内部连接面需区分。
 - 修复：外露窄边居中单行，安全的面内行合并，内部连接面不喷。 实现提交 `c98a211d`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 37–54，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 40 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:serving_cart`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。
+
+## 2026-11-21：第三轮人工审查与轨迹修复
+
+- 症状及证据：部分托盘边框与板边形成过密平行笔画。 人工审查提交 `8c28cdc8`，详见 [`workpiece__serving_cart.json`](../../../reviews/trajectories/workpiece__serving_cart.json)。
+- 根因：框架侧面和托盘窄边被当成独立喷涂行。
+- 修复：对共面、近距且面积相近的框架与板边只保留一组。 实现提交 `23a38bad`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 30–48，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:serving_cart`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
