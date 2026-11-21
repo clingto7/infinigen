@@ -21,3 +21,10 @@
 - 根因：侧面选择只检查单个水平轴分量，斜边法向未达阈值。
 - 修复：按水平法向长度选入斜边，并用同一目标面射线校验。 实现提交 `23a38bad`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 35–46，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:corner_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+
+## 2026-11-21：第四轮人工审查与轨迹修复
+
+- 症状及证据：最低层板的下表面不需喷涂。 人工审查提交 `c07283ec`，详见 [`workpiece__corner_shelf.json`](../../../reviews/trajectories/workpiece__corner_shelf.json)。
+- 根因：通用层板规则未区分装配后的最低板底面。
+- 修复：按同类层板最低高度排除该下表面，保留三角板外露斜边。 实现提交 `8bb4440a`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 31–42，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:corner_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。

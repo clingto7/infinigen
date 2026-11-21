@@ -21,3 +21,11 @@
 - 根因：横梁选面受整椅中心影响；座面没有背部构件净空约束。
 - 修复：横梁按自身前后法向选面，座面按背部网格净空裁定连接。 实现提交 `23a38bad`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 31–35，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:ladder_back_chair`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+
+## 2026-11-21：第四轮人工审查与轨迹修复
+
+- 症状及证据：座面部分笔画进入靠背构件的凸包。 人工审查提交 `c07283ec`，详见 [`workpiece__ladder_back_chair.json`](../../../reviews/trajectories/workpiece__ladder_back_chair.json)。
+- 根因：前轮只检查喷枪到背部实体的距离，未检查背部凸包自由空间。
+- 修复：对座面行及连接段按背部凸包逐段裁剪，只保留最长连续的外侧区段。 实现提交 `8bb4440a`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 31–35，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:ladder_back_chair`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+- seed 0–9 的座面喷枪线段按 5 mm 插值后均位于靠背构件凸包外。

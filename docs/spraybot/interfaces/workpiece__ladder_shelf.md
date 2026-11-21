@@ -21,3 +21,10 @@
 - 根因：局部射线可命中层板，但喷枪仍靠近相邻构件。
 - 修复：层板行增加整模型喷枪净空约束，只保留最长的连续安全区段。 实现提交 `23a38bad`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 34–50，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:ladder_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+
+## 2026-11-21：第四轮人工审查与轨迹修复
+
+- 症状及证据：最低层板下表面仍有无法执行的喷涂轨迹。 人工审查提交 `c07283ec`，详见 [`workpiece__ladder_shelf.json`](../../../reviews/trajectories/workpiece__ladder_shelf.json)。
+- 根因：通用层板选面没有排除最低板底面。
+- 修复：按层板最低高度排除下表面，其他层板继续保留相邻构件净空检查。 实现提交 `8bb4440a`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 31–47，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:ladder_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。

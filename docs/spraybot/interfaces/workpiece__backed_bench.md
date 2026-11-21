@@ -21,3 +21,11 @@
 - 根因：原规划只沿 U 型件两侧立腿走笔，窄边的密集采样固定在首个点所在侧。
 - 修复：为 U 型件增加底部横向长笔画，窄边连续采样跟随前一点，并允许同一靠背部件的相邻面首命中。 实现提交 `23a38bad`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 17–62，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:backed_bench`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+
+## 2026-11-21：第四轮人工审查与轨迹修复
+
+- 症状及证据：seed 0 的笔画 11、12 无须喷涂。 人工审查提交 `c07283ec`，详见 [`workpiece__backed_bench.json`](../../../reviews/trajectories/workpiece__backed_bench.json)。
+- 根因：宽横撑的内外侧被同一构件采样成两组近似纵向笔画。
+- 修复：对该宽横撑保留朝外的连续行，删去内侧两行。 实现提交 `8bb4440a`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 17–62，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:backed_bench`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+- seed 0 旧笔画 11、12 对应的内侧横撑行已消失；新轨迹重新编号后共有 20 笔。

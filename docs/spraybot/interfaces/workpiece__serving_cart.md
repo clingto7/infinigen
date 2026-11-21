@@ -21,3 +21,11 @@
 - 根因：框架侧面和托盘窄边被当成独立喷涂行。
 - 修复：对共面、近距且面积相近的框架与板边只保留一组。 实现提交 `23a38bad`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 30–48，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-19-review5-23a38bad/workpiece:serving_cart`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-19-23a38bad.json` 为 190/190 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+
+## 2026-11-21：第四轮人工审查与轨迹修复
+
+- 症状及证据：托盘边与框架仍有间距约 21 mm 的同向平行笔画。 人工审查提交 `c07283ec`，详见 [`workpiece__serving_cart.json`](../../../reviews/trajectories/workpiece__serving_cart.json)。
+- 根因：框架与板边面积比恰在旧去重阈值边界，重复行被保留。
+- 修复：扩大同面近距边的面积比容差，保留托盘边的一道轨迹。 实现提交 `8bb4440a`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 29–42，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:serving_cart`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
+- seed 0–9 的长平行笔画中未再发现同向且中点距离小于 40 mm 的重复对。
