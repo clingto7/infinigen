@@ -24,7 +24,6 @@ SELECTION = (
     "corner_shelf",
     "ladder_shelf",
     "metal_shelving",
-    "staggered_display_shelf",
     "backed_bench",
     "backless_bench",
     "bar_chair",

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from spraybot_trajectory.armchair import corners, face_mask, member_line, samples, smooth_stroke, surface_components, sweep
-from spraybot_trajectory.path_checks import clear_motion, clear_rays
+from spraybot_trajectory.path_checks import check_exported_rays, clear_motion
 
 
 CURVED_WORKPIECES = {
@@ -13,22 +13,93 @@ CURVED_WORKPIECES = {
 }
 
 
+def _exported_rays_clear(mesh, stroke: dict, allowed_faces: np.ndarray) -> bool:
+    """Check interpolated and rounded aims before accepting a joined stroke."""
+    surface = np.asarray(stroke["surface_points"])
+    nozzle = np.asarray(stroke["nozzle_points"])
+    aim = surface - nozzle
+    aim /= np.linalg.norm(aim, axis=1)[:, None]
+    path = {"points": np.round(nozzle / 1000, 6).tolist(),
+            "aims": np.round(aim, 6).tolist()}
+    result = check_exported_rays(mesh, [path], [{"part": "target"}], 120.0,
+                                 allowed_faces.astype(np.int8), {"1": "target"})
+    return not result["invalid_stroke_ids"]
+
+
 def _prefer_connected(mesh, separate: list[dict], connected: list[dict],
-                      allowed_faces: np.ndarray) -> list[dict]:
+                      allowed_faces: np.ndarray, clearance_mesh=None,
+                      min_clearance_mm: float = 0.0) -> list[dict]:
     if not connected or len(connected) >= len(separate):
         return separate
     for stroke in connected:
-        surface = np.asarray(stroke["surface_points"])
         nozzle = np.asarray(stroke["nozzle_points"])
         travel = np.diff(nozzle, axis=0)
         length = np.linalg.norm(travel, axis=1)
-        if (np.any(length < 1) or not np.all(clear_rays(mesh, surface, nozzle, allowed_faces))
+        if (np.any(length < 1) or not _exported_rays_clear(mesh, stroke, allowed_faces)
                 or not np.all(clear_motion(mesh, nozzle))):
+            return separate
+        if (clearance_mesh is not None and np.min(
+                clearance_mesh.nearest.on_surface(nozzle)[1]) < min_clearance_mm):
             return separate
         heading = travel / length[:, None]
         if np.any(np.sum(heading[:-1] * heading[1:], axis=1) < np.cos(np.deg2rad(45))):
             return separate
     return connected
+
+
+def _join_curved_rows(mesh, rows: list[dict], allowed_faces: np.ndarray,
+                      outward: np.ndarray) -> list[dict]:
+    """Connect neighboring curved panel rows with a projected, rounded turn."""
+    if len(rows) < 2:
+        return rows
+    panel = mesh.submesh([np.flatnonzero(allowed_faces)], append=True, repair=False)
+    result = [rows[0]]
+    for following in rows[1:]:
+        previous = result[-1]
+        first = np.asarray(previous["surface_points"])
+        second = np.asarray(following["surface_points"])
+        gap = np.linalg.norm(second[0] - first[-1])
+        cut = max(2, int(np.ceil(gap / 40)))
+        if gap > 120 or min(len(first), len(second)) <= 2 * cut + 4:
+            result.append(following)
+            continue
+        first, second = first[:-cut], second[cut:]
+        start, end = first[-1], second[0]
+        across = end - start
+        radius = np.linalg.norm(across) / 2
+        forward = first[-1] - first[-2]
+        forward /= np.linalg.norm(forward)
+        across /= 2 * radius
+        center = (start + end) / 2
+        trial = np.asarray([center + forward * radius * np.sin(angle)
+                            - across * radius * np.cos(angle)
+                            for angle in np.linspace(0, np.pi, 9)[1:-1]])
+        projected, _, faces = panel.nearest.on_surface(trial)
+        normals = panel.face_normals[faces]
+        if np.any(normals @ outward < 0.5):
+            result.append(following)
+            continue
+        surface = np.vstack((first, projected, second))
+        prior_nozzle = np.asarray(previous["nozzle_points"])[:-cut]
+        next_nozzle = np.asarray(following["nozzle_points"])[cut:]
+        nozzle = np.vstack((prior_nozzle, projected + normals * 120.0, next_nozzle))
+        rounded = smooth_stroke({**previous, "surface_points": surface.tolist(),
+                                 "nozzle_points": nozzle.tolist()}, passes=12)
+        surface = np.asarray(rounded["surface_points"])
+        nozzle = np.asarray(rounded["nozzle_points"])
+        travel = np.diff(nozzle, axis=0)
+        lengths = np.linalg.norm(travel, axis=1)
+        if np.any(lengths < 1):
+            result.append(following)
+            continue
+        unit = travel / lengths[:, None]
+        if (np.any(np.sum(unit[:-1] * unit[1:], axis=1) < np.cos(np.deg2rad(45)))
+                or not _exported_rays_clear(mesh, rounded, allowed_faces)
+                or not np.all(clear_motion(mesh, nozzle))):
+            result.append(following)
+            continue
+        result[-1] = {**rounded, "reason": previous["reason"].replace("_raster", "_serpentine")}
+    return result
 
 
 def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
@@ -39,6 +110,11 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
     vertices = np.asarray(mesh.vertices)
     object_center = (vertices.min(axis=0) + vertices.max(axis=0)) / 2
     strokes, counts = [], {"seat": 0, "back": 0, "leg_base": 0}
+    part_ids = np.asarray(model["part_id"])
+    back_ids = [int(index) for index, name in model["part_legend"].items()
+                if name in {"back", "back_panel"}]
+    back_faces = np.flatnonzero(np.isin(part_ids, back_ids))
+    back_mesh = mesh.submesh([back_faces], append=True, repair=False) if len(back_faces) else None
     for part in model["parametric"]["parts"]:
         semantic = "leg_base" if part["semantic"] == "storage_grid_legs" else part["semantic"]
         if semantic not in counts or part["surfaces"][0]["type"] not in {"sweep_quad", "sweep_cap"}:
@@ -61,8 +137,10 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                             sweep(mesh, points, normals, center, np.eye(3),
                                   np.array([0.0, 0.0, 1.0]), across, along,
                                   semantic, "seat_top_raster", serpentine=serpentine,
-                                  allowed_faces=allowed)]
-                strokes.extend(_prefer_connected(mesh, seat_rows(False), seat_rows(True), allowed))
+                                  allowed_faces=allowed, clearance_mesh=back_mesh,
+                                  min_clearance_mm=70.0)]
+                strokes.extend(_prefer_connected(mesh, seat_rows(False), seat_rows(True), allowed,
+                                                 back_mesh, 60.0))
                 edge_directions = [np.eye(3)[axis] * sign
                                    for axis in (0, 1) for sign in (-1, 1)]
             elif semantic == "back":
@@ -75,8 +153,15 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                                       np.array([float(sign), 0.0, 0.0]), across, along,
                                       semantic, f"back_{'front' if sign > 0 else 'rear'}_raster",
                                       serpentine=serpentine, allowed_faces=allowed)]
-                    strokes.extend(_prefer_connected(mesh, back_rows(False), back_rows(True),
-                                                     allowed))
+                    separate = back_rows(False)
+                    if category == "bar_chair":
+                        projected = _join_curved_rows(mesh, separate, allowed,
+                                                      np.array([float(sign), 0.0, 0.0]))
+                        connected = (projected if len(projected) < len(separate) else
+                                     _prefer_connected(mesh, separate, back_rows(True), allowed))
+                    else:
+                        connected = _prefer_connected(mesh, separate, back_rows(True), allowed)
+                    strokes.extend(connected)
                 edge_directions = [np.array([0.0, float(sign), 0.0]) for sign in (-1, 1)]
             else:
                 branches = [component]
@@ -90,6 +175,15 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                                   > extent[1] * 0.2]
                         if branch:
                             branches.append(branch)
+                    bottom = [surface for surface in component if
+                              np.max(corners(surface)[:, 2]) * 1000 < bounds[:, 2].min() + 90]
+                    if bottom:
+                        outward_x = np.eye(3)[0] * (1 if position[0] >= object_center[0] else -1)
+                        strokes.extend(member_line(mesh, bottom, outward_x, semantic,
+                                                   "u_support_bottom_length",
+                                                   trim_mm=8.0,
+                                                   allowed_faces=face_mask(mesh, bottom),
+                                                   dense=True))
                 for branch in branches:
                     branch_bounds = np.vstack([corners(s) for s in branch]) * 1000
                     branch_extent = np.ptp(branch_bounds, axis=0)
@@ -117,7 +211,7 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                     strokes.extend(member_line(mesh, edge, direction, semantic,
                                                f"{semantic}_narrow_edge",
                                                trim_mm=8.0,
-                                               allowed_faces=face_mask(mesh, edge), dense=True))
+                                               allowed_faces=allowed, dense=True))
     return strokes, {"curved_components": counts,
                      "scope": "seat top and narrow edges, back front/rear and outer edges; "
                               "two outward leg sides and outward stretchers"}

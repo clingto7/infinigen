@@ -91,7 +91,9 @@ def _selected(surface: dict, semantic: str, target: np.ndarray,
     if semantic in {"top", "seat"}:
         return normal[2] > 0.8 or max(abs(normal[0]), abs(normal[1])) > 0.8
     if semantic == "shelf":
-        return abs(normal[2]) > 0.8 or max(abs(normal[0]), abs(normal[1])) > 0.8
+        return abs(normal[2]) > 0.8 or np.linalg.norm(normal[:2]) > 0.8
+    if semantic == "slat" and category == "ladder_back_chair":
+        return abs(normal[0]) > 0.8
     if semantic in {"back_panel", "back"}:
         return abs(normal[0]) > 0.8 or (abs(normal[1]) > 0.8 and
                                        np.dot(normal, center - object_center) > 0)
@@ -310,7 +312,9 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
             corners.extend((origin, origin + u, origin + v, origin + u + v))
     bounds = np.asarray(corners)
     object_center = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
-    envelope_equations = ConvexHull(bounds).equations if category == "corner_desk" else None
+    envelope_equations = (ConvexHull(np.asarray(mesh.vertices)).equations
+                          if category in {"corner_desk", "folding_chair", "trestle_table"}
+                          else None)
     strokes = []
     blocked = []
     selected_surfaces = 0
@@ -346,8 +350,7 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
         other_bounds = []
         if (semantic == "back_panel" or
                 (semantic == "carcass" and category == "staggered_display_shelf") or
-                (semantic == "shelf" and category == "workbench") or
-                (semantic == "leg_base" and category == "workbench")):
+                (semantic == "shelf" and category == "workbench")):
             for other in model["parametric"]["parts"]:
                 if other["id"] == part["id"]:
                     continue
@@ -358,6 +361,28 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
         for surface in part["surfaces"]:
             if surface["type"] not in {"plane_rectangle", "plane_triangle"}:
                 continue
+            if category == "serving_cart" and semantic == "frame":
+                origin, u, v, normal = _plane({**surface, "type": "plane_rectangle"})
+                center = origin + (u + v) / 2
+                area = np.linalg.norm(np.cross(u, v))
+                duplicate_edge = False
+                for board in model["parametric"]["parts"]:
+                    if board["semantic"] != "top":
+                        continue
+                    for edge in board["surfaces"]:
+                        if edge["type"] != "plane_rectangle":
+                            continue
+                        base, edge_u, edge_v, edge_normal = _plane(edge)
+                        edge_area = np.linalg.norm(np.cross(edge_u, edge_v))
+                        if (np.dot(normal, edge_normal) > 0.99
+                                and np.linalg.norm(center - base - (edge_u + edge_v) / 2) < 45
+                                and 0.5 < area / edge_area < 2):
+                            duplicate_edge = True
+                            break
+                    if duplicate_edge:
+                        break
+                if duplicate_edge:
+                    continue
             if (category == "corner_desk" and semantic == "leg_base"
                     and surface["id"] not in preferred_faces):
                 continue
@@ -369,6 +394,19 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                     surface, semantic, target, object_center, category):
                 continue
             normal = np.asarray(surface["geometry"]["normal"], dtype=float)
+            if (category == "trestle_table" and semantic == "leg_base" and normal[2] < -0.8):
+                continue
+            if category in {"corner_desk", "folding_chair", "trestle_table"} and semantic == "leg_base":
+                candidate_rows = (_rectangle_rows(surface, 10.0 if category == "trestle_table"
+                                                   else EDGE_TRIM_MM)
+                                  if surface["type"] == "plane_rectangle" else _triangle_rows(surface))
+                if not candidate_rows:
+                    continue
+                trial_nozzles = np.vstack(candidate_rows) + normal * STANDOFF_MM
+                outside = np.max(trial_nozzles @ envelope_equations[:, :3].T
+                                 + envelope_equations[:, 3], axis=1) > 1
+                if np.mean(outside) < 0.95:
+                    continue
             if category == "corner_desk" and semantic == "top" and abs(normal[2]) < 0.3:
                 origin, u, v, _ = _plane(surface)
                 face = np.asarray((origin, origin + u, origin + v, origin + u + v))
@@ -402,20 +440,53 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                          and semantic == "leg_base" else EDGE_TRIM_MM)
             minimum_segment = (30.0 if category in {"cabriole_leg_table", "trestle_table"}
                                and semantic == "leg_base" else MIN_ROW_MM)
-            rows = (_rectangle_rows(surface, edge_trim, category == "coat_rack")
+            if category in {"metal_shelving", "workbench"} and semantic == "shelf" and normal[2] < -0.8:
+                shelf_bottoms = [min(_plane(other)[0][2] for other in item["surfaces"]
+                                     if other["type"] == "plane_rectangle")
+                                 for item in model["parametric"]["parts"] if item["semantic"] == "shelf"]
+                if category == "workbench" or min(shelf_bottoms) >= _plane(surface)[0][2] - 1:
+                    continue
+            rows = (_rectangle_rows(surface, edge_trim)
                     if surface["type"] == "plane_rectangle"
                     else _triangle_rows(surface))
             face_mask = np.zeros(len(mesh.faces), dtype=bool)
             face_mask[surface["mesh_mapping"]["construction_triangle_ids"]] = True
-            if category == "corner_shelf" and semantic == "frame":
+            if ((category == "corner_shelf" and semantic == "frame")
+                    or (category in {"metal_shelving", "workbench"} and semantic == "leg_base")):
                 # The shelf edge briefly becomes the first hit at each post joint.
                 face_mask = target.copy()
             face_rows = []
             complete_rows = True
             for row_index, landing in enumerate(rows):
+                if category == "metal_shelving" and semantic == "leg_base":
+                    # Follow the outer shelf/leg skin across their shallow joints.
+                    count = max(2, int(np.ceil(np.linalg.norm(landing[-1] - landing[0]) / 5)) + 1)
+                    landing = np.linspace(landing[0], landing[-1], count)
+                    provisional = landing + normal * STANDOFF_MM
+                    hits, ray_ids, hit_faces = mesh.ray.intersects_location(
+                        provisional, np.repeat((-normal)[None], len(landing), axis=0),
+                        multiple_hits=False)
+                    if len(ray_ids):
+                        depths = np.linalg.norm(hits - provisional[ray_ids], axis=1)
+                        joint = target[hit_faces] & (depths >= STANDOFF_MM - 12) & (depths < STANDOFF_MM)
+                        offsets = np.zeros(len(landing))
+                        offsets[ray_ids[joint]] = STANDOFF_MM - depths[joint]
+                        tapered = offsets.copy()
+                        for distance in range(1, 5):
+                            shoulder = offsets * (1 - distance / 5)
+                            tapered[distance:] = np.maximum(tapered[distance:], shoulder[:-distance])
+                            tapered[:-distance] = np.maximum(tapered[:-distance], shoulder[distance:])
+                        landing += tapered[:, None] * normal
                 nozzle = landing + normal * STANDOFF_MM
                 valid = (clear_rays(mesh, landing, nozzle, face_mask)
                          & (mesh.nearest.on_surface(nozzle)[1] >= 1.0))
+                if category == "ladder_shelf" and semantic == "shelf":
+                    valid &= mesh.nearest.on_surface(nozzle)[1] >= 50.0
+                    boundaries = np.flatnonzero(np.diff(np.r_[False, valid, False]))
+                    if len(boundaries):
+                        runs = list(zip(boundaries[::2], boundaries[1::2]))
+                        start, stop = max(runs, key=lambda pair: pair[1] - pair[0])
+                        landing, nozzle, valid = landing[start:stop], nozzle[start:stop], valid[start:stop]
                 if other_bounds:
                     join_distance = np.full(len(landing), np.inf)
                     for lower, upper in other_bounds:
@@ -438,6 +509,10 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                 if category == "corner_shelf" and semantic == "frame":
                     for segment in segments:
                         segment["allowed_parts"] = ["frame", "shelf"]
+                if category in {"metal_shelving", "workbench"} and semantic == "leg_base":
+                    for segment in segments:
+                        segment["allowed_parts"] = (["leg_base", "shelf"] if category == "metal_shelving"
+                                                     else ["leg_base", "shelf", "frame"])
                 if not np.all(valid) or not np.all(motion) or not segments:
                     complete_rows = False
                     blocked.append({"part": part["id"], "surface": surface["id"],

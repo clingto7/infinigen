@@ -1,4 +1,4 @@
-"""Audit the 20 reviewed workpiece interfaces before human trajectory review."""
+"""Audit the active reviewed workpiece interfaces before human trajectory review."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from spraybot_trajectory.pair_workpiece import _check_paintds
 
 
 CATEGORIES = (
-    "corner_shelf", "ladder_shelf", "metal_shelving", "staggered_display_shelf",
+    "corner_shelf", "ladder_shelf", "metal_shelving",
     "backed_bench", "backless_bench", "bar_chair", "armchair",
     "folding_chair", "ladder_back_chair", "windsor_chair",
     "cabriole_leg_table", "corner_desk", "folding_table", "hairpin_leg_table",

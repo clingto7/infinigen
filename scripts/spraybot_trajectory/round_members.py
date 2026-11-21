@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 from spraybot_trajectory.path_checks import clear_rays, split_runs
 from spraybot_trajectory.planar import MIN_ROW_MM, SAMPLE_STEP_MM, STANDOFF_MM
@@ -13,7 +14,9 @@ def _unit(vector):
 
 
 def plan_round_members(model: dict, mesh) -> tuple[list[dict], dict]:
+    category = model["generator"].split(":", 1)[1]
     center = (np.asarray(mesh.vertices).min(axis=0) + np.asarray(mesh.vertices).max(axis=0)) / 2
+    hull_planes = ConvexHull(np.asarray(mesh.vertices)).equations if category == "windsor_chair" else None
     target = np.asarray(model["spray_target"], dtype=bool)
     strokes, omitted = [], []
     for part in model["parametric"]["parts"]:
@@ -52,6 +55,27 @@ def plan_round_members(model: dict, mesh) -> tuple[list[dict], dict]:
                 trim = min(8.0, length * 0.1)
                 along = np.linspace(trim, length - trim,
                                     max(2, int(np.ceil((length - 2 * trim) / SAMPLE_STEP_MM)) + 1))
+                if category == "windsor_chair" and part["semantic"] in {"back", "slat"}:
+                    candidates = []
+                    for angle in np.deg2rad(np.arange(0, 360, 15)):
+                        normal = _unit(ru * np.cos(angle) + rv * np.sin(angle))
+                        landing = origin + np.outer(along, axis) + normal * radius
+                        nozzle = landing + normal * STANDOFF_MM
+                        valid = clear_rays(mesh, landing, nozzle, allowed)
+                        for segment in split_runs(mesh, landing, nozzle, valid,
+                                                  f"{reason}:lengthwise", part["semantic"],
+                                                  allowed_faces=allowed):
+                            path = np.asarray(segment["nozzle_points"])
+                            run_length = float(np.linalg.norm(np.diff(path, axis=0), axis=1).sum())
+                            if run_length >= minimum:
+                                exterior = np.mean(np.max(path @ hull_planes[:, :3].T
+                                                          + hull_planes[:, 3], axis=1) > 0)
+                                candidates.append((run_length, exterior, segment))
+                    if candidates:
+                        strokes.append(max(candidates, key=lambda item: (item[0], item[1]))[2])
+                    else:
+                        omitted.append({"surface": surface["id"], "reason": "occluded round side"})
+                    continue
                 directions = ([np.array([-1.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])]
                               if part["semantic"] == "back" else [projected])
                 retained_any = False

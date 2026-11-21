@@ -249,7 +249,8 @@ def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
         if not len(indices):
             continue
         if chosen:
-            same_side = indices[np.abs((points[indices] - points[chosen[0]]) @ side_axis) < 15]
+            anchor = chosen[-1] if dense else chosen[0]
+            same_side = indices[np.abs((points[indices] - points[anchor]) @ side_axis) < 15]
             if not len(same_side):
                 continue
             indices = same_side
@@ -281,7 +282,9 @@ def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
 
 
 def sweep(mesh, points, normals, center, axes, direction, across, along, semantic, reason,
-          single_row=False, serpentine=False, allowed_faces=None, clearance_mesh=None):
+          single_row=False, serpentine=False, allowed_faces=None, clearance_mesh=None,
+          min_clearance_mm=None):
+    clearance = (SEAT_ARM_CLEARANCE_MM if min_clearance_mm is None else min_clearance_mm)
     outward = direction / np.linalg.norm(direction)
     alignment = normals @ outward
     reference_normal = normals[int(np.argmax(alignment))]
@@ -326,7 +329,9 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
         nozzle = landing + surface_normals[selected] * STANDOFF_MM
         valid = clear_rays(mesh, landing, nozzle, allowed_faces)
         strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
-                                  allowed_faces=allowed_faces))
+                                  allowed_faces=allowed_faces,
+                                  clearance_mesh=clearance_mesh if min_clearance_mm is not None else None,
+                                  min_clearance_mm=clearance))
     if connected_rows:
         landing = surface[connected_rows]
         nozzle = landing + surface_normals[connected_rows] * STANDOFF_MM
@@ -334,7 +339,7 @@ def sweep(mesh, points, normals, center, axes, direction, across, along, semanti
         strokes.extend(split_runs(mesh, landing, nozzle, valid, reason, semantic,
                                   max_step_mm=180.0, allowed_faces=allowed_faces,
                                   clearance_mesh=clearance_mesh,
-                                  min_clearance_mm=SEAT_ARM_CLEARANCE_MM if clearance_mesh is not None else 0.0))
+                                  min_clearance_mm=clearance if clearance_mesh is not None else 0.0))
     return [s for s in strokes if np.linalg.norm(np.diff(np.asarray(s['surface_points']), axis=0), axis=1).sum() >= MIN_STROKE_MM]
 
 

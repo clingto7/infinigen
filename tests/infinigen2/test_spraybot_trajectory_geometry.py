@@ -39,6 +39,25 @@ class TrajectoryGeometryChecks(unittest.TestCase):
                     self.assertTrue(_selected(surface, semantic, np.array([True]),
                                               np.zeros(3), "folding_table"))
 
+    def test_corner_shelf_diagonal_edge_is_planned(self):
+        normal = np.array([0.68, 0.74, 0.0])
+        normal /= np.linalg.norm(normal)
+        surface = {"type": "plane_rectangle", "geometry": {
+            "origin": [0, 0, 0], "u": [0.4, 0.4, 0],
+            "v": [0, 0, 0.016], "normal": normal.tolist()},
+            "mesh_mapping": {"construction_triangle_ids": [0]}}
+        self.assertTrue(_selected(surface, "shelf", np.array([True]),
+                                  np.zeros(3), "corner_shelf"))
+
+    def test_ladder_back_slats_do_not_depend_on_whole_chair_center(self):
+        surface = {"type": "plane_rectangle", "geometry": {
+            "origin": [-0.234, 0, 0.52], "u": [0, 0.41, 0],
+            "v": [0, 0, 0.022], "normal": [-1, 0, 0]},
+            "mesh_mapping": {"construction_triangle_ids": [0]}}
+        for center in (np.array([-226., 0., 644.]), np.array([0., 0., 400.])):
+            self.assertTrue(_selected(surface, "slat", np.array([True]),
+                                      center, "ladder_back_chair"))
+
     def test_back_post_inner_edge_is_not_planned(self):
         surface = {"type": "plane_rectangle", "geometry": {
             "origin": [0, 0.3, 0], "u": [0, 0, 0.5],
