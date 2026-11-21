@@ -41,3 +41,8 @@
 ## 2026-11-21：第四轮轨迹审查通过
 
 - 用户确认本轮轨迹候选通过；正式记录见 [`workpiece__armchair.json`](../../../reviews/trajectories/workpiece__armchair.json)。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:armchair`，规划源码提交 `8bb4440a`，全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。本结论绑定该模型、seed 和轨迹版本；实体机器人可达性与涂层质量尚未验证。
+
+## 2026-11-21：文档展示抽样发现的规划失败
+
+- 为轨迹汇总额外生成的 Armchair seed 23、24 均有 `ready` 的参数化描述，但当前规划器在 `arm_frame_strokes → relocate_stroke` 报出 `Armchair stroke has no whole-path collision-free adjustment within 2 mm`，因此没有这两个 seed 的配对轨迹。失败发生在源码提交 `72496fb1`（规划器 `armchair.py` SHA-256 为 `fb6a3e44e51dada5595d715625a88fe7dea549420704bd647e01776dec040e2b`）。模型 `model.json` SHA-256 分别为 seed 23：`ab08f4ce086539a598be0d019c30efdf7ed51b51d85ec3e57c526f2136320220`、seed 24：`ad6822aeaf7113786ae8825e95f106459e67550fd70b5b383ad60bd35c8ed12b`。复现模型位于 spraybot 服务器 `/home/ma-user/ws/spray-review/report-review-18-seeds20-24-72496fb1/interfaces/workpiece:armchair/episodes/`。
+- 这是旧接受批次之外的新结构样本，不改写 seed 0–9 已接受证据，也不能把旧结论外推到这两个 seed。文档展示改用 seed 20、21、22、25、26；这五个样本的配对与导出几何检查通过，但仍待人工逐笔审查。后续修复应修改整个 Armchair 规划规则，并重新生成受影响样本及审查证据，不能针对 seed 编号特判。
