@@ -3,83 +3,78 @@
   "interface_id": "workpiece:corner_shelf",
   "status": "needs_fix",
   "reviewer": "hqb",
-  "notes": "每块三角隔板只覆盖两条侧边，斜边漏喷。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
-  "seed_issues": [
-    {
-      "seed": 0,
-      "note": "instance_2 与 instance_3 三角层板的 wall_y0、wall_x0 各有一条，wall_diagonal 无笔画；斜边法向约 (0.68,0.74,0)，被轴向 0.8 选择阈值排除。"
-    }
-  ],
+  "notes": "最低层板的下表面无需喷涂，组装后也难以执行。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+  "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "5361392d0c8a1cd52ad0e30658ba8cfeaaa5910b35aa57463b069c22d9ceaa46",
+      "trajectory_sha256": "aaafbfc33b96debf7a643ed532f6fa7d347de608d3fa8ce1f7280a87e22717c1",
       "model_sha256": "b18922b6449c1cb1881571c5c7a2a5e6636ae0fa5275e9255fc9b396a321fcd3",
       "coverage_fraction": 1.0,
-      "ray_samples": 2550
+      "ray_samples": 3010
     },
     {
       "seed": 1,
-      "trajectory_sha256": "f46f96427a150f5a84feeea2e61236bd463d82ea1a1d39f86179a74ebed7ff58",
+      "trajectory_sha256": "c3dbbf12699ed2586300025063ac4b2d2ea7ff28b1843859e980a35957577c2b",
       "model_sha256": "fd621a9b1dc1a2d1ea99eb6db825cd3da7e44c4e7cd906ac6fa8cc48417ab713",
       "coverage_fraction": 1.0,
-      "ray_samples": 2316
+      "ray_samples": 2740
     },
     {
       "seed": 2,
-      "trajectory_sha256": "9514b6047c62a68f05d79cd77aeed774025c6704dc98f429cb9ff105e31a4db7",
+      "trajectory_sha256": "56a0e4352fc1a807b85c7b7807c7c970b715732d5d7185e644d2397a008fbc05",
       "model_sha256": "bb38db180ad01008faf4cf37a399320be83be6092067f1f40e332e1748ac1ec8",
       "coverage_fraction": 1.0,
-      "ray_samples": 1964
+      "ray_samples": 2309
     },
     {
       "seed": 3,
-      "trajectory_sha256": "98c487a856700c3369c54b33394e1f2144209d0d9b410a33e673045ccea45a83",
+      "trajectory_sha256": "46f7d25d02e97cf57e8f6757529ed98d8cd8938200c5fa3d59ad8bdc2ce55adc",
       "model_sha256": "933f11e5828eec1bc8a67367cf32b3b49e2c0d61813c1959dabc8eb125b92b76",
       "coverage_fraction": 1.0,
-      "ray_samples": 2214
+      "ray_samples": 2614
     },
     {
       "seed": 4,
-      "trajectory_sha256": "5cc4c9d2ddab89bba97ce1931168605231fe711d7e773506ccffd33634a89a65",
+      "trajectory_sha256": "97a0216e5dbca8daa08cd60f52c58e43f4d5af553f52fa8cf34782aef9764e7d",
       "model_sha256": "9bf49728b20c88436fef09ea9671e79c05e7918331ccccd6d6c5108545257814",
       "coverage_fraction": 1.0,
-      "ray_samples": 2514
+      "ray_samples": 2974
     },
     {
       "seed": 5,
-      "trajectory_sha256": "31fabda4f85b0980cb804cc344a8a671201bd4ff013f5eccfe1c0bb80ae44702",
+      "trajectory_sha256": "2f1a7f1622f6095a4952b23033800fda5b4109245b016c8ff43a95c85a7a63c0",
       "model_sha256": "d344510638d81da147464fb66af5c39d264a483bfd158436875282f95cf52be5",
       "coverage_fraction": 1.0,
-      "ray_samples": 1706
+      "ray_samples": 1988
     },
     {
       "seed": 6,
-      "trajectory_sha256": "eabb5cd4bca749d1f5cb2d7b6f91e76968ad454bab50a11d7d5ad9e120fb3755",
+      "trajectory_sha256": "30d76046baca0882cbc857cd41dbdf977698eb204ebd30cdc0aa3a3da8bd8a3d",
       "model_sha256": "58db87dc6d436a406dff6a294d6f8b9a7d2b2f15509edf40aaff866af1beb36a",
       "coverage_fraction": 1.0,
-      "ray_samples": 2412
+      "ray_samples": 2848
     },
     {
       "seed": 7,
-      "trajectory_sha256": "525fe606a3d529fd71d5e2f6382aaf4a8d128d34e5a03df292fe37bb22ab182c",
+      "trajectory_sha256": "2146971ac1c6c9c35ce6be186b716054b07cc51bcdef3f6aaafc5524f4956eba",
       "model_sha256": "57d6d06f4b7b7fd2f308f330a751ba0e2c4b620dbf0720eed14dc7ba028b8acf",
       "coverage_fraction": 1.0,
-      "ray_samples": 2394
+      "ray_samples": 2830
     },
     {
       "seed": 8,
-      "trajectory_sha256": "7c8bbd1ce1139ed7acc468f161670e4de55b2f307f9bc6591a371acb8fe41f36",
+      "trajectory_sha256": "c01ecdbef9078c574ac2b33fb9345efd73d36daa77e0e9f340a135d86cacc779",
       "model_sha256": "3c9463bc6f20ede8437b3dd72d4b20afedf5ae55c11759bc2ead2be89a6edada",
       "coverage_fraction": 1.0,
-      "ray_samples": 1718
+      "ray_samples": 2018
     },
     {
       "seed": 9,
-      "trajectory_sha256": "0df72dddb1f4f66d8ce72364d9814a4bfe9a31231c00b4f71ef23f66e9f2fcdf",
+      "trajectory_sha256": "118391ab4db3f09c4c40faf5942b491a333d803ed45dfbed8134c21974cd420a",
       "model_sha256": "7e0772e4942509da12a51635fb0c3c3b0a5694c3764430a9a279f4d282212dbb",
       "coverage_fraction": 1.0,
-      "ray_samples": 1768
+      "ray_samples": 2132
     }
   ],
   "history": [
@@ -166,7 +161,91 @@
         }
       ],
       "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "每块三角隔板只覆盖两条侧边，斜边漏喷。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
+      "seed_issues": [
+        {
+          "seed": 0,
+          "note": "instance_2 与 instance_3 三角层板的 wall_y0、wall_x0 各有一条，wall_diagonal 无笔画；斜边法向约 (0.68,0.74,0)，被轴向 0.8 选择阈值排除。"
+        }
+      ],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "5361392d0c8a1cd52ad0e30658ba8cfeaaa5910b35aa57463b069c22d9ceaa46",
+          "model_sha256": "b18922b6449c1cb1881571c5c7a2a5e6636ae0fa5275e9255fc9b396a321fcd3",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2550
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "f46f96427a150f5a84feeea2e61236bd463d82ea1a1d39f86179a74ebed7ff58",
+          "model_sha256": "fd621a9b1dc1a2d1ea99eb6db825cd3da7e44c4e7cd906ac6fa8cc48417ab713",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2316
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "9514b6047c62a68f05d79cd77aeed774025c6704dc98f429cb9ff105e31a4db7",
+          "model_sha256": "bb38db180ad01008faf4cf37a399320be83be6092067f1f40e332e1748ac1ec8",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1964
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "98c487a856700c3369c54b33394e1f2144209d0d9b410a33e673045ccea45a83",
+          "model_sha256": "933f11e5828eec1bc8a67367cf32b3b49e2c0d61813c1959dabc8eb125b92b76",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2214
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "5cc4c9d2ddab89bba97ce1931168605231fe711d7e773506ccffd33634a89a65",
+          "model_sha256": "9bf49728b20c88436fef09ea9671e79c05e7918331ccccd6d6c5108545257814",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2514
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "31fabda4f85b0980cb804cc344a8a671201bd4ff013f5eccfe1c0bb80ae44702",
+          "model_sha256": "d344510638d81da147464fb66af5c39d264a483bfd158436875282f95cf52be5",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1706
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "eabb5cd4bca749d1f5cb2d7b6f91e76968ad454bab50a11d7d5ad9e120fb3755",
+          "model_sha256": "58db87dc6d436a406dff6a294d6f8b9a7d2b2f15509edf40aaff866af1beb36a",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2412
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "525fe606a3d529fd71d5e2f6382aaf4a8d128d34e5a03df292fe37bb22ab182c",
+          "model_sha256": "57d6d06f4b7b7fd2f308f330a751ba0e2c4b620dbf0720eed14dc7ba028b8acf",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2394
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "7c8bbd1ce1139ed7acc468f161670e4de55b2f307f9bc6591a371acb8fe41f36",
+          "model_sha256": "3c9463bc6f20ede8437b3dd72d4b20afedf5ae55c11759bc2ead2be89a6edada",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1718
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "0df72dddb1f4f66d8ce72364d9814a4bfe9a31231c00b4f71ef23f66e9f2fcdf",
+          "model_sha256": "7e0772e4942509da12a51635fb0c3c3b0a5694c3764430a9a279f4d282212dbb",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1768
+        }
+      ],
+      "reviewed_at": "2026-11-21T06:36:18.461035+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T06:36:18.461035+00:00"
+  "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
 }

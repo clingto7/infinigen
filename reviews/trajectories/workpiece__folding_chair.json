@@ -3,83 +3,78 @@
   "interface_id": "workpiece:folding_chair",
   "status": "needs_fix",
   "reviewer": "hqb",
-  "notes": "部分椅腿下段轨迹处在整件外包络内部，无法执行。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
-  "seed_issues": [
-    {
-      "seed": 4,
-      "note": "笔画 0、6、10、17 在椅腿下部；当前凸包诊断对应喷头点在包络内的比例约为 0.74、0.71、0.74、0.71。"
-    }
-  ],
+  "notes": "下部叉形支架除正面外，两侧面也应各有可执行的锐角转弯轨迹。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+  "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "7a5063707b5a3e394e48ee97ba4ad707d499c3040004e36897ac668a94d24da4",
+      "trajectory_sha256": "68f25f4ed6ca29aded87e315948b0a086039e29391b9b774cf93d135d2343cb3",
       "model_sha256": "35601d4007b05b307ef5eeb3807310fba9ab2978cc1806e0c872c9c4617842cd",
       "coverage_fraction": 1.0,
-      "ray_samples": 1844
+      "ray_samples": 1506
     },
     {
       "seed": 1,
-      "trajectory_sha256": "5669dd35750309f25f80872c9993050614c5e48c9f1ead2588054341830ffe7f",
+      "trajectory_sha256": "91eca5a4ed43e63c21600156b8b43c6f038645c7a52ea0afb37c867a1b62e92c",
       "model_sha256": "4d8bfd75603990ad1856d417bce970109df64fd82cdec8423d5bfa6473818623",
       "coverage_fraction": 1.0,
-      "ray_samples": 1805
+      "ray_samples": 1467
     },
     {
       "seed": 2,
-      "trajectory_sha256": "841de5fa1243355a3e279b0c498a003b57296c7b3f9d8ea5b486fcc83c14f480",
+      "trajectory_sha256": "414500e2eef0dc30823d58e5e5d394df710a3a425460e42c34c913ce51b72baf",
       "model_sha256": "305055a97dc038abe0ac6b90c16a38f273584d849717fb73362d4cf304a0e35f",
       "coverage_fraction": 1.0,
-      "ray_samples": 1820
+      "ray_samples": 1482
     },
     {
       "seed": 3,
-      "trajectory_sha256": "36785646cd0758cd8fad39499608757dd66f6b5e2b497b22ed5b755603fd3ddf",
+      "trajectory_sha256": "2842a5d36d4f2ce81e62fb38472a4fb9c8416a33cbbc807369eb6ce2c9ed62a1",
       "model_sha256": "de055d41c8ba2c32842cb666420ab0764e2b095289e7ce4b30b5fc14286a7096",
       "coverage_fraction": 1.0,
-      "ray_samples": 1814
+      "ray_samples": 1470
     },
     {
       "seed": 4,
-      "trajectory_sha256": "8dbf3ae3c708f11c2b7fe0402281aab77457a4a49cf325803de0f364bc02f157",
+      "trajectory_sha256": "16a95fb54639b816da60560b8606fcf212790042d4895aae0b0e0027e062ec24",
       "model_sha256": "780bec241f7ef03c67a975249d791ed2e10baaae840056057ad93d6d68537a77",
       "coverage_fraction": 1.0,
-      "ray_samples": 1868
+      "ray_samples": 1530
     },
     {
       "seed": 5,
-      "trajectory_sha256": "4f11e7cd64d52f243281b33857d6e2feee6ff18fd41a22826993b24a112c052b",
+      "trajectory_sha256": "d2a7cff505749bf575c571fc9391be163d8e9dd8cf8f4e28ee7ab0b59995003b",
       "model_sha256": "4ac1d07ecc14d56f8dc20454a4752a6a379f4f5c01fdba026ec784c118b19155",
       "coverage_fraction": 1.0,
-      "ray_samples": 1721
+      "ray_samples": 1359
     },
     {
       "seed": 6,
-      "trajectory_sha256": "13ab09fe4732684896a4f811efef086abf29c910a03d605dbcaed9a05c22915b",
+      "trajectory_sha256": "bf0a68aae1ef8b840b8494e4b3f8deb1b4fe8ea3f09c6e676dc20c7f60b184c5",
       "model_sha256": "57219ba46d0c262e34f3f69492de04008fd341226dfa66e68d3138d259a13947",
       "coverage_fraction": 1.0,
-      "ray_samples": 1829
+      "ray_samples": 1491
     },
     {
       "seed": 7,
-      "trajectory_sha256": "9e594b4018506858ac6b06e746144e87e3cd449add50f3ea5bbf4e963fbbcab9",
+      "trajectory_sha256": "619dff4a85ca059803e35a2560995e0c4741c4b1e1a31033a35035eda7095de5",
       "model_sha256": "95751190f22c00f860d5974ac590a104b675c588be7c78c7ca2f3f7f8f827f9c",
       "coverage_fraction": 1.0,
-      "ray_samples": 1805
+      "ray_samples": 1461
     },
     {
       "seed": 8,
-      "trajectory_sha256": "35c1c64e5f7281c5ef69f2b478a0f78fb3cc09b062c3a1ef1bd8a7a8487a3382",
+      "trajectory_sha256": "8a07b25d4496eebb433d71d458682c9dbf0cb7374434722bed32d641179cd0de",
       "model_sha256": "b20d357c806fc65e43726b1ad79b250b2933d2a6ba17db63eea3566d377d5f03",
       "coverage_fraction": 1.0,
-      "ray_samples": 1760
+      "ray_samples": 1422
     },
     {
       "seed": 9,
-      "trajectory_sha256": "d53c0a81e1d30d19e5aceb66d2029d71e350277d02d8fa9394cc0b4b516c7f48",
+      "trajectory_sha256": "b48c2ce4e9bc483693d6f328507c57f06ebaed9a9d217ce9e8cc16b7972a959e",
       "model_sha256": "90faa8eea41ce832e975693ded9b616f21cfd425ca04987012e0059d235bdfaf",
       "coverage_fraction": 1.0,
-      "ray_samples": 1748
+      "ray_samples": 1404
     }
   ],
   "history": [
@@ -166,7 +161,91 @@
         }
       ],
       "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "部分椅腿下段轨迹处在整件外包络内部，无法执行。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
+      "seed_issues": [
+        {
+          "seed": 4,
+          "note": "笔画 0、6、10、17 在椅腿下部；当前凸包诊断对应喷头点在包络内的比例约为 0.74、0.71、0.74、0.71。"
+        }
+      ],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "7a5063707b5a3e394e48ee97ba4ad707d499c3040004e36897ac668a94d24da4",
+          "model_sha256": "35601d4007b05b307ef5eeb3807310fba9ab2978cc1806e0c872c9c4617842cd",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1844
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "5669dd35750309f25f80872c9993050614c5e48c9f1ead2588054341830ffe7f",
+          "model_sha256": "4d8bfd75603990ad1856d417bce970109df64fd82cdec8423d5bfa6473818623",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1805
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "841de5fa1243355a3e279b0c498a003b57296c7b3f9d8ea5b486fcc83c14f480",
+          "model_sha256": "305055a97dc038abe0ac6b90c16a38f273584d849717fb73362d4cf304a0e35f",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1820
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "36785646cd0758cd8fad39499608757dd66f6b5e2b497b22ed5b755603fd3ddf",
+          "model_sha256": "de055d41c8ba2c32842cb666420ab0764e2b095289e7ce4b30b5fc14286a7096",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1814
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "8dbf3ae3c708f11c2b7fe0402281aab77457a4a49cf325803de0f364bc02f157",
+          "model_sha256": "780bec241f7ef03c67a975249d791ed2e10baaae840056057ad93d6d68537a77",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1868
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "4f11e7cd64d52f243281b33857d6e2feee6ff18fd41a22826993b24a112c052b",
+          "model_sha256": "4ac1d07ecc14d56f8dc20454a4752a6a379f4f5c01fdba026ec784c118b19155",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1721
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "13ab09fe4732684896a4f811efef086abf29c910a03d605dbcaed9a05c22915b",
+          "model_sha256": "57219ba46d0c262e34f3f69492de04008fd341226dfa66e68d3138d259a13947",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1829
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "9e594b4018506858ac6b06e746144e87e3cd449add50f3ea5bbf4e963fbbcab9",
+          "model_sha256": "95751190f22c00f860d5974ac590a104b675c588be7c78c7ca2f3f7f8f827f9c",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1805
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "35c1c64e5f7281c5ef69f2b478a0f78fb3cc09b062c3a1ef1bd8a7a8487a3382",
+          "model_sha256": "b20d357c806fc65e43726b1ad79b250b2933d2a6ba17db63eea3566d377d5f03",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1760
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "d53c0a81e1d30d19e5aceb66d2029d71e350277d02d8fa9394cc0b4b516c7f48",
+          "model_sha256": "90faa8eea41ce832e975693ded9b616f21cfd425ca04987012e0059d235bdfaf",
+          "coverage_fraction": 1.0,
+          "ray_samples": 1748
+        }
+      ],
+      "reviewed_at": "2026-11-21T06:36:18.461356+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T06:36:18.461356+00:00"
+  "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
 }

@@ -3,83 +3,78 @@
   "interface_id": "workpiece:trestle_table",
   "status": "needs_fix",
   "reviewer": "hqb",
-  "notes": "底部部分轨迹不可执行，需按地面及整件外包络复核。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
-  "seed_issues": [
-    {
-      "seed": 3,
-      "note": "笔画 1 位于 z≈-120 mm 的底面接近位置；笔画 12、21 的喷头分别约 64%、100% 落入整件凸包内部。"
-    }
-  ],
+  "notes": "上轮凸包筛选去掉过多腿部轨迹。原审查主要针对少数自下向上喷涂的底面路径，腿部其他外露面应恢复覆盖。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+  "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "bd6edd3a610daead892d1931de040982dc7265818983a8b7de6727977ddecca4",
+      "trajectory_sha256": "5a87cf9cbe1ddcb3596ae96a2fe3ce29bdf05a507d23268e16a5aa31bd8273bc",
       "model_sha256": "c1c5db66358647a330133d3a3a228b0ccf41878b824c4c77f803dca67adacd68",
-      "coverage_fraction": 0.967391304347826,
-      "ray_samples": 6633
+      "coverage_fraction": 0.6956521739130435,
+      "ray_samples": 5091
     },
     {
       "seed": 1,
-      "trajectory_sha256": "71c8cb59e4fb4601b8fe16990d13a82aa04c92ed4d665962ac2a7b810b45fd3c",
+      "trajectory_sha256": "f345df2dd45615d0670b0815de2b0ff2b5dbea25b5c2ff343067f05b0cddcee0",
       "model_sha256": "907fccc764544aac09c9053e7e994b82b82d93c0ab18a716ebadb81812999c8b",
-      "coverage_fraction": 1.0,
-      "ray_samples": 6760
+      "coverage_fraction": 0.65,
+      "ray_samples": 4608
     },
     {
       "seed": 2,
-      "trajectory_sha256": "9876df7d352c115b144c3b9c4014f8e17b88962d8af42c38e595cf9fcf90e10a",
+      "trajectory_sha256": "943587605e34199d7f18b7eab513ad1b58ac6a7e3eb1001773e543272cb6ca1c",
       "model_sha256": "18c9c6c719470c78295b531d7d431b80f237fc9731bb47b1bb97f98e28d73c9d",
-      "coverage_fraction": 0.96875,
-      "ray_samples": 6300
+      "coverage_fraction": 0.6875,
+      "ray_samples": 4824
     },
     {
       "seed": 3,
-      "trajectory_sha256": "defdb6df95790c92ec961e0c7a1b1758b469cb6b10b943fd53e089553a4ecd5e",
+      "trajectory_sha256": "e6a2ec2e886f4051440041f7ab7e640d5ebe281cf23da7c0f07904d9c22a2176",
       "model_sha256": "f8a63c1b27aeaaf96b2bd45302d9d703c7542fb2e142beb47627305fb167ddbf",
-      "coverage_fraction": 1.0,
-      "ray_samples": 6978
+      "coverage_fraction": 0.6422413793103449,
+      "ray_samples": 4827
     },
     {
       "seed": 4,
-      "trajectory_sha256": "8b722a34a031c0258c590134f2c0a1d2c328d0819bdeadb984e8c4035f99722e",
+      "trajectory_sha256": "757b5e65236deb29bef0ad52d0fe34a025599bfc8bf94bf43e5b9220aacc188d",
       "model_sha256": "5cf1ee01928a318434dbeff74de4255d77ab6d9d5815b1a5dab95af4036d7295",
-      "coverage_fraction": 0.9166666666666666,
-      "ray_samples": 6330
+      "coverage_fraction": 0.6666666666666666,
+      "ray_samples": 4932
     },
     {
       "seed": 5,
-      "trajectory_sha256": "d9b0469c6dcec40dbd6d77f9968d2979f6854a8a91a64fe30eff85a1fcd80a98",
+      "trajectory_sha256": "91759cfadcad7f6f004f1ea2742480f901d5963f88fa1590490cb8787b95a72e",
       "model_sha256": "85e2e10eef6d6cdd40795a61c89f712b2e9462e2f5eacf489f0163625dfbb031",
-      "coverage_fraction": 1.0,
-      "ray_samples": 7648
+      "coverage_fraction": 0.6681034482758621,
+      "ray_samples": 5373
     },
     {
       "seed": 6,
-      "trajectory_sha256": "62ac7b5d2bc65dc5fd1a7507c61136940773077449c5e5709d9e69cd362a4aab",
+      "trajectory_sha256": "16af0afd24431d5ff94128f0008ebeac68d644970d64f5fa0ec163450874bb45",
       "model_sha256": "0130262201bdd1cc72ca3e237a964a3dd4c80a6ccef2aa62d4877a6a777b88a1",
-      "coverage_fraction": 0.925531914893617,
-      "ray_samples": 6327
+      "coverage_fraction": 0.6808510638297872,
+      "ray_samples": 4878
     },
     {
       "seed": 7,
-      "trajectory_sha256": "29823d1627cca4ee6a8e0eacce00e2a2d75b88607c1011d2eae1f9fb2de7ab97",
+      "trajectory_sha256": "a628108ed247e000dc78c27106b96af65df7b15a823a5c92fb85f09584150eac",
       "model_sha256": "cf08744b58ccbffa8c01200ecad5f7d2f6a6f746c3b1ec8088cd5cfa53a8ee3f",
-      "coverage_fraction": 1.0,
-      "ray_samples": 6660
+      "coverage_fraction": 0.6333333333333333,
+      "ray_samples": 4709
     },
     {
       "seed": 8,
-      "trajectory_sha256": "d4a6ecc59a509443fa8d64c1fb331bbf8520efb5b0f4f85f42112d13d43e02ac",
+      "trajectory_sha256": "0256ec4a4eda2d1d7a063beb71617bb044ecc981aef4f3eabcef8c6eecda46d1",
       "model_sha256": "26e85a5bcaecd6740f1a3534748f63ea0d418802fa17488570aa92d248d9fc73",
-      "coverage_fraction": 1.0,
-      "ray_samples": 6859
+      "coverage_fraction": 0.6375,
+      "ray_samples": 4731
     },
     {
       "seed": 9,
-      "trajectory_sha256": "79cbda9b0b161b5e4ae1d4011bcf6f340f61dedd6a33be1775efe8d07bd56b68",
+      "trajectory_sha256": "30fa4298a67d9cbe80156a64c2b7008c2a3f52478027a7f733e738924698220b",
       "model_sha256": "83a77885f8e4d847caf9f3b69f765649920cc881753a1a1d454bd3d8f86efa31",
-      "coverage_fraction": 0.9912280701754386,
-      "ray_samples": 6661
+      "coverage_fraction": 0.6403508771929824,
+      "ray_samples": 4528
     }
   ],
   "history": [
@@ -166,7 +161,91 @@
         }
       ],
       "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "底部部分轨迹不可执行，需按地面及整件外包络复核。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
+      "seed_issues": [
+        {
+          "seed": 3,
+          "note": "笔画 1 位于 z≈-120 mm 的底面接近位置；笔画 12、21 的喷头分别约 64%、100% 落入整件凸包内部。"
+        }
+      ],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "bd6edd3a610daead892d1931de040982dc7265818983a8b7de6727977ddecca4",
+          "model_sha256": "c1c5db66358647a330133d3a3a228b0ccf41878b824c4c77f803dca67adacd68",
+          "coverage_fraction": 0.967391304347826,
+          "ray_samples": 6633
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "71c8cb59e4fb4601b8fe16990d13a82aa04c92ed4d665962ac2a7b810b45fd3c",
+          "model_sha256": "907fccc764544aac09c9053e7e994b82b82d93c0ab18a716ebadb81812999c8b",
+          "coverage_fraction": 1.0,
+          "ray_samples": 6760
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "9876df7d352c115b144c3b9c4014f8e17b88962d8af42c38e595cf9fcf90e10a",
+          "model_sha256": "18c9c6c719470c78295b531d7d431b80f237fc9731bb47b1bb97f98e28d73c9d",
+          "coverage_fraction": 0.96875,
+          "ray_samples": 6300
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "defdb6df95790c92ec961e0c7a1b1758b469cb6b10b943fd53e089553a4ecd5e",
+          "model_sha256": "f8a63c1b27aeaaf96b2bd45302d9d703c7542fb2e142beb47627305fb167ddbf",
+          "coverage_fraction": 1.0,
+          "ray_samples": 6978
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "8b722a34a031c0258c590134f2c0a1d2c328d0819bdeadb984e8c4035f99722e",
+          "model_sha256": "5cf1ee01928a318434dbeff74de4255d77ab6d9d5815b1a5dab95af4036d7295",
+          "coverage_fraction": 0.9166666666666666,
+          "ray_samples": 6330
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "d9b0469c6dcec40dbd6d77f9968d2979f6854a8a91a64fe30eff85a1fcd80a98",
+          "model_sha256": "85e2e10eef6d6cdd40795a61c89f712b2e9462e2f5eacf489f0163625dfbb031",
+          "coverage_fraction": 1.0,
+          "ray_samples": 7648
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "62ac7b5d2bc65dc5fd1a7507c61136940773077449c5e5709d9e69cd362a4aab",
+          "model_sha256": "0130262201bdd1cc72ca3e237a964a3dd4c80a6ccef2aa62d4877a6a777b88a1",
+          "coverage_fraction": 0.925531914893617,
+          "ray_samples": 6327
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "29823d1627cca4ee6a8e0eacce00e2a2d75b88607c1011d2eae1f9fb2de7ab97",
+          "model_sha256": "cf08744b58ccbffa8c01200ecad5f7d2f6a6f746c3b1ec8088cd5cfa53a8ee3f",
+          "coverage_fraction": 1.0,
+          "ray_samples": 6660
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "d4a6ecc59a509443fa8d64c1fb331bbf8520efb5b0f4f85f42112d13d43e02ac",
+          "model_sha256": "26e85a5bcaecd6740f1a3534748f63ea0d418802fa17488570aa92d248d9fc73",
+          "coverage_fraction": 1.0,
+          "ray_samples": 6859
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "79cbda9b0b161b5e4ae1d4011bcf6f340f61dedd6a33be1775efe8d07bd56b68",
+          "model_sha256": "83a77885f8e4d847caf9f3b69f765649920cc881753a1a1d454bd3d8f86efa31",
+          "coverage_fraction": 0.9912280701754386,
+          "ray_samples": 6661
+        }
+      ],
+      "reviewed_at": "2026-11-21T06:36:18.463166+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T06:36:18.463166+00:00"
+  "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
 }
