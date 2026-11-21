@@ -13,7 +13,7 @@ from spraybot_trajectory.pair_workpiece import _check_paintds
 CATEGORIES = (
     "corner_shelf", "ladder_shelf", "metal_shelving",
     "backed_bench", "backless_bench", "bar_chair", "armchair",
-    "folding_chair", "ladder_back_chair", "windsor_chair",
+    "folding_chair", "ladder_back_chair",
     "cabriole_leg_table", "corner_desk", "folding_table", "hairpin_leg_table",
     "trestle_table", "workbench", "crib", "coat_rack", "serving_cart",
 )

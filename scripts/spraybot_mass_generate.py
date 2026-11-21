@@ -30,7 +30,6 @@ SELECTION = (
     "armchair",
     "folding_chair",
     "ladder_back_chair",
-    "windsor_chair",
     "cabriole_leg_table",
     "corner_desk",
     "folding_table",

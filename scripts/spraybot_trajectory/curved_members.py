@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 from spraybot_trajectory.armchair import corners, face_mask, member_line, samples, smooth_stroke, surface_components, sweep
 from spraybot_trajectory.path_checks import check_exported_rays, clear_motion
@@ -24,6 +25,36 @@ def _exported_rays_clear(mesh, stroke: dict, allowed_faces: np.ndarray) -> bool:
     result = check_exported_rays(mesh, [path], [{"part": "target"}], 120.0,
                                  allowed_faces.astype(np.int8), {"1": "target"})
     return not result["invalid_stroke_ids"]
+
+
+def _outside_back_envelope(rows: list[dict], equations: np.ndarray) -> list[dict]:
+    """Keep the longest run of each seat row outside the back hull."""
+    retained = []
+    for row in rows:
+        surface = np.asarray(row["surface_points"])
+        nozzle = np.asarray(row["nozzle_points"])
+        outside = np.max(nozzle @ equations[:, :3].T + equations[:, 3], axis=1) >= 2.0
+        joined = outside[:-1] & outside[1:]
+        for index in np.flatnonzero(joined):
+            length = np.linalg.norm(nozzle[index + 1] - nozzle[index])
+            probes = np.linspace(nozzle[index], nozzle[index + 1],
+                                 max(2, int(np.ceil(length / 5)) + 1))
+            joined[index] = np.all(np.max(probes @ equations[:, :3].T + equations[:, 3],
+                                          axis=1) >= 2.0)
+        cuts = np.flatnonzero(~joined)
+        starts = np.r_[0, cuts + 1]
+        stops = np.r_[cuts + 1, len(nozzle)]
+        candidates = [(start, stop) for start, stop in zip(starts, stops)
+                      if stop - start >= 2 and np.all(outside[start:stop])]
+        if not candidates:
+            continue
+        start, stop = max(candidates, key=lambda pair: np.linalg.norm(
+            np.diff(surface[pair[0]:pair[1]], axis=0), axis=1).sum())
+        if np.linalg.norm(np.diff(surface[start:stop], axis=0), axis=1).sum() < 100:
+            continue
+        retained.append({**row, "surface_points": surface[start:stop].tolist(),
+                         "nozzle_points": nozzle[start:stop].tolist()})
+    return retained
 
 
 def _prefer_connected(mesh, separate: list[dict], connected: list[dict],
@@ -115,6 +146,8 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                 if name in {"back", "back_panel"}]
     back_faces = np.flatnonzero(np.isin(part_ids, back_ids))
     back_mesh = mesh.submesh([back_faces], append=True, repair=False) if len(back_faces) else None
+    back_envelope = (ConvexHull(back_mesh.vertices).equations
+                     if category == "ladder_back_chair" and back_mesh is not None else None)
     for part in model["parametric"]["parts"]:
         semantic = "leg_base" if part["semantic"] == "storage_grid_legs" else part["semantic"]
         if semantic not in counts or part["surfaces"][0]["type"] not in {"sweep_quad", "sweep_cap"}:
@@ -139,7 +172,11 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                                   semantic, "seat_top_raster", serpentine=serpentine,
                                   allowed_faces=allowed, clearance_mesh=back_mesh,
                                   min_clearance_mm=70.0)]
-                strokes.extend(_prefer_connected(mesh, seat_rows(False), seat_rows(True), allowed,
+                separate, connected = seat_rows(False), seat_rows(True)
+                if back_envelope is not None:
+                    separate = _outside_back_envelope(separate, back_envelope)
+                    connected = _outside_back_envelope(connected, back_envelope)
+                strokes.extend(_prefer_connected(mesh, separate, connected, allowed,
                                                  back_mesh, 60.0))
                 edge_directions = [np.eye(3)[axis] * sign
                                    for axis in (0, 1) for sign in (-1, 1)]
@@ -197,9 +234,19 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                         directions = [np.eye(3)[across] * (1 if radial[across] >= 0 else -1)]
                     branch_faces = face_mask(mesh, branch)
                     for direction in directions:
-                        strokes.extend(member_line(mesh, branch, direction, semantic,
-                                                   "leg_or_stretcher_length",
-                                                   allowed_faces=branch_faces, dense=True))
+                        lines = member_line(mesh, branch, direction, semantic,
+                                            "leg_or_stretcher_length",
+                                            allowed_faces=branch_faces, dense=True)
+                        if (category == "backed_bench" and branch_extent[2] < 100
+                                and branch_extent[0] > 200 and len(lines) > 1):
+                            # Keep the outer line of a wide horizontal support.
+                            axis = int(np.argmax(np.abs(direction)))
+                            positions = [np.mean(line["surface_points"], axis=0)[axis]
+                                         for line in lines]
+                            best = max(positions) if direction[axis] > 0 else min(positions)
+                            lines = [line for line, value in zip(lines, positions)
+                                     if abs(value - best) < 50]
+                        strokes.extend(lines)
                 edge_directions = []
             for direction in edge_directions:
                 edge_surfaces = [surface for surface in component

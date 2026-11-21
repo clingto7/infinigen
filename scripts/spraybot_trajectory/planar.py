@@ -141,6 +141,79 @@ def _triangle_rows(surface: dict) -> list[np.ndarray]:
     return rows
 
 
+def _angled_open_corner_row(mesh, surface: dict) -> list[dict]:
+    """Reach a desk leg through an open corner with an oblique spray direction."""
+    rows = _rectangle_rows(surface)
+    if not rows:
+        return []
+    landing = rows[0]
+    normal = np.asarray(surface["geometry"]["normal"], dtype=float)
+    allowed = np.zeros(len(mesh.faces), dtype=bool)
+    allowed[surface["mesh_mapping"]["construction_triangle_ids"]] = True
+    best = None
+    for degrees in range(0, 360, 15):
+        direction = np.array([np.cos(np.deg2rad(degrees)), np.sin(np.deg2rad(degrees)), 0.0])
+        incidence = float(np.dot(direction, normal))
+        if incidence < 0.35:
+            continue
+        nozzle = landing + direction * STANDOFF_MM
+        clearance = float(mesh.nearest.on_surface(nozzle)[1].min())
+        if (clearance < 50 or not np.all(clear_rays(mesh, landing, nozzle, allowed))
+                or not np.all(clear_motion(mesh, nozzle))):
+            continue
+        score = clearance + 20 * incidence
+        if best is None or score > best[0]:
+            best = (score, nozzle)
+    if best is None:
+        return []
+    nozzle = best[1]
+    return split_runs(mesh, landing, nozzle, np.ones(len(landing), dtype=bool),
+                      f"{surface['id']}:angled_open_corner", "leg_base",
+                      allowed_faces=allowed)
+
+
+def _folding_cross_sides(mesh, part: dict, object_center: np.ndarray) -> tuple[list[dict], set[str]]:
+    """Approach both narrow sides of a sloping brace from its exposed broad face."""
+    faces = []
+    for surface in part["surfaces"]:
+        if surface["type"] != "plane_rectangle":
+            continue
+        origin, u, v, normal = _plane(surface)
+        if max(np.linalg.norm(u), np.linalg.norm(v)) < 300:
+            continue
+        midpoint = origin + (u + v) / 2
+        radial = midpoint - object_center
+        radial[2] = 0
+        score = float(np.dot(normal, radial) / max(np.linalg.norm(radial), 1))
+        faces.append((score, surface, normal))
+    if len(faces) != 4:
+        return [], set()
+    primary = max(faces, key=lambda item: item[0])[2]
+    sides = [(surface, normal) for _, surface, normal in faces
+             if abs(np.dot(normal, primary)) < 0.2 and abs(normal[2]) > 0.25]
+    if len(sides) != 2:
+        return [], set()
+    strokes = []
+    for surface, normal in sides:
+        rows = _rectangle_rows(surface)
+        if not rows:
+            continue
+        direction = 0.65 * primary + 0.35 * normal
+        direction /= np.linalg.norm(direction)
+        landing = rows[0]
+        nozzle = landing + direction * STANDOFF_MM
+        allowed = np.zeros(len(mesh.faces), dtype=bool)
+        allowed[surface["mesh_mapping"]["construction_triangle_ids"]] = True
+        valid = clear_rays(mesh, landing, nozzle, allowed)
+        valid &= mesh.nearest.on_surface(nozzle)[1] >= 20.0
+        segments = split_runs(mesh, landing, nozzle, valid,
+                              f"{surface['id']}:folding_side_angle", "leg_base",
+                              allowed_faces=allowed)
+        strokes.extend(segment for segment in segments if np.linalg.norm(np.diff(
+            segment["surface_points"], axis=0), axis=1).sum() >= MIN_ROW_MM)
+    return strokes, {surface["id"] for surface, _ in sides}
+
+
 def _join_rows(mesh, rows: list[dict], allowed_faces: np.ndarray,
                normal: np.ndarray) -> list[dict]:
     """Join complete, neighboring face rows with rounded on-face turns."""
@@ -323,6 +396,7 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
         if category == "cabriole_leg_table" and semantic == "leg_base":
             continue
         preferred_faces = set()
+        preferred_scores = []
         if category == "corner_desk" and semantic == "leg_base":
             for axis in (0, 1):
                 candidates = []
@@ -338,7 +412,19 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                                          + envelope_equations[:, 3]))
                     candidates.append((score, candidate["id"]))
                 if candidates:
-                    preferred_faces.add(max(candidates)[1])
+                    score, face_id = max(candidates)
+                    preferred_faces.add(face_id)
+                    preferred_scores.append(score)
+        angled_open_corner = (category == "corner_desk" and semantic == "leg_base"
+                              and len(preferred_scores) == 2 and max(preferred_scores) < 1.0)
+        if angled_open_corner:
+            preferred_faces = {surface["id"] for surface in part["surfaces"]
+                               if surface["type"] == "plane_rectangle"
+                               and abs(surface["geometry"]["normal"][2]) < 0.5}
+        folding_side_ids = set()
+        if category in {"folding_chair", "folding_table"} and semantic == "leg_base":
+            side_strokes, folding_side_ids = _folding_cross_sides(mesh, part, object_center)
+            strokes.extend(side_strokes)
         if category == "crib" and semantic == "frame" and any(
             surface["type"] == "plane_rectangle"
             and surface["geometry"]["normal"][2] > 0.8
@@ -361,6 +447,8 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
         for surface in part["surfaces"]:
             if surface["type"] not in {"plane_rectangle", "plane_triangle"}:
                 continue
+            if surface["id"] in folding_side_ids:
+                continue
             if category == "serving_cart" and semantic == "frame":
                 origin, u, v, normal = _plane({**surface, "type": "plane_rectangle"})
                 center = origin + (u + v) / 2
@@ -376,7 +464,7 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                         edge_area = np.linalg.norm(np.cross(edge_u, edge_v))
                         if (np.dot(normal, edge_normal) > 0.99
                                 and np.linalg.norm(center - base - (edge_u + edge_v) / 2) < 45
-                                and 0.5 < area / edge_area < 2):
+                                and 0.45 < area / edge_area < 2.2):
                             duplicate_edge = True
                             break
                     if duplicate_edge:
@@ -394,9 +482,21 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                     surface, semantic, target, object_center, category):
                 continue
             normal = np.asarray(surface["geometry"]["normal"], dtype=float)
+            if angled_open_corner:
+                strokes.extend(_angled_open_corner_row(mesh, surface))
+                continue
             if (category == "trestle_table" and semantic == "leg_base" and normal[2] < -0.8):
                 continue
-            if category in {"corner_desk", "folding_chair", "trestle_table"} and semantic == "leg_base":
+            if category == "trestle_table" and semantic == "leg_base" and normal[2] > 0.2:
+                trial_rows = (_rectangle_rows(surface, 10.0) if surface["type"] == "plane_rectangle"
+                              else _triangle_rows(surface))
+                if trial_rows:
+                    trial = np.vstack(trial_rows) + normal * STANDOFF_MM
+                    outside = np.max(trial @ envelope_equations[:, :3].T
+                                     + envelope_equations[:, 3], axis=1) > 1
+                    if np.mean(outside) < 0.5:
+                        continue
+            if category in {"corner_desk", "folding_chair"} and semantic == "leg_base":
                 candidate_rows = (_rectangle_rows(surface, 10.0 if category == "trestle_table"
                                                    else EDGE_TRIM_MM)
                                   if surface["type"] == "plane_rectangle" else _triangle_rows(surface))
@@ -440,11 +540,13 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                          and semantic == "leg_base" else EDGE_TRIM_MM)
             minimum_segment = (30.0 if category in {"cabriole_leg_table", "trestle_table"}
                                and semantic == "leg_base" else MIN_ROW_MM)
-            if category in {"metal_shelving", "workbench"} and semantic == "shelf" and normal[2] < -0.8:
-                shelf_bottoms = [min(_plane(other)[0][2] for other in item["surfaces"]
-                                     if other["type"] == "plane_rectangle")
+            if category in {"corner_shelf", "ladder_shelf", "metal_shelving", "workbench"} and semantic == "shelf" and normal[2] < -0.8:
+                shelf_bottoms = [min(_plane({**other, "type": "plane_rectangle"})[0][2]
+                                     for other in item["surfaces"]
+                                     if other["type"] in {"plane_rectangle", "plane_triangle"})
                                  for item in model["parametric"]["parts"] if item["semantic"] == "shelf"]
-                if category == "workbench" or min(shelf_bottoms) >= _plane(surface)[0][2] - 1:
+                if (category == "workbench" or min(shelf_bottoms) >=
+                        _plane({**surface, "type": "plane_rectangle"})[0][2] - 1):
                     continue
             rows = (_rectangle_rows(surface, edge_trim)
                     if surface["type"] == "plane_rectangle"
