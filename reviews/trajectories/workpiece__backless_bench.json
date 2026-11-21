@@ -1,0 +1,87 @@
+{
+  "schema": "spraybot.trajectory-review.v1",
+  "interface_id": "workpiece:backless_bench",
+  "status": "needs_fix",
+  "reviewer": "hqb",
+  "notes": "U 型腿只有局部覆盖，座板窄侧面也只覆盖一部分。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
+  "seed_issues": [
+    {
+      "seed": 0,
+      "note": "两副 U 型腿仅有 2 条腿部笔画；座板 y 向两侧窄面为 0 条。"
+    }
+  ],
+  "evidence": [
+    {
+      "seed": 0,
+      "trajectory_sha256": "8f5f759bdfee845ed7eb5a675896a03fa6fde4cf0e9f7184f7a3d2bbcbe99151",
+      "model_sha256": "5ad0adf33935542e0678d8d9770dd28c501a4948aa0faf336bcf7603a71cdc75",
+      "coverage_fraction": 0.6136801541425819,
+      "ray_samples": 2005
+    },
+    {
+      "seed": 1,
+      "trajectory_sha256": "8c6f57523891a814884b5d3326da96cefb7fbdabbb5cb8a1819f813d9b59b3aa",
+      "model_sha256": "760a3e3f99f89d8e355ef5afb8b0f64c2b39cebea5079c647aa218caf615b36d",
+      "coverage_fraction": 0.4970725995316159,
+      "ray_samples": 1810
+    },
+    {
+      "seed": 2,
+      "trajectory_sha256": "963626ac3e51b55a0ec07fbc1c580751e1154ef35add9cf5348f6d7efe402aaa",
+      "model_sha256": "f37a3af94c161c73e9d73e6aa4926ffddb0a697404bb24ff9edc927039663d31",
+      "coverage_fraction": 0.49414519906323184,
+      "ray_samples": 1989
+    },
+    {
+      "seed": 3,
+      "trajectory_sha256": "8bd59bca16b97bedf7b532cbd5027f349dea0a21313fa82f855e87911b5e7cdc",
+      "model_sha256": "547c87a8631895b1406f148af5830b96690f9600a908ccdfe5f1d729cd321151",
+      "coverage_fraction": 0.4847328244274809,
+      "ray_samples": 1692
+    },
+    {
+      "seed": 4,
+      "trajectory_sha256": "d6288992041da7f9453c012d6b40f6444e846cde6473f6256b57b675213736ab",
+      "model_sha256": "9b2f898c525983520afd18b51274c7dbaa31f9f9451b7f752a7758b0fc19fc82",
+      "coverage_fraction": 0.452720207253886,
+      "ray_samples": 1973
+    },
+    {
+      "seed": 5,
+      "trajectory_sha256": "7a6faca442b752b5cebace6d79133c0ccb6f65fb0677f5f3e651007985b724d4",
+      "model_sha256": "3de4936d86e5fa74308c468915d22386d88ae48653c126ede2f71a3dcb549467",
+      "coverage_fraction": 0.6018735362997658,
+      "ray_samples": 1832
+    },
+    {
+      "seed": 6,
+      "trajectory_sha256": "af2d839e3c8786534aee3637dbe7bb50af637903118643afa52e1254c42f71bb",
+      "model_sha256": "1f0efe1a26c24424dbee92351f481eb53e0fe5fe2adfa3aa3f358814d7c98228",
+      "coverage_fraction": 0.6226415094339622,
+      "ray_samples": 1902
+    },
+    {
+      "seed": 7,
+      "trajectory_sha256": "eb8bb3201821beacb30e07ac9d18e02052094a161062e7cd17ae77ffd117dc99",
+      "model_sha256": "58aa54a59c91156365d13332e7e8d0e32cfb9b380ab397aaeaa68635c4bb3f5a",
+      "coverage_fraction": 0.4707259953161593,
+      "ray_samples": 1869
+    },
+    {
+      "seed": 8,
+      "trajectory_sha256": "1286217925cd5d44f579baea4e942576c8cd05980d2d94d12c9bcf0dba72f28c",
+      "model_sha256": "3a41e5ef099a89f69fbc8cef83db1f1a8233782cd70a676ff5ae72fb7d836c15",
+      "coverage_fraction": 0.4882903981264637,
+      "ray_samples": 1671
+    },
+    {
+      "seed": 9,
+      "trajectory_sha256": "c8506cccb856c1c5e16d05bd01dbe08d18d2b9cb14299a5f2f06085e80d5d320",
+      "model_sha256": "864e79659f7c9c68d3d0373bc57cd80045448b8879f67d6687546d9c101e1ec2",
+      "coverage_fraction": 0.5971698113207548,
+      "ray_samples": 1469
+    }
+  ],
+  "history": [],
+  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "spraybot.trajectory-review.v1",
+  "interface_id": "workpiece:corner_shelf",
+  "status": "needs_fix",
+  "reviewer": "hqb",
+  "notes": "立柱应以两个方向的长笔画覆盖，避免每面密集双行及按层板间隙切成碎段。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
+  "seed_issues": [
+    {
+      "seed": 0,
+      "note": "立柱两面各被拆为 2 行×3 段，共 12 笔。"
+    }
+  ],
+  "evidence": [
+    {
+      "seed": 0,
+      "trajectory_sha256": "06b1a98467d7a984f557a45d5a6a5cd9ba2e9962602f9df4b7d984b359aa82b5",
+      "model_sha256": "b18922b6449c1cb1881571c5c7a2a5e6636ae0fa5275e9255fc9b396a321fcd3",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2278
+    },
+    {
+      "seed": 1,
+      "trajectory_sha256": "9462c2c5ba9db2257e07ca8968a0c1a6f3801074a7bba8891548b76b97d1b17a",
+      "model_sha256": "fd621a9b1dc1a2d1ea99eb6db825cd3da7e44c4e7cd906ac6fa8cc48417ab713",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2098
+    },
+    {
+      "seed": 2,
+      "trajectory_sha256": "9f2825dc718cb28954f65363dad9978eb4f125589272db38b1d9c0aeda55d652",
+      "model_sha256": "bb38db180ad01008faf4cf37a399320be83be6092067f1f40e332e1748ac1ec8",
+      "coverage_fraction": 0.9166666666666666,
+      "ray_samples": 1814
+    },
+    {
+      "seed": 3,
+      "trajectory_sha256": "b12eb46e4d0be4f7e1d7da67ba1de3beaec65eaafe84097eb8c0d62660eb21c9",
+      "model_sha256": "933f11e5828eec1bc8a67367cf32b3b49e2c0d61813c1959dabc8eb125b92b76",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2038
+    },
+    {
+      "seed": 4,
+      "trajectory_sha256": "4fe79ea4e66f469b4f7fd0ec47276c3b0107609637c5851e5be396c850ed72f8",
+      "model_sha256": "9bf49728b20c88436fef09ea9671e79c05e7918331ccccd6d6c5108545257814",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2254
+    },
+    {
+      "seed": 5,
+      "trajectory_sha256": "6b0a65977e844fb9d9f1bb6c6515a03e3ef9a9563e8c468b2f56dba095177ff4",
+      "model_sha256": "d344510638d81da147464fb66af5c39d264a483bfd158436875282f95cf52be5",
+      "coverage_fraction": 0.75,
+      "ray_samples": 1616
+    },
+    {
+      "seed": 6,
+      "trajectory_sha256": "c1c5edbf87db2ada00b339e589a759313b326d80d370713b8d15fce5c9bf8a5e",
+      "model_sha256": "58db87dc6d436a406dff6a294d6f8b9a7d2b2f15509edf40aaff866af1beb36a",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2170
+    },
+    {
+      "seed": 7,
+      "trajectory_sha256": "3fe59d721213e606ee5a3b7bbbc203e9040de721318bc0e86e6351b47c0a6b81",
+      "model_sha256": "57d6d06f4b7b7fd2f308f330a751ba0e2c4b620dbf0720eed14dc7ba028b8acf",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 2134
+    },
+    {
+      "seed": 8,
+      "trajectory_sha256": "43a26ac8a80786b30e903949a8f0d1e2659d6f554f83f3033f02f68776418550",
+      "model_sha256": "3c9463bc6f20ede8437b3dd72d4b20afedf5ae55c11759bc2ead2be89a6edada",
+      "coverage_fraction": 0.9166666666666666,
+      "ray_samples": 1646
+    },
+    {
+      "seed": 9,
+      "trajectory_sha256": "81c69124c0bf64ed04e962c9e49a1f64db4f400864e7344058e05711f8920f94",
+      "model_sha256": "7e0772e4942509da12a51635fb0c3c3b0a5694c3764430a9a279f4d282212dbb",
+      "coverage_fraction": 0.9318181818181818,
+      "ray_samples": 1586
+    }
+  ],
+  "history": [],
+  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+}

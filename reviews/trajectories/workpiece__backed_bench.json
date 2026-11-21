@@ -1,0 +1,91 @@
+{
+  "schema": "spraybot.trajectory-review.v1",
+  "interface_id": "workpiece:backed_bench",
+  "status": "needs_fix",
+  "reviewer": "hqb",
+  "notes": "部分 seed 的腿完全漏喷；座板、背板窄侧面未规划。U 型腿也须按外露面检查。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
+  "seed_issues": [
+    {
+      "seed": 2,
+      "note": "storage_grid_legs 未被规划，leg_base 笔画为 0。"
+    },
+    {
+      "seed": 0,
+      "note": "座板、背板窄侧面缺少对应笔画；横撑接近方向须复核。"
+    }
+  ],
+  "evidence": [
+    {
+      "seed": 0,
+      "trajectory_sha256": "fee170895e847d122c6349d2ca0bf8f1490ebde88a17e771f8784869ea70ca81",
+      "model_sha256": "398318f4ffa657f0988d73905e333c1db2d830bd64189aa498a0fa1fad88e57a",
+      "coverage_fraction": 0.6469594594594594,
+      "ray_samples": 4972
+    },
+    {
+      "seed": 1,
+      "trajectory_sha256": "25a588270d73c4b41e65da4d0d4e5a60861cfa41a84c2c439eef2f161cd86bbd",
+      "model_sha256": "ed5567316d161666dcd22784cf0ea317b4c0d958b48e35cc241e47b2c13fee48",
+      "coverage_fraction": 0.93646408839779,
+      "ray_samples": 5519
+    },
+    {
+      "seed": 2,
+      "trajectory_sha256": "0954e02066dd6bfca69748548470571a312d810674f489a34bcfa9970f3fad32",
+      "model_sha256": "49ca4172f241e07f5ad13c5e70599b363fb3953a19614e59e8eddc6709064688",
+      "coverage_fraction": 0.907359586830213,
+      "ray_samples": 4283
+    },
+    {
+      "seed": 3,
+      "trajectory_sha256": "7ff762de49c9195fa133372722b5b2606b83f8a3ef047047395a46e07a7b3c8a",
+      "model_sha256": "6d6a7aa83f3eb9bc7de0ee3c829424ef37b44ebff1e7364d0ba2e0dd75ea04ae",
+      "coverage_fraction": 0.9817831118731247,
+      "ray_samples": 5152
+    },
+    {
+      "seed": 4,
+      "trajectory_sha256": "b74a3ecac9975d23d34da723a74f60bac857b504c7f77260babf6a82c70b7dda",
+      "model_sha256": "e0aacb7c0e20196c49f8963e22bdeeb2a382c1a3ac1412ce134e57c9d1d767ee",
+      "coverage_fraction": 0.973103448275862,
+      "ray_samples": 6618
+    },
+    {
+      "seed": 5,
+      "trajectory_sha256": "4de4e39d6ff26730a3b47a8e2573cd48f534492a530c957a13def9ae79603606",
+      "model_sha256": "1ce70a5d31879b509dc62528268304a10f93289a7f7573caba2cc2a27f7b740a",
+      "coverage_fraction": 0.698051948051948,
+      "ray_samples": 3777
+    },
+    {
+      "seed": 6,
+      "trajectory_sha256": "e8170243cd0ff421281c5c1e1202652d321541a5b4d269a49408d117df327ec0",
+      "model_sha256": "be7ff0a1737426f80050a0bdf85b87ba4dc4bf713ff605288533c75e65aafca9",
+      "coverage_fraction": 0.7147058823529412,
+      "ray_samples": 5503
+    },
+    {
+      "seed": 7,
+      "trajectory_sha256": "ddf66b8a5ae12197266f783bcef1dcd86407b929490add57c528e6102901eb50",
+      "model_sha256": "39e49c72c9b7530844b02236ce765ca310ea95d37a5b4e9050aae1540f5ede4f",
+      "coverage_fraction": 0.3875770020533881,
+      "ray_samples": 4316
+    },
+    {
+      "seed": 8,
+      "trajectory_sha256": "d259a9037551d4691623da8135edefe19576c958340e3ba15cdb47c60619282f",
+      "model_sha256": "07a6ddb194fd3cef236e9d023292c2381efccee10b9a50d3323889915aa817cb",
+      "coverage_fraction": 0.9654919236417033,
+      "ray_samples": 4422
+    },
+    {
+      "seed": 9,
+      "trajectory_sha256": "1530f2a42ce7579a120824f88f8b3c5fe15739e45757e81f547ee28dc2f26e5f",
+      "model_sha256": "032226d264801cfdbd764e687440267ad89f43101a64bf69f831e23c9372f00e",
+      "coverage_fraction": 0.612012987012987,
+      "ray_samples": 5210
+    }
+  ],
+  "history": [],
+  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+}

@@ -1,0 +1,82 @@
+{
+  "schema": "spraybot.trajectory-review.v1",
+  "interface_id": "workpiece:coat_rack",
+  "status": "pending",
+  "reviewer": "hqb",
+  "notes": "用户本轮初看认为 coat_rack 没有明显问题；保留为 20 类复测对照，尚未给出本轮正式轨迹接受结论。",
+  "seed_issues": [],
+  "evidence": [
+    {
+      "seed": 0,
+      "trajectory_sha256": "1354aeb048a51cf62863e379eeee9b10246506b74dd7e43db2b01183c5845701",
+      "model_sha256": "d42aeb443fbb503274d05e1a85f52eff4ab5ad8908fc2bdf832fbb42af53a420",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2890
+    },
+    {
+      "seed": 1,
+      "trajectory_sha256": "847994885664446e3c5cb84c98759cf883cdbe4b2a840b79bcf7953a8321c903",
+      "model_sha256": "189ed087f941d805940a1744239312e88604ad7be440099750af0406a8733bca",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2833
+    },
+    {
+      "seed": 2,
+      "trajectory_sha256": "22fe9316a160c7b9d85fa53e0ca9fe949edaff88ea1f0efc5382d5edd18b6b78",
+      "model_sha256": "a01eb4fea462d764bc9246f00e3d81001b04cf24685a2af25a346c0d175fbcda",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2872
+    },
+    {
+      "seed": 3,
+      "trajectory_sha256": "39dec7e2c4df23ffc665c377b0c113d73b0256b36b463ffd606df99b74b4aaa3",
+      "model_sha256": "91c10cd7b225672ca541a98e70984415a1dcc2b0545ce7836ccd913c4bb9d366",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2794
+    },
+    {
+      "seed": 4,
+      "trajectory_sha256": "5236cc1dd37c854d027a786def6395baae2d013030d6dc186db5842f417fc46b",
+      "model_sha256": "0a36c11b05f5e362696fb955e2903fe343df79fa7201f148bda5e4bc580138aa",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2899
+    },
+    {
+      "seed": 5,
+      "trajectory_sha256": "356acba0df87be8f4d5788fe8f0b4c33a25c3e25dfc0b88c3186111c06871824",
+      "model_sha256": "016e228842769bd9c16bc2b3df73baf1114fc601a0f7a192edc93adb5d4c1da8",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2816
+    },
+    {
+      "seed": 6,
+      "trajectory_sha256": "3f526b209ad17b7c5b6caa379962b9cd603a92b414058b81f0b97ae92f494d6c",
+      "model_sha256": "daf3eb4c64c1aa8cb9988c805e997bff3cfcd37df32676a476c7c7777606a801",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2866
+    },
+    {
+      "seed": 7,
+      "trajectory_sha256": "51338216aa2a82a7195b0081469ecafc95370783f11e2569f9d089f36109bfca",
+      "model_sha256": "5cde8bf86ecb20e0daa5c8f5d26cf21ef17bad96377259becbb2cb86782d6a7c",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2857
+    },
+    {
+      "seed": 8,
+      "trajectory_sha256": "9d6d4d465347baf60c2d80d0ded8e22adb6f748033d082042b76a4d6bb98faf4",
+      "model_sha256": "e3ddcdc7d8486cb126a2d2b02d4126d1b756db084407a47df4fcedad4e6ce04f",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2776
+    },
+    {
+      "seed": 9,
+      "trajectory_sha256": "62bba297c019f5a56e00bcc21bf5984eb5ca53fb10a766da6f1e61a163f3ba9e",
+      "model_sha256": "ae1b6d1981603f56d6d28741218e13b9c53f49f88912cb88b55e1940ad02b0c7",
+      "coverage_fraction": 1.0,
+      "ray_samples": 2714
+    }
+  ],
+  "history": [],
+  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+}

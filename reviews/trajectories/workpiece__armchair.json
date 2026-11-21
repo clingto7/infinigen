@@ -1,10 +1,15 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:armchair",
-  "status": "accepted",
+  "status": "pending",
   "reviewer": "hqb",
-  "notes": "2026-11-20 用户人工复审：当前版本轨迹可以接受。本次确认限于当前 10 个 seed 及所绑定的模型与轨迹证据；喷涂工艺质量、机器人可达性仍需后续验证。",
-  "seed_issues": [],
+  "notes": "此前轨迹已接受；本轮椅子共性问题要求复核该类横梁包络、窄面与连贯性，复查前不延用原接受结论。",
+  "seed_issues": [
+    {
+      "seed": 0,
+      "note": "此前版本已接受；本轮用户提出椅子横梁接近方向和往复笔画连贯性的共性复核要求，需逐笔确认是否影响当前版本。"
+    }
+  ],
   "evidence": [
     {
       "seed": 0,
@@ -327,7 +332,86 @@
         }
       ],
       "reviewed_at": "2026-11-20T01:57:46.656932+00:00"
+    },
+    {
+      "status": "accepted",
+      "reviewer": "hqb",
+      "notes": "2026-11-20 用户人工复审：当前版本轨迹可以接受。本次确认限于当前 10 个 seed 及所绑定的模型与轨迹证据；喷涂工艺质量、机器人可达性仍需后续验证。",
+      "seed_issues": [],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "460b09cb3e95ddbf7aa877ce5805fbef5bb564bf7c7adf180afc6d3d5a724f7f",
+          "model_sha256": "697a8c38c1fe053adcf10abb2edd6ac527f53bc813f3da64dee690f6c2435254",
+          "coverage_fraction": 0.9846938775510204,
+          "ray_samples": 3729
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "ac2b1822a0fddbd2971f3e37a7a97ab60a734e362c783ed4b772dd24da376139",
+          "model_sha256": "4cd590206e2fc5021eba9b27efadc9ab3e38716da3c1fc5832118413102382b0",
+          "coverage_fraction": 0.9839055793991416,
+          "ray_samples": 3035
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "c0d26ad2a4f8cacae29a0b49114171d0e6b8f98b819edce81bf7e0565b86e0b4",
+          "model_sha256": "fa4b1c0362df0360cd0b642db7b7484062c8d2d49db1db450f9a476942109954",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3961
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "c14bceaef4f8e8a0f902c26464a8a4de491d62fa71bd299717fa381213733e96",
+          "model_sha256": "1eb3c5bfca85c62ffe8baa1e363564cc751a473e3ae116743958dd32be866790",
+          "coverage_fraction": 0.9994565217391305,
+          "ray_samples": 3380
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "4771f3da7736d427b12ea1d708385121349fcf5d359408ba6d64cfddb218c0ce",
+          "model_sha256": "eb0314d6ed9b8b4484cff55613b414483ee00f1cec8384a27fad0f7a3d7f1924",
+          "coverage_fraction": 1.0,
+          "ray_samples": 4055
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "b420abf2b66be44b8cb1a8b4d7f9f0656540465919ed6a3f819f3258bcded167",
+          "model_sha256": "2f8492406e1a01a3f0f9fc3f2f8fff223d33b080141ab5282b1e3e3442f72995",
+          "coverage_fraction": 0.9753521126760564,
+          "ray_samples": 3563
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "00d513a4f0b5fedc54cb43d36d4c59d006fdc046e1aa41454614499b7756a423",
+          "model_sha256": "1a1e9ee5265912f4777046996d23d5a02f60a40fbea0e4ba53279e2bb9f54276",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3877
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "7f9a5c1db7f191ddd8dbbaf632aff8a32e7e0e9103dad699f7955b336f830472",
+          "model_sha256": "f31c1baf5ca3af6b9207acc3c550f2b404e7ab9a6d0c3577c96ca1707b1f19fa",
+          "coverage_fraction": 0.9685681024447031,
+          "ray_samples": 3725
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "f8ae62a881981d60d2176b5ed4fdc9dea503cf7f32c787bb2b3cb2caa917ca8e",
+          "model_sha256": "84d2f8006679246f778fa2e3394229efbfa9444ef118e68ee2a3cd3bfd5fa86c",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3498
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "d383b641696faff9ad53dc072b0183bb4f38424aac83200f06171aec1ae7de05",
+          "model_sha256": "3a874e90a433bb0a6956bd2a242c915770bfda3e9028c13a55e53e57a9b2bec6",
+          "coverage_fraction": 0.9478707782672541,
+          "ray_samples": 3398
+        }
+      ],
+      "reviewed_at": "2026-11-20T05:39:56.671809+00:00"
     }
   ],
-  "reviewed_at": "2026-11-20T05:39:56.671809+00:00"
+  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
 }
