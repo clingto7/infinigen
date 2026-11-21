@@ -106,8 +106,11 @@ def check_exported_rays(mesh, paths: list[dict], sources: list[dict],
         nozzles = np.asarray(nozzles)
         directions = np.asarray(directions)
         count += len(nozzles)
-        allowed = (np.asarray(face_parts) == semantic_ids[source['part']]
-                   if face_parts is not None and source['part'] in semantic_ids else None)
+        names = source.get('allowed_parts', [source['part']])
+        if face_parts is not None and any(name not in semantic_ids for name in names):
+            raise ValueError(f"unknown trajectory part in {names!r}")
+        allowed = (np.isin(face_parts, [semantic_ids[name] for name in names])
+                   if face_parts is not None else None)
         if standoff_mm is None:
             hits, ray_ids, faces = mesh.ray.intersects_location(
                 nozzles, directions, multiple_hits=False)

@@ -116,13 +116,19 @@ def surface_components(part):
     return list(result.values())
 
 
-def samples(surfaces, target=None):
+def samples(surfaces, target=None, spacing_mm=None):
     points, normals = [], []
     for surface in surfaces:
         ids = surface['mesh_mapping']['construction_triangle_ids']
         if target is not None and not np.any(target[ids]):
             continue
         kind, nu, nv, evaluate = sampler(surface)
+        if spacing_mm is not None and kind == 'sweep_quad':
+            quad = corners(surface) * 1000
+            nu = max(nu, int(np.ceil(max(np.linalg.norm(quad[2] - quad[0]),
+                                          np.linalg.norm(quad[3] - quad[1])) / spacing_mm)))
+            nv = max(nv, int(np.ceil(max(np.linalg.norm(quad[1] - quad[0]),
+                                          np.linalg.norm(quad[3] - quad[2])) / spacing_mm)))
         for i in range(nu + 1):
             u = i / nu
             for j in range(nv + (0 if surface['periodic_v'] else 1)):
@@ -221,9 +227,9 @@ def relocate_stroke(mesh, stroke, allowed_faces, clearance_mesh=None):
 
 
 def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
-                allowed_faces=None):
+                allowed_faces=None, dense=False):
     """Follow one parameterized member face along its long axis, with stable side selection."""
-    points, normals = samples(component)
+    points, normals = samples(component, spacing_mm=15.0 if dense else None)
     if len(points) < 2:
         return []
     bounds = np.vstack([corners(s) for s in component]) * 1000
@@ -236,6 +242,7 @@ def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
     chosen = []
     side_axis = np.cross(np.eye(3)[axis], outward)
     side_axis /= np.linalg.norm(side_axis)
+    side_center = float(np.median(points @ side_axis)) if dense else 0.0
     for value in columns:
         indices = np.flatnonzero((np.abs(points[:, axis] - value) < 18)
                                  & (normals @ outward > 0.6))
@@ -247,10 +254,19 @@ def member_line(mesh, component, direction, semantic, reason, trim_mm=15.0,
                 continue
             indices = same_side
         # Stay on the same outward side. Prefer the face most exposed in that direction.
-        index = max(indices, key=lambda i: float(points[i] @ outward
-                    - 0.15 * abs(points[i, axis] - value)
-                    - (2.0 * abs((points[i] - points[chosen[-1]]) @ side_axis)
-                       if chosen else 0.0)))
+        if dense:
+            index = min(indices, key=lambda i: float(
+                abs(points[i] @ side_axis - side_center)
+                + 0.15 * abs(points[i, axis] - value)
+                + (2.0 * abs((points[i] - points[chosen[-1]]) @ side_axis)
+                   if chosen else 0.0)))
+        else:
+            index = max(indices, key=lambda i: float(points[i] @ outward
+                        - 0.15 * abs(points[i, axis] - value)
+                        - (2.0 * abs((points[i] - points[chosen[-1]]) @ side_axis)
+                           if chosen else 0.0)))
+        if chosen and np.linalg.norm(points[index] - points[chosen[-1]]) < 1.0:
+            continue
         chosen.append(index)
     if len(chosen) < 2:
         return []

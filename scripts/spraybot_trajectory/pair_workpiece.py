@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import ConvexHull, cKDTree
 import trimesh
 
 from spraybot_trajectory.paintds import euler_zyx_to_aim, write_paintds
@@ -29,7 +29,8 @@ def _export_path(surface: np.ndarray, nozzle: np.ndarray) -> tuple[dict, np.ndar
 
 
 def _repair_whole_stroke(mesh, surface: np.ndarray, nozzle: np.ndarray,
-                         semantic: str, model: dict) -> tuple[np.ndarray, np.ndarray, dict]:
+                         semantic: str, model: dict,
+                         allowed_parts: list[str] | None = None) -> tuple[np.ndarray, np.ndarray, dict]:
     """Move a complete stroke within its face to avoid join-line ray ambiguity."""
     outward = np.mean(nozzle - surface, axis=0)
     outward /= np.linalg.norm(outward)
@@ -44,7 +45,7 @@ def _repair_whole_stroke(mesh, surface: np.ndarray, nozzle: np.ndarray,
     for shift in shifts:
         moved_surface, moved_nozzle = surface + shift, nozzle + shift
         path, _ = _export_path(moved_surface, moved_nozzle)
-        source = {"part": semantic}
+        source = {"part": semantic, "allowed_parts": allowed_parts or [semantic]}
         rays = check_exported_rays(mesh, [path], [source], STANDOFF_MM,
                                    model["part_id"], model["part_legend"])
         motion = check_exported_motion(mesh, [path])
@@ -143,10 +144,14 @@ def pair(model_path: Path, output_root: Path) -> dict:
         if surface.shape != nozzle.shape or surface.ndim != 2 or len(surface) < 2:
             raise ValueError(f"invalid stroke: {stroke['reason']}")
         surface, nozzle, repair = _repair_whole_stroke(mesh, surface, nozzle,
-                                                       stroke["part"], model)
+                                                       stroke["part"], model,
+                                                       stroke.get("allowed_parts"))
         path, aim = _export_path(surface, nozzle)
         paths.append(path)
-        sources.append({"part": stroke["part"], "surface": stroke["reason"]})
+        source = {"part": stroke["part"], "surface": stroke["reason"]}
+        if stroke.get("allowed_parts"):
+            source["allowed_parts"] = stroke["allowed_parts"]
+        sources.append(source)
         paintds.append(SimpleNamespace(positions_mm=nozzle, aim=aim))
         landing_points.append(surface)
         nozzle_points.append(nozzle)
@@ -194,7 +199,8 @@ def pair(model_path: Path, output_root: Path) -> dict:
             missed_midpoints.append(index)
             continue
         first = float(np.linalg.norm(hits[0] - origin))
-        if first < STANDOFF_MM - 5 or int(model["part_id"][face_ids[0]]) != semantic_ids[source["part"]]:
+        valid_parts = {semantic_ids[name] for name in source.get("allowed_parts", [source["part"]])}
+        if first < STANDOFF_MM - 5 or int(model["part_id"][face_ids[0]]) not in valid_parts:
             blocked_midpoints.append(index)
         elif first > STANDOFF_MM + 25:
             missed_midpoints.append(index)
@@ -203,6 +209,22 @@ def pair(model_path: Path, output_root: Path) -> dict:
                   "blocked_stroke_ids": blocked_midpoints,
                   "missed_stroke_ids": missed_midpoints,
                   "clear_strokes": len(paths) - len(blocked_midpoints) - len(missed_midpoints)}
+    envelope = ConvexHull(np.asarray(mesh.vertices))
+    equations = envelope.equations
+    inside_envelope = []
+    for index, (path, source) in enumerate(zip(paths, sources)):
+        if source["part"] not in {"leg_base", "frame"}:
+            continue
+        points = np.asarray(path["points"]) * 1000
+        inside = np.all(points @ equations[:, :3].T + equations[:, 3] < -1.0, axis=1)
+        if np.any(inside):
+            inside_envelope.append({"stroke": index, "part": source["part"],
+                                    "waypoint_fraction": float(inside.mean())})
+    envelope_diagnostic = {
+        "method": "nozzle waypoints strictly inside whole-object convex hull; free space may be included",
+        "inside_strokes": inside_envelope,
+        "scope": "review cue, not a reachability or machine gate",
+    }
     check = {
         "schema": "spraybot.paired-trajectory.v1",
         "interface_id": interface_id,
@@ -231,6 +253,7 @@ def pair(model_path: Path, output_root: Path) -> dict:
         "model_surface_gap_max_mm": float(surface_gap.max()),
         "coverage_diagnostic_scope": "all accessible spray_target faces; this is broader than the planned coating scope",
         "coating_scope": diagnostics,
+        "envelope_diagnostic": envelope_diagnostic,
         "fully_occluded_rows": len(occluded),
         "same_face_covered_rows": len(covered_rows),
         "visible_unplanned_rows": len(unplanned),

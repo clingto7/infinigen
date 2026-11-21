@@ -15,9 +15,63 @@ from spraybot_trajectory.path_checks import (
     clear_motion, clear_rays,
 )
 from spraybot_trajectory.armchair import coating_scope, relocate_stroke
+from spraybot_trajectory.planar import _join_rows, _rectangle_rows, _selected
 
 
 class TrajectoryGeometryChecks(unittest.TestCase):
+    def test_narrow_board_edge_has_one_centered_row(self):
+        surface = {"type": "plane_rectangle", "geometry": {
+            "origin": [0, 0, 0], "u": [0.6, 0, 0], "v": [0, 0.03, 0],
+            "normal": [0, 0, 1]}}
+        rows = _rectangle_rows(surface)
+        self.assertEqual(len(rows), 1)
+        self.assertAlmostEqual(rows[0][0, 1], 15.0)
+
+    def test_board_edge_policy_includes_both_axes(self):
+        for semantic in ("top", "seat", "shelf"):
+            for axis in (0, 1):
+                for sign in (-1, 1):
+                    normal = np.eye(3)[axis] * sign
+                    surface = {"type": "plane_rectangle", "geometry": {
+                        "origin": [0, 0, 0], "u": [0.5, 0, 0],
+                        "v": [0, 0, 0.03], "normal": normal.tolist()},
+                        "mesh_mapping": {"construction_triangle_ids": [0]}}
+                    self.assertTrue(_selected(surface, semantic, np.array([True]),
+                                              np.zeros(3), "folding_table"))
+
+    def test_back_post_inner_edge_is_not_planned(self):
+        surface = {"type": "plane_rectangle", "geometry": {
+            "origin": [0, 0.3, 0], "u": [0, 0, 0.5],
+            "v": [0.03, 0, 0], "normal": [0, -1, 0]},
+            "mesh_mapping": {"construction_triangle_ids": [0]}}
+        self.assertFalse(_selected(surface, "back", np.array([True]),
+                                   np.zeros(3), "ladder_back_chair"))
+
+    def test_staggered_shelf_keeps_exposed_front_thin_edge(self):
+        surface = {"type": "plane_rectangle", "geometry": {
+            "origin": [0.15, 0, 0], "u": [0, 0.3, 0],
+            "v": [0, 0, 0.016], "normal": [1, 0, 0]},
+            "mesh_mapping": {"construction_triangle_ids": [0]}}
+        self.assertTrue(_selected(surface, "shelf", np.array([True]),
+                                  np.zeros(3), "staggered_display_shelf"))
+        surface["geometry"]["normal"] = [-1, 0, 0]
+        self.assertFalse(_selected(surface, "shelf", np.array([True]),
+                                   np.zeros(3), "staggered_display_shelf"))
+
+    def test_adjacent_clear_rows_form_one_rounded_serpentine(self):
+        mesh = trimesh.creation.box(extents=[500, 300, 20])
+        allowed = mesh.face_normals[:, 2] > 0.9
+        rows = []
+        for index, y in enumerate((-40.0, 40.0)):
+            landing = np.column_stack((np.linspace(-200, 200, 29),
+                                       np.full(29, y), np.full(29, 10.0)))
+            rows.append({"surface_points": landing.tolist(),
+                         "nozzle_points": (landing + [0, 0, 120]).tolist(),
+                         "reason": f"board:top:row_{index}", "part": "top"})
+        joined = _join_rows(mesh, rows, allowed, np.array([0., 0., 1.]))
+        self.assertEqual(len(joined), 1)
+        self.assertEqual(joined[0]["reason"], "board:top:serpentine")
+
     def test_exported_smoothness_flags_a_sharp_turn(self):
         paths = [
             {'points': [[0., 0., 0.], [0.02, 0., 0.], [0.02, 0.02, 0.]]},
@@ -162,6 +216,9 @@ class TrajectoryGeometryChecks(unittest.TestCase):
             check = check_exported_rays(mesh, paths, sources, 120.0, labels,
                                         {"0": "seat", "1": "arm"})
             self.assertEqual(check["invalid_stroke_ids"], [0])
+        joint = [{"part": "seat", "allowed_parts": ["seat", "arm"]}]
+        self.assertEqual(check_exported_rays(mesh, down, joint, 120.0, labels,
+                                             {"0": "seat", "1": "arm"})["invalid_stroke_ids"], [])
 
     def test_generic_exported_geometry_rejects_empty_ray_and_crossing_path(self):
         mesh = trimesh.creation.box(extents=[20, 20, 20])
