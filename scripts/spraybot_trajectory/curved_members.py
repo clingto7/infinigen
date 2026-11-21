@@ -80,7 +80,7 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                 edge_directions = [np.array([0.0, float(sign), 0.0]) for sign in (-1, 1)]
             else:
                 branches = [component]
-                if (category == "backless_bench" and extent[1] > 180
+                if (category in {"backed_bench", "backless_bench"} and extent[1] > 180
                         and extent[2] > 250):
                     # A U-shaped support is one connected mesh but contains two legs.
                     branches = []
