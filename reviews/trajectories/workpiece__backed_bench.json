@@ -7,7 +7,7 @@
   "seed_issues": [
     {
       "seed": 2,
-      "note": "storage_grid_legs 未被规划，leg_base 笔画为 0。"
+      "note": "初版 storage_grid_legs 未被规划，leg_base 笔画为 0。8f2fbe82 修复后的复验仍只有 4/8 根独立立腿有轨迹：seed 2 的 storage_grid_legs 有 8 个竖直连通分量（x=±179 mm，y=±498/±166 mm，高 398 mm），轨迹只落在 y≈-498、166 mm 的四根上；另四根在中心线采样后被整笔筛掉。"
     },
     {
       "seed": 0,
