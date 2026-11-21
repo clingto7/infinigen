@@ -7,3 +7,10 @@
 - 机器定位与处理：车轮短侧壁和向内轮面不在本轮接近方向内。
 - 尚需人工逐笔审查实际喷涂范围、路径自然程度和姿态；实体喷枪、机器人可达性及涂层质量另行验证。
 - 机器复验：seed 0–9 均通过（10/10）；笔画数 63–98，小于 50 mm 的笔画合计 0 条，完全遮挡行 80 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-final-3961174e/workpiece:serving_cart`；全批审计为 200/200 通过。
+
+## 2026-11-21：第二轮轨迹修复
+
+- 症状及证据：板边、杆件和相邻密集行需复查。 审查记录见 [`workpiece__serving_cart.json`](../../../reviews/trajectories/workpiece__serving_cart.json)（`b1534ea7`）。
+- 根因：窄面按通用栅格分行，外露边与内部连接面需区分。
+- 修复：外露窄边居中单行，安全的面内行合并，内部连接面不喷。 实现提交 `c98a211d`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 37–54，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 40 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:serving_cart`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。

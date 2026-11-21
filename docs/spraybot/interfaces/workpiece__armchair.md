@@ -29,3 +29,10 @@
 2. 对照构件清单检查 seat 顶面及侧壁、back 立柱及顶横梁、arm 的连续轮廓、leg_base 的腿和四根横梁；这份清单是 Armchair 当前工艺范围，不是其他工件的默认范围。
 3. 运行导出后喷向、首个命中、喷枪中心线侵入和转角检查；用 Web 逐 seed、逐笔判断漏喷、连贯性与工艺合理性。遇到碰撞优先重规划整笔，并比较修复前后的喷涂范围。
 4. 重新绑定模型、轨迹与源码哈希，更新本记录和正式审查 JSON；取得新的人工结论后再提交 `accepted`。
+
+## 2026-11-21：第二轮轨迹修复
+
+- 症状及证据：本轮需复核窄边、连贯性和横撑外部接近；旧接受证据因代码更新失效。 审查记录见 [`workpiece__armchair.json`](../../../reviews/trajectories/workpiece__armchair.json)（`b1534ea7`）。
+- 根因：曲面窄边采样与其他椅子类型的共性边界需重新验证。
+- 修复：复核窄边中心采样及导出轨迹；本轮生成的笔画点未因修复改变，重新绑定机器证据。 实现提交 `c98a211d`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 29–37，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 0 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:armchair`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。

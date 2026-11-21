@@ -7,3 +7,10 @@
 - 机器定位与处理：中层两根纵向窄横杆的顶面在部分 seed 被上方结构挡住，排除该局部面；窄竖板条每面一行，床板的宽面扫描保持。
 - 尚需人工逐笔审查实际喷涂范围、路径自然程度和姿态；实体喷枪、机器人可达性及涂层质量另行验证。
 - 机器复验：seed 0–9 均通过（10/10）；笔画数 89–98，小于 50 mm 的笔画合计 0 条，完全遮挡行 320 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-final-3961174e/workpiece:crib`；全批审计为 200/200 通过。
+
+## 2026-11-21：第二轮轨迹修复
+
+- 症状及证据：窄条出现双密集行，床底内部有不可执行的喷涂。 审查记录见 [`workpiece__crib.json`](../../../reviews/trajectories/workpiece__crib.json)（`b1534ea7`）。
+- 根因：按面宽栅格化和内部支撑选面未排除不可达处。
+- 修复：窄条居中单行；排除宽大内部床底支撑，保留可外侧接近的构件。 实现提交 `c98a211d`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 58–60，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 320 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:crib`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。

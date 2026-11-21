@@ -14,3 +14,10 @@
 - 背板与层板、侧板的接头按其他构件包围盒留 15 mm 间隙拆笔。首轮 seed 0、2、3、5、7 的背板或侧板射线在接缝误命中，修复后逐条导出检查通过。
 - 待逐笔人工审查喷涂范围、接缝和路径自然程度；机器人可达性与涂层质量另行验证。
 - 机器复验：seed 0–9 均通过（10/10）；笔画数 129–143，小于 50 mm 的笔画合计 0 条，完全遮挡行 80 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-final-3961174e/workpiece:staggered_display_shelf`；全批审计为 200/200 通过。
+
+## 2026-11-21：第二轮轨迹修复
+
+- 症状及证据：层板前缘与窄侧面覆盖不全，行数偏多。 审查记录见 [`workpiece__staggered_display_shelf.json`](../../../reviews/trajectories/workpiece__staggered_display_shelf.json)（`b1534ea7`）。
+- 根因：薄层板外露前缘与内部接缝未区分。
+- 修复：选入外露前缘、排除内部接缝；窄面单行，同面安全时连接往复行。 实现提交 `c98a211d`。
+- 复验：seed 0–9 机器门禁 10/10 通过，笔画数 153–169，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 0 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:staggered_display_shelf`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。
