@@ -105,7 +105,7 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                     for direction in directions:
                         strokes.extend(member_line(mesh, branch, direction, semantic,
                                                    "leg_or_stretcher_length",
-                                                   allowed_faces=branch_faces))
+                                                   allowed_faces=branch_faces, dense=True))
                 edge_directions = []
             for direction in edge_directions:
                 edge_surfaces = [surface for surface in component
