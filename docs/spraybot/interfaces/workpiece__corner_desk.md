@@ -29,3 +29,8 @@
 - 修复：对轴向候选均落在凸包内的腿搜索水平斜向接近角，以目标面首命中、喷枪净空及运动校验选入两面轨迹。 实现提交 `8bb4440a`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 21–23，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:corner_desk`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
 - 新增转角腿两笔的喷枪位置仍处于整件凸包内，但均由开放角斜向接近，逐笔保持至少 50 mm 实体净空；该凸包提示留给人工判断。
+
+
+## 2026-11-21：第四轮轨迹审查通过
+
+- 用户确认本轮轨迹候选通过；正式记录见 [`workpiece__corner_desk.json`](../../../reviews/trajectories/workpiece__corner_desk.json)。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:corner_desk`，规划源码提交 `8bb4440a`，全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。本结论绑定该模型、seed 和轨迹版本；实体机器人可达性与涂层质量尚未验证。

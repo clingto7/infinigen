@@ -14,3 +14,8 @@
 - 根因：窄板被多行栅格化，曲腿每个短面独立分段。
 - 修复：桌板四个外露窄边各用单行；四条腿各沿正面与两侧规划三条长笔画。 实现提交 `c98a211d`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 21–21，小于 50 mm 的笔画合计 0 条，完全遮挡行诊断合计 40 行。配对证据位于 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-20-review4-b19008cd/workpiece:cabriole_leg_table`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-20-b19008cd.json` 为 200/200 通过。轨迹仍待人工逐笔审查；机器人可达性和实体涂层质量尚未验证。
+
+
+## 2026-11-21：第四轮轨迹审查通过
+
+- 用户确认本轮轨迹候选通过；正式记录见 [`workpiece__cabriole_leg_table.json`](../../../reviews/trajectories/workpiece__cabriole_leg_table.json)。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:cabriole_leg_table`，规划源码提交 `8bb4440a`，全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。本结论绑定该模型、seed 和轨迹版本；实体机器人可达性与涂层质量尚未验证。

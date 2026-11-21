@@ -1,80 +1,80 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:folding_table",
-  "status": "needs_fix",
+  "status": "accepted",
   "reviewer": "hqb",
-  "notes": "下部叉形支架与 folding_chair 同理，应覆盖正面和两个侧面。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+  "notes": "用户确认本轮轨迹候选可以通过；审查对象为 spraybot/trajectories-18-review6-8bb4440a，规划代码 8bb4440a。18 个活跃接口、每接口 10 个 seed 的机器审计 180/180 通过；人工接受仅对应此处绑定的模型与轨迹产物，实体机器人可达性和涂层质量仍待验证。",
   "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "04e2f54aec4052b54628ab3504805e2955603e6729fd76db577cc4b71526754d",
+      "trajectory_sha256": "0c1e50bf9714ec8921878a5c2064c81702f5c0601621636a3680fbeee01089aa",
       "model_sha256": "a8a6d84003469cba07887f39a717cca6833f05b68eeb75238179c6a2f8c314d9",
       "coverage_fraction": 1.0,
       "ray_samples": 4085
     },
     {
       "seed": 1,
-      "trajectory_sha256": "f2ee214e66215c22d27f077925e2083a7258f5f35e2ddf074b7447d4f379eee1",
+      "trajectory_sha256": "21e0bc591b52ab4df5cc0cb7637f26caa1b6330eb001615d52e055d3a6a51fe1",
       "model_sha256": "46e020a422bf905576badc7882b3c78f5f0af4c34a22e0332824002f30e5da9b",
       "coverage_fraction": 0.9871794871794872,
-      "ray_samples": 3758
+      "ray_samples": 5382
     },
     {
       "seed": 2,
-      "trajectory_sha256": "970525b789d5ed66614d16afa9ac467184a8a7c8765d934e9217b2f6384f3c9e",
+      "trajectory_sha256": "57637e04eebc0169733efa0d00c88a9e9affa5dfca55dc4d79748a41396c4692",
       "model_sha256": "e3dbbe27760478772cfe50a9c7961ec3b181ed6dcb5f19de76cd69adf624e5d6",
       "coverage_fraction": 1.0,
       "ray_samples": 3893
     },
     {
       "seed": 3,
-      "trajectory_sha256": "824cb0e78c727e3f529dc9777b2d3fcd2b42e36a8fc6f83becae71ea3b42a1e5",
+      "trajectory_sha256": "2c6522a6c9f854be0d98d73fa037869eb7920d977ee78f0af8299f9b88b255e2",
       "model_sha256": "728b4f3fcdbc0cf21005421803adc26d3a048375ab498f82e8d129a39a734c90",
       "coverage_fraction": 0.9871794871794872,
-      "ray_samples": 3998
+      "ray_samples": 5718
     },
     {
       "seed": 4,
-      "trajectory_sha256": "801d22c3c711c4a88ec8f34d5c3861408dbd99bb69d72057cf5683c11e3e33ca",
+      "trajectory_sha256": "243fca1e5b0317a71a1310e004454bea7c41f1a40d47d0befb61a2185ba769b0",
       "model_sha256": "3c6d8f89d0c1889f28ba2b4eacc5d70fde6c0c860f05eb5b5a4b4d4036bcde70",
       "coverage_fraction": 1.0,
       "ray_samples": 4013
     },
     {
       "seed": 5,
-      "trajectory_sha256": "0c7271a40f88aa315f08085c6fba359074942f92c74d97c91b33e4a1314d77ce",
+      "trajectory_sha256": "b2b88e63f102c2c31dc3c81196b68592ef28fdb5f2560f2b621e280935601b66",
       "model_sha256": "8291943ee0d5718388b3a761ca3dd29d8f7e44e921e73fc85899843bc7fd8587",
       "coverage_fraction": 0.9871794871794872,
-      "ray_samples": 4364
+      "ray_samples": 6180
     },
     {
       "seed": 6,
-      "trajectory_sha256": "3eb8e0b6bcfb1b8d7db1d365cb62dee1f4527a2640faafca631df09018e67803",
+      "trajectory_sha256": "6b0869f28feb8550e5e8cab2cc1631b998060979a9056981840e6cda47540954",
       "model_sha256": "d2804d180b3edb022f63037acf1fd308ccadae0b0928b5bb966c03dfe55b216c",
       "coverage_fraction": 1.0,
       "ray_samples": 3971
     },
     {
       "seed": 7,
-      "trajectory_sha256": "4a3f2a48c213baf45ddd1369e6d53b991587338ce81bdffbb383c1a903b32159",
+      "trajectory_sha256": "136a7603f2aa180d8b9a06802f39f7ad431ce5b986cb4263d2a27480196b27f0",
       "model_sha256": "3bd970e68944b8bde9bc3bf4db635705f0753cd7cf6dc7c83391fcd865311f87",
       "coverage_fraction": 1.0,
-      "ray_samples": 3853
+      "ray_samples": 5429
     },
     {
       "seed": 8,
-      "trajectory_sha256": "dbf8120244c2326e490fc1c5806acb2c7fda8429ce18ce10584324f6619586b1",
+      "trajectory_sha256": "0f520f3d5de17449ab8a35006a4804df960f9930f1f4d78da127e29d7271d8d6",
       "model_sha256": "6da9ee39dd8e60eeefa2c237758ae6210d4663dbe1da6cee18fb224f729b8b9f",
       "coverage_fraction": 0.9871794871794872,
-      "ray_samples": 3908
+      "ray_samples": 5580
     },
     {
       "seed": 9,
-      "trajectory_sha256": "e2259c9157b8c3c0b7507f5bf5d19d27947bddced61c413f6ebf9d9eeffdcdfe",
+      "trajectory_sha256": "5704b5e53161bf93b7bb2630a5c78dd9383192a69858df9c04a10e5c8e6a69ff",
       "model_sha256": "2fffb4e40bd357400272b1ced9b2d57eb7426dbb39bd6d5c5816c96a3de1e6f3",
       "coverage_fraction": 0.9864864864864865,
-      "ray_samples": 4019
+      "ray_samples": 5775
     }
   ],
   "history": [
@@ -161,7 +161,86 @@
         }
       ],
       "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "下部叉形支架与 folding_chair 同理，应覆盖正面和两个侧面。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+      "seed_issues": [],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "04e2f54aec4052b54628ab3504805e2955603e6729fd76db577cc4b71526754d",
+          "model_sha256": "a8a6d84003469cba07887f39a717cca6833f05b68eeb75238179c6a2f8c314d9",
+          "coverage_fraction": 1.0,
+          "ray_samples": 4085
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "f2ee214e66215c22d27f077925e2083a7258f5f35e2ddf074b7447d4f379eee1",
+          "model_sha256": "46e020a422bf905576badc7882b3c78f5f0af4c34a22e0332824002f30e5da9b",
+          "coverage_fraction": 0.9871794871794872,
+          "ray_samples": 3758
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "970525b789d5ed66614d16afa9ac467184a8a7c8765d934e9217b2f6384f3c9e",
+          "model_sha256": "e3dbbe27760478772cfe50a9c7961ec3b181ed6dcb5f19de76cd69adf624e5d6",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3893
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "824cb0e78c727e3f529dc9777b2d3fcd2b42e36a8fc6f83becae71ea3b42a1e5",
+          "model_sha256": "728b4f3fcdbc0cf21005421803adc26d3a048375ab498f82e8d129a39a734c90",
+          "coverage_fraction": 0.9871794871794872,
+          "ray_samples": 3998
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "801d22c3c711c4a88ec8f34d5c3861408dbd99bb69d72057cf5683c11e3e33ca",
+          "model_sha256": "3c6d8f89d0c1889f28ba2b4eacc5d70fde6c0c860f05eb5b5a4b4d4036bcde70",
+          "coverage_fraction": 1.0,
+          "ray_samples": 4013
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "0c7271a40f88aa315f08085c6fba359074942f92c74d97c91b33e4a1314d77ce",
+          "model_sha256": "8291943ee0d5718388b3a761ca3dd29d8f7e44e921e73fc85899843bc7fd8587",
+          "coverage_fraction": 0.9871794871794872,
+          "ray_samples": 4364
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "3eb8e0b6bcfb1b8d7db1d365cb62dee1f4527a2640faafca631df09018e67803",
+          "model_sha256": "d2804d180b3edb022f63037acf1fd308ccadae0b0928b5bb966c03dfe55b216c",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3971
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "4a3f2a48c213baf45ddd1369e6d53b991587338ce81bdffbb383c1a903b32159",
+          "model_sha256": "3bd970e68944b8bde9bc3bf4db635705f0753cd7cf6dc7c83391fcd865311f87",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3853
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "dbf8120244c2326e490fc1c5806acb2c7fda8429ce18ce10584324f6619586b1",
+          "model_sha256": "6da9ee39dd8e60eeefa2c237758ae6210d4663dbe1da6cee18fb224f729b8b9f",
+          "coverage_fraction": 0.9871794871794872,
+          "ray_samples": 3908
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "e2259c9157b8c3c0b7507f5bf5d19d27947bddced61c413f6ebf9d9eeffdcdfe",
+          "model_sha256": "2fffb4e40bd357400272b1ced9b2d57eb7426dbb39bd6d5c5816c96a3de1e6f3",
+          "coverage_fraction": 0.9864864864864865,
+          "ray_samples": 4019
+        }
+      ],
+      "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
+  "reviewed_at": "2026-11-21T08:44:35.724075+00:00"
 }

@@ -1,87 +1,167 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:cabriole_leg_table",
-  "status": "needs_fix",
+  "status": "accepted",
   "reviewer": "hqb",
-  "notes": "桌板四周窄侧面覆盖不对称；每条腿被分成五段，每段两条密集平行笔画。期望按腿整体规划覆盖正面与两侧的约三条连续往复笔画。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
-  "seed_issues": [
-    {
-      "seed": 0,
-      "note": "桌板仅 x 正向窄侧面有笔画、y 向无笔画；四条腿各有 10 条分段笔画。"
-    }
-  ],
+  "notes": "用户确认本轮轨迹候选可以通过；审查对象为 spraybot/trajectories-18-review6-8bb4440a，规划代码 8bb4440a。18 个活跃接口、每接口 10 个 seed 的机器审计 180/180 通过；人工接受仅对应此处绑定的模型与轨迹产物，实体机器人可达性和涂层质量仍待验证。",
+  "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "b24d091e0e79e9bcc7206cef27b3c6a0697d45857c86457fca351d81617ca951",
+      "trajectory_sha256": "f6a465ce1d6a3a7ebf7ef4e3b147e7fc1073941d261ca8981d498ae1b345b20c",
       "model_sha256": "d8aa24e5d34cea36128a84cfc7c6174ebb37f0e1b290e6f1d11db30f2ee988fd",
-      "coverage_fraction": 1.0,
-      "ray_samples": 2292
+      "coverage_fraction": 0.9945054945054945,
+      "ray_samples": 4165
     },
     {
       "seed": 1,
-      "trajectory_sha256": "e9e71439ce1b1ebb6eb1dd441a01a0e7568777cf353058042992320df16f5c3a",
+      "trajectory_sha256": "486b500e7702d11d8dc66fdaf69979349205f22c1db51940f8914e9028f634cb",
       "model_sha256": "9b912fe15c134c195e3e8e28cf43f837c1f66d45ce6f82012630ec6ed7db8584",
-      "coverage_fraction": 1.0,
-      "ray_samples": 2214
+      "coverage_fraction": 0.994475138121547,
+      "ray_samples": 3993
     },
     {
       "seed": 2,
-      "trajectory_sha256": "0169f33a3a241667db43c360c686a74c905baa1b4457620221b389c8763123ac",
+      "trajectory_sha256": "f51a89ad19fe6f9a0770ac53050cbff9f03bfc40d54f1c862b4556565302caad",
       "model_sha256": "1df751a6bd7424026b0109dbb43fe8c94f308b1da8ea6e030fe85542a5bdb468",
-      "coverage_fraction": 0.9972375690607734,
-      "ray_samples": 2232
+      "coverage_fraction": 0.994475138121547,
+      "ray_samples": 3981
     },
     {
       "seed": 3,
-      "trajectory_sha256": "ca944628e5438664100f3c493c89a1fcd3cbc01fb9d780f40dd548afa4325e0a",
+      "trajectory_sha256": "b2cf5e6bcc749429c6273bea523f72d753771c986d5c722fe5d971ee88888905",
       "model_sha256": "dfa78d88fb98b8bc4d060443df6b51fe5374fbb3df2d781984e626efe82eb851",
-      "coverage_fraction": 0.9972375690607734,
-      "ray_samples": 2343
+      "coverage_fraction": 0.994475138121547,
+      "ray_samples": 4143
     },
     {
       "seed": 4,
-      "trajectory_sha256": "0f9feace6a8e4827acf0ec1b6883583d2aa7ee8c92e3b001349cbe6a50b48b68",
+      "trajectory_sha256": "b46b12560a5c660eb9520c58216fadcbc45597f055f3e984366c94e4f05218bf",
       "model_sha256": "b1820a654aa98ce2ec7e15ed4a77a827dfa560e1957b2da9f9588cdd09a5b6fa",
-      "coverage_fraction": 0.978494623655914,
-      "ray_samples": 2322
+      "coverage_fraction": 0.9946236559139785,
+      "ray_samples": 4177
     },
     {
       "seed": 5,
-      "trajectory_sha256": "73de498ccc4fe4ce3ff621315a69e96f753a4b999fae6a600bd97bd2770f114d",
+      "trajectory_sha256": "378e28f4e822107edf02d3a39c10028e84bae02a4e956dd4d3b8f0297b7f8d19",
       "model_sha256": "1f7e5f2efb663a177dc86845514cd2c17b6e5edb5a0829d5e4eb42f70f602a0a",
       "coverage_fraction": 1.0,
-      "ray_samples": 2300
+      "ray_samples": 3947
     },
     {
       "seed": 6,
-      "trajectory_sha256": "ed3577e53c968fb525ffb939e2d9e83f4ba309c724b039c3696c7cb913df6216",
+      "trajectory_sha256": "4415b47086847caea532db8f3e33083f889c937560fe7d6a8bf29cbc3d35bf50",
       "model_sha256": "409b6974ef62c9c7363c6dd73c1f3905f649337c57d244923bda308b9c292143",
-      "coverage_fraction": 1.0,
-      "ray_samples": 2289
+      "coverage_fraction": 0.9945652173913043,
+      "ray_samples": 4171
     },
     {
       "seed": 7,
-      "trajectory_sha256": "35c056377fdafa5ef7e710831de529d34c0dc449ff46f144cfe40ed49963e66d",
+      "trajectory_sha256": "cf7ce3c7834c2d65ab2b5569b11d1cf5bf63d85176d5e9f3b92dcfdb2b020a66",
       "model_sha256": "0bfb822d59bd8fc44f1f8c7d45f6b9b52c17dbf341b526ccb4c84f5147414e51",
-      "coverage_fraction": 0.9779005524861878,
-      "ray_samples": 2181
+      "coverage_fraction": 0.994475138121547,
+      "ray_samples": 3987
     },
     {
       "seed": 8,
-      "trajectory_sha256": "a7918d3f670e740731843e850631c935569e4d2d6f0d21a1bfd72ce3aec4133f",
+      "trajectory_sha256": "c189f4006b1c7f10fdb117900c6adab758c19e00b2d69994cd3e759d616b47e6",
       "model_sha256": "3596b93ccacba1c0f57e885ac435ca4818aaf4542f692f6ad4ba1a71a0972038",
-      "coverage_fraction": 0.9972222222222222,
-      "ray_samples": 2232
+      "coverage_fraction": 0.9944444444444445,
+      "ray_samples": 3969
     },
     {
       "seed": 9,
-      "trajectory_sha256": "2a3f5df1f10c543f9bc1b7f68d811fe38e99e1f4fd4886bf62e947be7c0b72fe",
+      "trajectory_sha256": "2eb1ac5d5ffe77642efcfc201799b2255d92922bb8818aabaa4de65f988b461e",
       "model_sha256": "2b660d432ed9fff6f1eccf857d29e987de98337da503d9bf7cb987d44330b43b",
       "coverage_fraction": 1.0,
-      "ray_samples": 2192
+      "ray_samples": 4058
     }
   ],
-  "history": [],
-  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+  "history": [
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "桌板四周窄侧面覆盖不对称；每条腿被分成五段，每段两条密集平行笔画。期望按腿整体规划覆盖正面与两侧的约三条连续往复笔画。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
+      "seed_issues": [
+        {
+          "seed": 0,
+          "note": "桌板仅 x 正向窄侧面有笔画、y 向无笔画；四条腿各有 10 条分段笔画。"
+        }
+      ],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "b24d091e0e79e9bcc7206cef27b3c6a0697d45857c86457fca351d81617ca951",
+          "model_sha256": "d8aa24e5d34cea36128a84cfc7c6174ebb37f0e1b290e6f1d11db30f2ee988fd",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2292
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "e9e71439ce1b1ebb6eb1dd441a01a0e7568777cf353058042992320df16f5c3a",
+          "model_sha256": "9b912fe15c134c195e3e8e28cf43f837c1f66d45ce6f82012630ec6ed7db8584",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2214
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "0169f33a3a241667db43c360c686a74c905baa1b4457620221b389c8763123ac",
+          "model_sha256": "1df751a6bd7424026b0109dbb43fe8c94f308b1da8ea6e030fe85542a5bdb468",
+          "coverage_fraction": 0.9972375690607734,
+          "ray_samples": 2232
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "ca944628e5438664100f3c493c89a1fcd3cbc01fb9d780f40dd548afa4325e0a",
+          "model_sha256": "dfa78d88fb98b8bc4d060443df6b51fe5374fbb3df2d781984e626efe82eb851",
+          "coverage_fraction": 0.9972375690607734,
+          "ray_samples": 2343
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "0f9feace6a8e4827acf0ec1b6883583d2aa7ee8c92e3b001349cbe6a50b48b68",
+          "model_sha256": "b1820a654aa98ce2ec7e15ed4a77a827dfa560e1957b2da9f9588cdd09a5b6fa",
+          "coverage_fraction": 0.978494623655914,
+          "ray_samples": 2322
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "73de498ccc4fe4ce3ff621315a69e96f753a4b999fae6a600bd97bd2770f114d",
+          "model_sha256": "1f7e5f2efb663a177dc86845514cd2c17b6e5edb5a0829d5e4eb42f70f602a0a",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2300
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "ed3577e53c968fb525ffb939e2d9e83f4ba309c724b039c3696c7cb913df6216",
+          "model_sha256": "409b6974ef62c9c7363c6dd73c1f3905f649337c57d244923bda308b9c292143",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2289
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "35c056377fdafa5ef7e710831de529d34c0dc449ff46f144cfe40ed49963e66d",
+          "model_sha256": "0bfb822d59bd8fc44f1f8c7d45f6b9b52c17dbf341b526ccb4c84f5147414e51",
+          "coverage_fraction": 0.9779005524861878,
+          "ray_samples": 2181
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "a7918d3f670e740731843e850631c935569e4d2d6f0d21a1bfd72ce3aec4133f",
+          "model_sha256": "3596b93ccacba1c0f57e885ac435ca4818aaf4542f692f6ad4ba1a71a0972038",
+          "coverage_fraction": 0.9972222222222222,
+          "ray_samples": 2232
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "2a3f5df1f10c543f9bc1b7f68d811fe38e99e1f4fd4886bf62e947be7c0b72fe",
+          "model_sha256": "2b660d432ed9fff6f1eccf857d29e987de98337da503d9bf7cb987d44330b43b",
+          "coverage_fraction": 1.0,
+          "ray_samples": 2192
+        }
+      ],
+      "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    }
+  ],
+  "reviewed_at": "2026-11-21T08:44:35.724075+00:00"
 }

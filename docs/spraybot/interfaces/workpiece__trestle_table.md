@@ -30,3 +30,8 @@
 - 修复：恢复侧向腿面，只排除底朝向面及少数从桌下进入的斜面。 实现提交 `8bb4440a`。
 - 复验：seed 0–9 机器门禁 10/10 通过，笔画数 13–21，短于 50 mm 的笔画合计 0 条。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:trestle_table`；全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。轨迹仍待人工逐笔审查；机器人可达性与实体涂层质量未验证。
 - seed 3 的腿部笔画由上轮 4 条恢复到 15 条；旧笔画 1、12、21 对应的底朝向或桌下斜向路径没有恢复。
+
+
+## 2026-11-21：第四轮轨迹审查通过
+
+- 用户确认本轮轨迹候选通过；正式记录见 [`workpiece__trestle_table.json`](../../../reviews/trajectories/workpiece__trestle_table.json)。配对证据在 spraybot 服务器 `/home/ma-user/ws/spray-review/trajectories-18-review6-8bb4440a/workpiece:trestle_table`，规划源码提交 `8bb4440a`，全批审计 `/home/ma-user/ws/spray-review/batch-audit-18-8bb4440a.json` 为 180/180 通过。本结论绑定该模型、seed 和轨迹版本；实体机器人可达性与涂层质量尚未验证。

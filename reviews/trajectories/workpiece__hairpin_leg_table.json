@@ -1,87 +1,167 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:hairpin_leg_table",
-  "status": "needs_fix",
+  "status": "accepted",
   "reviewer": "hqb",
-  "notes": "复查过密的窄面双行、板件窄侧面覆盖、可安全连成 S 形的平行笔画，以及喷枪进入家具内部和构件间碎段的问题；按部件和 seed 修复，不以机器门禁通过代替人工验收。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
-  "seed_issues": [
-    {
-      "seed": 0,
-      "note": "seed 0：30 mm 桌板窄面有双行；y 向两侧窄面无轨迹。"
-    }
-  ],
+  "notes": "用户确认本轮轨迹候选可以通过；审查对象为 spraybot/trajectories-18-review6-8bb4440a，规划代码 8bb4440a。18 个活跃接口、每接口 10 个 seed 的机器审计 180/180 通过；人工接受仅对应此处绑定的模型与轨迹产物，实体机器人可达性和涂层质量仍待验证。",
+  "seed_issues": [],
   "evidence": [
     {
       "seed": 0,
-      "trajectory_sha256": "ca4cfbd6f5613226e9bc410fcaca70744695361106426e55b9d1f0ee351151dd",
+      "trajectory_sha256": "b276d106df974b4963a30c13cb8247168dd8fe676a724d30d38aab1e89f1b623",
       "model_sha256": "62733dbe11c5210fbaf726586cd1e964979df2f680f3caf489c41e663d788cb1",
-      "coverage_fraction": 1.0,
-      "ray_samples": 3440
+      "coverage_fraction": 0.9965986394557823,
+      "ray_samples": 3562
     },
     {
       "seed": 1,
-      "trajectory_sha256": "6236f0e1b49512d7c251fdee6aa38c86623532a34985bb3382ecaaf6e0cdd294",
+      "trajectory_sha256": "9f37824bf0a33edcaf3e5e4a54f7ad854af1ab115f16712a146fcfced10851a4",
       "model_sha256": "e5c2428f60c48e6edcc19462ace07f8223dc7f5aba027bed6c3387e84d12fc32",
-      "coverage_fraction": 0.9854368932038835,
-      "ray_samples": 3100
+      "coverage_fraction": 1.0,
+      "ray_samples": 3267
     },
     {
       "seed": 2,
-      "trajectory_sha256": "1cc70a766424ebc28977f92ed2574d7a75663d4a6035a89597849eb769a8497d",
+      "trajectory_sha256": "c4bbf949af89e45c0176a8a4a4a6e6bc68385c66a5488682417e0f31332667af",
       "model_sha256": "d9f6119fd93b4f6904fe9dde34f986b02d3ad3869d7aa63de583395b7e917671",
-      "coverage_fraction": 0.9982993197278912,
-      "ray_samples": 3284
+      "coverage_fraction": 0.9965986394557823,
+      "ray_samples": 3418
     },
     {
       "seed": 3,
-      "trajectory_sha256": "d28e32d6abc6bc5226bc8223bf99babe148e68c624b96b3e8408c0f6ff98450e",
+      "trajectory_sha256": "ec347af281aa48b1c0b4d41ae3d7270cca1156b8a7d4486529326c17a25c73f8",
       "model_sha256": "04b0e442833fc1763f5af7279f3ba888edfed4cee7964bdebc859e5d56660272",
-      "coverage_fraction": 0.9781553398058253,
-      "ray_samples": 3277
+      "coverage_fraction": 1.0,
+      "ray_samples": 3361
     },
     {
       "seed": 4,
-      "trajectory_sha256": "b3f403d15d9efbbb98ea1b011f0a22292797d181154aa0e9bd01feb343785bcd",
+      "trajectory_sha256": "c20dd7d72288741be77e367e05d975d73f57b614173af5f8de5bb23379a7ba8c",
       "model_sha256": "32fcae0aa5a83a82d5e9bd45d752e9780d0dbacb2075814d6920ec8b35ece5d8",
-      "coverage_fraction": 0.9805825242718447,
-      "ray_samples": 3392
+      "coverage_fraction": 0.9951456310679612,
+      "ray_samples": 3520
     },
     {
       "seed": 5,
-      "trajectory_sha256": "684b1d2b36791bc41336f963fe5fd5f082470ba4ace07b8f27e188355df1a3b9",
+      "trajectory_sha256": "39f9b2a78bcbfebfc630b4159d70b0fb1667d8d53010498aeae53ac69f079501",
       "model_sha256": "f5c165e2cb830dac8dcd22b6e8b2234872c61b6ade15c67afcf51d4a9f8c0eb0",
       "coverage_fraction": 1.0,
-      "ray_samples": 3288
+      "ray_samples": 3376
     },
     {
       "seed": 6,
-      "trajectory_sha256": "2332ce2df8b04f8f758dabbc92a25dd3063faea603943e4c659e6904c6bf8210",
+      "trajectory_sha256": "5b8bb8e1c48f2b7ea8abcc22c6bee70db9953afb6867250d11bd61c8fc226e6f",
       "model_sha256": "73e98100430674150f36a89d76131d69fbca567466adde6d7174763d3620c74b",
-      "coverage_fraction": 0.9854368932038835,
-      "ray_samples": 3157
+      "coverage_fraction": 1.0,
+      "ray_samples": 3333
     },
     {
       "seed": 7,
-      "trajectory_sha256": "ead89e75ff731347177790c6a5c3e2d33625459399da78764de8bad2b1d29563",
+      "trajectory_sha256": "69c840bfa69d279df0645c7ec92a679d333c73f80563f11f4e4c1822f9e765b2",
       "model_sha256": "ba82de123493075f4accc76494107a4726b5a37a4ffd7dfe8699bf1600c1d370",
-      "coverage_fraction": 0.9659863945578231,
-      "ray_samples": 3013
+      "coverage_fraction": 1.0,
+      "ray_samples": 3195
     },
     {
       "seed": 8,
-      "trajectory_sha256": "0cf8fe751140f2553b4ce75b81d2a6c4bf70b02751a48ff80dbfda7fd02ae68c",
+      "trajectory_sha256": "12e3fd66ea122c56b1843529a5be88992ad20417c4f015695368a7c316bc29a2",
       "model_sha256": "e63289ac010b74d971a20ac0eba42915467442de1310590a38e7077c3f14af5d",
-      "coverage_fraction": 0.982824427480916,
-      "ray_samples": 3187
+      "coverage_fraction": 1.0,
+      "ray_samples": 3277
     },
     {
       "seed": 9,
-      "trajectory_sha256": "255a472194c152101de6320a19fa5b9c96ab197e3b5928c82952a1f7fec52d21",
+      "trajectory_sha256": "9618c35f11ebb40c36e3348d2d6d8f5d13554e3fc8a0ac105b518e3bd1039df2",
       "model_sha256": "9a7689e850d161a2ee61ad42e46c3e0f81c651f51bace3343dffefd9bba126ab",
-      "coverage_fraction": 0.9965986394557823,
-      "ray_samples": 3138
+      "coverage_fraction": 1.0,
+      "ray_samples": 3235
     }
   ],
-  "history": [],
-  "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+  "history": [
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "复查过密的窄面双行、板件窄侧面覆盖、可安全连成 S 形的平行笔画，以及喷枪进入家具内部和构件间碎段的问题；按部件和 seed 修复，不以机器门禁通过代替人工验收。 全批共性要求：单道覆盖过窄面、补全外露板边、连接安全可喷的往复笔画；逐 seed 重审。",
+      "seed_issues": [
+        {
+          "seed": 0,
+          "note": "seed 0：30 mm 桌板窄面有双行；y 向两侧窄面无轨迹。"
+        }
+      ],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "ca4cfbd6f5613226e9bc410fcaca70744695361106426e55b9d1f0ee351151dd",
+          "model_sha256": "62733dbe11c5210fbaf726586cd1e964979df2f680f3caf489c41e663d788cb1",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3440
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "6236f0e1b49512d7c251fdee6aa38c86623532a34985bb3382ecaaf6e0cdd294",
+          "model_sha256": "e5c2428f60c48e6edcc19462ace07f8223dc7f5aba027bed6c3387e84d12fc32",
+          "coverage_fraction": 0.9854368932038835,
+          "ray_samples": 3100
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "1cc70a766424ebc28977f92ed2574d7a75663d4a6035a89597849eb769a8497d",
+          "model_sha256": "d9f6119fd93b4f6904fe9dde34f986b02d3ad3869d7aa63de583395b7e917671",
+          "coverage_fraction": 0.9982993197278912,
+          "ray_samples": 3284
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "d28e32d6abc6bc5226bc8223bf99babe148e68c624b96b3e8408c0f6ff98450e",
+          "model_sha256": "04b0e442833fc1763f5af7279f3ba888edfed4cee7964bdebc859e5d56660272",
+          "coverage_fraction": 0.9781553398058253,
+          "ray_samples": 3277
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "b3f403d15d9efbbb98ea1b011f0a22292797d181154aa0e9bd01feb343785bcd",
+          "model_sha256": "32fcae0aa5a83a82d5e9bd45d752e9780d0dbacb2075814d6920ec8b35ece5d8",
+          "coverage_fraction": 0.9805825242718447,
+          "ray_samples": 3392
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "684b1d2b36791bc41336f963fe5fd5f082470ba4ace07b8f27e188355df1a3b9",
+          "model_sha256": "f5c165e2cb830dac8dcd22b6e8b2234872c61b6ade15c67afcf51d4a9f8c0eb0",
+          "coverage_fraction": 1.0,
+          "ray_samples": 3288
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "2332ce2df8b04f8f758dabbc92a25dd3063faea603943e4c659e6904c6bf8210",
+          "model_sha256": "73e98100430674150f36a89d76131d69fbca567466adde6d7174763d3620c74b",
+          "coverage_fraction": 0.9854368932038835,
+          "ray_samples": 3157
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "ead89e75ff731347177790c6a5c3e2d33625459399da78764de8bad2b1d29563",
+          "model_sha256": "ba82de123493075f4accc76494107a4726b5a37a4ffd7dfe8699bf1600c1d370",
+          "coverage_fraction": 0.9659863945578231,
+          "ray_samples": 3013
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "0cf8fe751140f2553b4ce75b81d2a6c4bf70b02751a48ff80dbfda7fd02ae68c",
+          "model_sha256": "e63289ac010b74d971a20ac0eba42915467442de1310590a38e7077c3f14af5d",
+          "coverage_fraction": 0.982824427480916,
+          "ray_samples": 3187
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "255a472194c152101de6320a19fa5b9c96ab197e3b5928c82952a1f7fec52d21",
+          "model_sha256": "9a7689e850d161a2ee61ad42e46c3e0f81c651f51bace3343dffefd9bba126ab",
+          "coverage_fraction": 0.9965986394557823,
+          "ray_samples": 3138
+        }
+      ],
+      "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    }
+  ],
+  "reviewed_at": "2026-11-21T08:44:35.724075+00:00"
 }
