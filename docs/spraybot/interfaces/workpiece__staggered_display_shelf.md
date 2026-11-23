@@ -27,3 +27,8 @@
 
 - 人工审查提交 `8c28cdc8` 记录用户决定暂缓后续轨迹工作。`23a38bad` 将其从活跃批量生成和审计清单移出。
 - 已注册接口、模型、参数化描述与既有轨迹审查历史均保留；本轮无新轨迹产物，也不宣称修复或接受。
+
+## 2026-11-23：搁置状态形式化
+
+- 轨迹审查记录 [`workpiece__staggered_display_shelf.json`](../../../reviews/trajectories/workpiece__staggered_display_shelf.json) 的状态由 `needs_fix` 改为 `deferred`（搁置），正式区分"主动暂停投入"与"有缺陷待修"：本接口不再携带待修复缺陷清单，恢复时须先重建机器证据与配对轨迹再复审，旧结论不自动恢复。
+- 审查工具 `spraybot_trajectory_review.py` 与 Web 审查界面同步支持 `deferred`；状态语义见 [接口工作流](../interface-workflow.md) 第 5 节。

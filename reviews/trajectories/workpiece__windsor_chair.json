@@ -1,9 +1,9 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:windsor_chair",
-  "status": "needs_fix",
+  "status": "deferred",
   "reviewer": "hqb",
-  "notes": "该接口轨迹过于复杂，本轮暂停后续修复与复审；保留接口、模型、参数化描述和既有审查历史。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+  "notes": "主动搁置（deferred）：工件结构过于复杂，人工决定暂停该接口的后续轨迹修复与复审。与 needs_fix 不同，本状态不携带待修复缺陷清单；已注册接口、模型、参数化描述与既有审查历史保留。恢复时须先重建机器证据与配对轨迹再复审，旧结论不自动恢复。审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
   "seed_issues": [],
   "evidence": [
     {
@@ -245,7 +245,86 @@
         }
       ],
       "reviewed_at": "2026-11-21T06:36:18.463384+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "该接口轨迹过于复杂，本轮暂停后续修复与复审；保留接口、模型、参数化描述和既有审查历史。 审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
+      "seed_issues": [],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "957350f2c3b1fa1090930dcfee549c02bb0c63b602458f3d98f15096fb9d12a7",
+          "model_sha256": "79608e113f8cd41d6481b4433b8b64d902b87c9540b4e6b66109b340c09d2155",
+          "coverage_fraction": 0.9913344887348353,
+          "ray_samples": 1983
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "a2a07c02cc82917c7e08cc6815821a5798ff4607ef66e0c288f76025e14247c3",
+          "model_sha256": "4a595a04a5b8a115c256f8d09e017c0d565a14eff63c0e4b807ea996bccf5bb0",
+          "coverage_fraction": 0.9863013698630136,
+          "ray_samples": 1831
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "ccfef6e0b0680a8f2d26356dbf3c938b9d0dbfec0670a6909cb0ac803a05280f",
+          "model_sha256": "58abea2813ae61ccd4bf758dfa38845d91393a183f085ffdcf8206f6b2b47fb3",
+          "coverage_fraction": 0.9880774962742176,
+          "ray_samples": 1968
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "d604f56e07c4105af8dc91023220f4af40895374e099fa63db0d5b114625c6bf",
+          "model_sha256": "8266bf7ecdcfbf93f2c1428e4adf82c9b70d5eae6a2fff5ab592fee30140f240",
+          "coverage_fraction": 0.9925373134328358,
+          "ray_samples": 2187
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "7a3a63a789d19ea1b2a2b3b002294e2a25b8ce46f980d44de0f8397d3bae3753",
+          "model_sha256": "fa56356765f46f47ee89c504d3299fbd680f5ebb30581cdb907c9984e0cf0fd5",
+          "coverage_fraction": 0.993368700265252,
+          "ray_samples": 2426
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "354f4cfb091c722872c346a9a2cae0e7b3153261f8fbc3e80dd5861468c614ca",
+          "model_sha256": "bdace37195f6c5e4948e3ca844014c4ca037813b74777215f08e473c14bb6011",
+          "coverage_fraction": 0.9878682842287695,
+          "ray_samples": 1854
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "2c94a3ac9ad5cc05146facb81d97dc5b3159b4d085ba71a3e4ad59973e3058d0",
+          "model_sha256": "8a638cb3895a41fc3f3791bde8b6e1ce8eb914f26c042ce76b731b0ee5b4f29d",
+          "coverage_fraction": 0.9870689655172413,
+          "ray_samples": 1869
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "a9a7df4c96c6b4eaf527d1a0552f7074a20436ac1f1ebf3ecebb406760e5c447",
+          "model_sha256": "3b6af0fb599dfcba6ed29572f1d521c81e2fc6434e6f25388fb96f79551af132",
+          "coverage_fraction": 0.9927631578947368,
+          "ray_samples": 2245
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "30d0457b68c6efe8d02f2db306159f0ffa8653be15531ef2c29cd316c0a31534",
+          "model_sha256": "192ee38284e7d173a17c6d59711985c2e8fa1cd053e0e87ac6457d76fc973b0a",
+          "coverage_fraction": 0.9908675799086758,
+          "ray_samples": 2078
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "248fa6feb6e81a5043f1ea30e4b2081afb8372686f5dd8ff6ef09d93845b8818",
+          "model_sha256": "b75eb58b97f07f696dfb211ad87bd23d1ea1cf068844146be211e4051c9b4dcd",
+          "coverage_fraction": 0.9913941480206541,
+          "ray_samples": 2006
+        }
+      ],
+      "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T07:46:19.417037+00:00"
+  "reviewed_at": "2026-11-23T07:58:37.863789+00:00"
 }

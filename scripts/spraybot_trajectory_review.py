@@ -69,7 +69,7 @@ def read(interface_id: str, review_root: Path | None, trajectory_root: Path | No
 def save(request: dict, review_root: Path, trajectory_root: Path) -> Path:
     interface_id = request["interface_id"]
     status = request["status"]
-    if status not in {"pending", "accepted", "needs_fix"}:
+    if status not in {"pending", "accepted", "needs_fix", "deferred"}:
         raise ValueError("unknown trajectory review status")
     try:
         current = artifact_evidence(interface_id, review_root, trajectory_root)
@@ -90,8 +90,9 @@ def save(request: dict, review_root: Path, trajectory_root: Path) -> Path:
     if status == "accepted" and issues:
         raise ValueError("clear unresolved seed issues before accepting")
     old = read(interface_id, review_root, trajectory_root)
-    if status == "accepted" and old["status"] == "needs_fix" and old.get("evidence") == current:
-        raise ValueError("needs_fix requires a revised trajectory before acceptance")
+    if (status == "accepted" and old["status"] in {"needs_fix", "deferred"}
+            and old.get("evidence") == current):
+        raise ValueError("needs_fix or deferred requires a revised trajectory before acceptance")
     history = old.get("history", [])
     if old.get("reviewed_at"):
         history = [*history, {key: old.get(key) for key in

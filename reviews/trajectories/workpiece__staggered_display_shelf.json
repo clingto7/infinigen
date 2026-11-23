@@ -1,9 +1,9 @@
 {
   "schema": "spraybot.trajectory-review.v1",
   "interface_id": "workpiece:staggered_display_shelf",
-  "status": "needs_fix",
+  "status": "deferred",
   "reviewer": "hqb",
-  "notes": "用户决定暂缓该复杂工件的后续轨迹工作；保留现有模型接口、参数化审查和轨迹审查历史，不作为本轮修复或重新审查对象。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
+  "notes": "主动搁置（deferred）：工件结构过于复杂，人工决定暂停该接口的后续轨迹修复与复审。与 needs_fix 不同，本状态不携带待修复缺陷清单；已注册接口、模型、参数化描述与既有审查历史保留。恢复时须先重建机器证据与配对轨迹再复审，旧结论不自动恢复。审查对象：spraybot/trajectories-19-review5-23a38bad，规划代码 23a38bad；机器通过不代表人工接受。",
   "seed_issues": [],
   "evidence": [
     {
@@ -161,7 +161,86 @@
         }
       ],
       "reviewed_at": "2026-11-21T03:41:37.866755+00:00"
+    },
+    {
+      "status": "needs_fix",
+      "reviewer": "hqb",
+      "notes": "用户决定暂缓该复杂工件的后续轨迹工作；保留现有模型接口、参数化审查和轨迹审查历史，不作为本轮修复或重新审查对象。 审查对象：spraybot/trajectories-20-review4-b19008cd，规划代码 b19008cd；机器通过不代表人工接受。",
+      "seed_issues": [],
+      "evidence": [
+        {
+          "seed": 0,
+          "trajectory_sha256": "837248a70c5154287ba4ec6a7eadc5cd1fc83168dd01813282b4fd584cd7f261",
+          "model_sha256": "3e037d2a86ed28bbac752f4c1c27613f1a6a183fec0891ee6f1309542687da87",
+          "coverage_fraction": 0.6,
+          "ray_samples": 12176
+        },
+        {
+          "seed": 1,
+          "trajectory_sha256": "71de47f480d996afd5ed7b9a0b9a839b7a1b1f8df62f87bdbdaea6b12cd37d2b",
+          "model_sha256": "336b85947eb3f31d9cc2b60395188602eb6eea66f6d9a205046543b7b429f117",
+          "coverage_fraction": 0.6333333333333333,
+          "ray_samples": 12397
+        },
+        {
+          "seed": 2,
+          "trajectory_sha256": "a65d3368b5d12c92c79038c10e1d67a7f3308f41dc47ab8b521d5fef7ef817d1",
+          "model_sha256": "f0daa4b9d8251b563839601f853a46b72dbed15cc31a870b9113b93a80af0981",
+          "coverage_fraction": 0.6166666666666667,
+          "ray_samples": 11680
+        },
+        {
+          "seed": 3,
+          "trajectory_sha256": "7bc94d1024c75b4f3d178116a7cf45f0c6fe357bcaf62c760128d9d6e9c4691f",
+          "model_sha256": "10929242a90f7ed278820e156da2e0cde389e4b6cb0162652466836cccbaf90b",
+          "coverage_fraction": 0.6666666666666666,
+          "ray_samples": 13496
+        },
+        {
+          "seed": 4,
+          "trajectory_sha256": "9fe141c49cbd2ed8891c6db2c601582c125c84cbc6d86de22c7af2dc756c0ff2",
+          "model_sha256": "cc6d9a97cec281cb4d5637ecf660bd312138119a0ef61a7c318d36023c1a0cd9",
+          "coverage_fraction": 0.6333333333333333,
+          "ray_samples": 13128
+        },
+        {
+          "seed": 5,
+          "trajectory_sha256": "3cdc22087dd7361d3c747f7f31d7b219577691afd078774866dcba0474b22288",
+          "model_sha256": "5ce8c54a9e54cc0609f307e33215062885d752375f0c92065d088d63b67c310f",
+          "coverage_fraction": 0.6166666666666667,
+          "ray_samples": 12400
+        },
+        {
+          "seed": 6,
+          "trajectory_sha256": "a4cb7306a0cf5d9427d3b78e6cf333e02c64567491fff7072dd97df8de21b285",
+          "model_sha256": "bedb302384b9d6ed3edec7aa4791365882eb4064cd3ac71461875f0eaf074546",
+          "coverage_fraction": 0.6166666666666667,
+          "ray_samples": 12682
+        },
+        {
+          "seed": 7,
+          "trajectory_sha256": "21bf6ba670f4ca8a585eab214a31b80a0e3fd344b9ebbb1ae70a4acf337bd7d4",
+          "model_sha256": "a86e627ef416f94285bfbe56e70562c670caf54acc3516148f2c59ba1ae8b7bb",
+          "coverage_fraction": 0.625,
+          "ray_samples": 11881
+        },
+        {
+          "seed": 8,
+          "trajectory_sha256": "3d4419b9459d413dc602eeb7e85c43a86dd003ffece4708efb2ea10a35044b0c",
+          "model_sha256": "d6b44767d52f840dbd57a896bdfeca10f36ebf23ea717c40f34ca9edbd3fceb5",
+          "coverage_fraction": 0.6333333333333333,
+          "ray_samples": 12186
+        },
+        {
+          "seed": 9,
+          "trajectory_sha256": "18684302971a5b511712b681c23fc050db767ea6e600f0516b9c84411ad0dd87",
+          "model_sha256": "070fcc77c8ef708e276175ae4409b9fd957d909d072f8f72a2793bcf7fa2ce2a",
+          "coverage_fraction": 0.65,
+          "ray_samples": 13513
+        }
+      ],
+      "reviewed_at": "2026-11-21T06:36:18.462846+00:00"
     }
   ],
-  "reviewed_at": "2026-11-21T06:36:18.462846+00:00"
+  "reviewed_at": "2026-11-23T07:58:37.810762+00:00"
 }

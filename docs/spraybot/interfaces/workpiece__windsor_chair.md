@@ -28,3 +28,8 @@
 
 - 人工审查提交 `c07283ec` 记录用户决定暂停该复杂接口的后续轨迹工作；`8bb4440a` 将其从活跃批量生成和审计清单移出。
 - 已注册接口、模型、参数化描述与既有轨迹审查历史均保留；本轮没有新轨迹产物，也不宣称修复或接受。
+
+## 2026-11-23：搁置状态形式化
+
+- 轨迹审查记录 [`workpiece__windsor_chair.json`](../../../reviews/trajectories/workpiece__windsor_chair.json) 的状态由 `needs_fix` 改为 `deferred`（搁置），正式区分"主动暂停投入"与"有缺陷待修"：本接口不再携带待修复缺陷清单，恢复时须先重建机器证据与配对轨迹再复审，旧结论不自动恢复。剩余 18 条独立 `back` 短圆杆是否值得单独喷涂的问题随搁置一并冻结，不在活跃清单内。
+- 审查工具 `spraybot_trajectory_review.py` 与 Web 审查界面同步支持 `deferred`；状态语义见 [接口工作流](../interface-workflow.md) 第 5 节。
