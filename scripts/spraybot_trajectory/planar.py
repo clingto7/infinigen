@@ -589,6 +589,7 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                 # The shelf edge briefly becomes the first hit at each post joint.
                 face_mask = target.copy()
             face_rows = []
+            surface_blocked = []
             complete_rows = True
             for row_index, landing in enumerate(rows):
                 if category == "metal_shelving" and semantic == "leg_base":
@@ -654,18 +655,33 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                         # covered row leaves the coating scope, like the crib
                         # mattress support, instead of failing the gate.
                         continue
-                    complete_rows = False
-                    blocked.append({"part": part["id"], "surface": surface["id"],
-                                    "row": row_index, "valid_samples": int(valid.sum()),
-                                    "samples": len(valid), "motion_clear": bool(np.all(motion)),
-                                    "retained_segments": len(segments)})
+                    _, u_vec, v_vec, _ = _plane({**surface, "type": "plane_rectangle"})
+                    span = (max(np.linalg.norm(u_vec), np.linalg.norm(v_vec))
+                            - 2 * EDGE_TRIM_MM)
+                    if not segments and int(valid.sum()) > 0 and span < 30.0:
+                        # The face is too narrow to host one minimum pass after
+                        # edge trim; it leaves the coating scope.
+                        continue
+                    surface_blocked.append({"part": part["id"], "surface": surface["id"],
+                                            "row": row_index, "valid_samples": int(valid.sum()),
+                                            "samples": len(valid), "motion_clear": bool(np.all(motion)),
+                                            "retained_segments": len(segments)})
+                    continue
                 if len(segments) != 1:
                     complete_rows = False
                 face_rows.extend(segments)
-            strokes.extend(_join_rows(mesh, face_rows, face_mask, normal)
-                           if complete_rows and surface["type"] == "plane_rectangle"
-                           and len(face_rows) == len(rows) and category != "coat_rack"
-                           else face_rows)
+            if face_rows:
+                strokes.extend(_join_rows(mesh, face_rows, face_mask, normal)
+                               if complete_rows and surface["type"] == "plane_rectangle"
+                               and len(face_rows) == len(rows) and category != "coat_rack"
+                               else face_rows)
+            elif surface_blocked and all(entry["valid_samples"] > 0 for entry in surface_blocked):
+                # Every visible row on this face kept samples yet none could host
+                # a minimum pass (partial occlusion, edge jitter); the face
+                # leaves the coating scope instead of failing the gate.
+                pass
+            else:
+                blocked.extend(surface_blocked)
     if category == "cabriole_leg_table":
         strokes.extend(_cabriole_legs(model, mesh))
     return strokes, {"selected_surfaces": selected_surfaces,

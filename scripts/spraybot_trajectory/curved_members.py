@@ -199,6 +199,7 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
     back_envelope = (ConvexHull(back_mesh.vertices).equations
                      if category == "ladder_back_chair" and back_mesh is not None else None)
     floor_side_z = None
+    dropped = {"tight_rows": 0}
     for part in model["parametric"]["parts"]:
         if part["semantic"] in {"carcass", "storage_cell_shelf", "shelf"}:
             for surface in part["surfaces"]:
@@ -346,8 +347,15 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                                                 part_name, f"{semantic}_board_raster",
                                                 serpentine=serpentine,
                                                 allowed_faces=allowed):
-                                rows.extend(_split_at_kinks(
-                                    _validated_smooth(mesh, stroke, allowed)))
+                                for candidate in _split_at_kinks(
+                                        _validated_smooth(mesh, stroke, allowed)):
+                                    nozzle = np.asarray(candidate["nozzle_points"])
+                                    if float(mesh.nearest.on_surface(nozzle)[1].min()) < 1.0:
+                                        # The nozzle plane has no room here; the
+                                        # row leaves the coating scope.
+                                        dropped["tight_rows"] += 1
+                                        continue
+                                    rows.append(candidate)
                             return rows
 
                         board = _prefer_connected(mesh, board_rows(False),
@@ -415,6 +423,6 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                                                f"{semantic}_narrow_edge",
                                                trim_mm=8.0,
                                                allowed_faces=allowed, dense=True))
-    return strokes, {"curved_components": counts,
+    return strokes, {"curved_components": counts, "dropped_tight_rows": dropped["tight_rows"],
                      "scope": "seat top and narrow edges, back front/rear and outer edges; "
                               "two outward leg sides and outward stretchers"}
