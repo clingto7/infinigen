@@ -2,16 +2,30 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from spraybot_trajectory.armchair import corners, face_mask, member_line, samples, smooth_stroke, surface_components, sweep
+from spraybot_trajectory.armchair import corners, face_mask, majority_part_name, member_line, samples, smooth_stroke, surface_components, sweep
 from spraybot_trajectory.path_checks import check_exported_rays, clear_motion
 
 
 CURVED_WORKPIECES = {
     "backed_bench", "backless_bench", "bar_chair", "ladder_back_chair", "windsor_chair",
+    "rocking_chair",
+    "bookcase_with_doors", "corner_cabinet", "desk_with_hutch", "dressing_table",
+    "kitchen_island", "nightstand", "sideboard", "sliding_door_cabinet",
+    "storage_bench", "tv_stand", "wall_cabinet",
 }
+
+# Swept-box board semantics from the cabinet and storage families. Each exposed
+# side of a swept board is rastered once, facing away from the object center.
+CABINET_BOARD_SEMANTICS = {"carcass", "storage_cell_shelf", "door_frame", "door_panel",
+                           "drawer_front", "back_panel", "shelf", "top", "frame"}
+
+# Parametric semantic names that differ from the shared part legend.
+SEMANTIC_TO_PART = {"storage_cell_shelf": "shelf"}
 
 
 def _exported_rays_clear(mesh, stroke: dict, allowed_faces: np.ndarray) -> bool:
@@ -55,6 +69,42 @@ def _outside_back_envelope(rows: list[dict], equations: np.ndarray) -> list[dict
         retained.append({**row, "surface_points": surface[start:stop].tolist(),
                          "nozzle_points": nozzle[start:stop].tolist()})
     return retained
+
+
+def _validated_smooth(mesh, stroke: dict, allowed: np.ndarray) -> dict:
+    """Round a stroke only if the rounded export stays clear; else keep it raw."""
+    smoothed = smooth_stroke(stroke, passes=8, landing=False)
+    nozzle = np.asarray(smoothed["nozzle_points"])
+    travel = np.diff(nozzle, axis=0)
+    length = np.linalg.norm(travel, axis=1)
+    if np.any(length < 1):
+        return stroke
+    heading = travel / length[:, None]
+    if np.any(np.sum(heading[:-1] * heading[1:], axis=1) < np.cos(np.deg2rad(45))):
+        return stroke
+    if not _exported_rays_clear(mesh, smoothed, allowed) or not np.all(clear_motion(mesh, nozzle)):
+        return stroke
+    return smoothed
+
+
+def _split_at_kinks(stroke: dict) -> list[dict]:
+    """Split one stroke at abrupt heading changes instead of forcing the join."""
+    pts = np.asarray(stroke["surface_points"])
+    nozzle = np.asarray(stroke["nozzle_points"])
+    travel = np.diff(nozzle, axis=0)
+    length = np.linalg.norm(travel, axis=1)
+    if np.any(length < 1e-9) or len(pts) < 3:
+        return [stroke]
+    unit = travel / length[:, None]
+    turn = np.sum(unit[:-1] * unit[1:], axis=1) < np.cos(np.deg2rad(45))
+    if not np.any(turn):
+        return [stroke]
+    cuts = np.flatnonzero(turn)
+    starts = np.r_[0, cuts + 1]
+    stops = np.r_[cuts + 1, len(pts)]
+    return [{**stroke, "surface_points": pts[start:stop].tolist(),
+             "nozzle_points": nozzle[start:stop].tolist()}
+            for start, stop in zip(starts, stops) if stop - start >= 2]
 
 
 def _prefer_connected(mesh, separate: list[dict], connected: list[dict],
@@ -148,9 +198,23 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
     back_mesh = mesh.submesh([back_faces], append=True, repair=False) if len(back_faces) else None
     back_envelope = (ConvexHull(back_mesh.vertices).equations
                      if category == "ladder_back_chair" and back_mesh is not None else None)
+    floor_side_z = None
+    for part in model["parametric"]["parts"]:
+        if part["semantic"] in {"carcass", "storage_cell_shelf", "shelf"}:
+            for surface in part["surfaces"]:
+                if "corners" in surface["geometry"]:
+                    low = float(np.min(np.asarray(surface["geometry"]["corners"])[:, 2])) * 1000
+                    floor_side_z = low if floor_side_z is None else min(floor_side_z, low)
+    # Swept cabinet boards meet carcass/back-panel skins at shallow joints; the
+    # 5 mm export sampling may see the neighbor skin first, so board strokes
+    # accept a first hit on any target face inside the standoff window.
+    target_part_names = [name for name_id, name in model["part_legend"].items()
+                         if np.any((np.asarray(model["part_id"]) == int(name_id))
+                                   & np.asarray(model["spray_target"], dtype=bool))]
     for part in model["parametric"]["parts"]:
         semantic = "leg_base" if part["semantic"] == "storage_grid_legs" else part["semantic"]
-        if semantic not in counts or part["surfaces"][0]["type"] not in {"sweep_quad", "sweep_cap"}:
+        if (semantic not in counts and semantic not in CABINET_BOARD_SEMANTICS) or \
+                part["surfaces"][0]["type"] not in {"sweep_quad", "sweep_cap"}:
             continue
         for component in surface_components(part):
             points, normals = samples(component, target)
@@ -161,7 +225,8 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
             position = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
             center = points.mean(axis=0)
             allowed = face_mask(mesh, component)
-            counts[semantic] += 1
+            counts[semantic] = counts.get(semantic, 0) + 1
+            part_name = majority_part_name(model, component) or SEMANTIC_TO_PART.get(semantic, semantic)
             if semantic == "seat":
                 along = int(np.argmax(extent[:2]))
                 across = 1 - along
@@ -200,6 +265,97 @@ def plan_curved_members(model: dict, mesh) -> tuple[list[dict], dict]:
                         connected = _prefer_connected(mesh, separate, back_rows(True), allowed)
                     strokes.extend(connected)
                 edge_directions = [np.array([0.0, float(sign), 0.0]) for sign in (-1, 1)]
+            elif semantic == "door_frame":
+                # A rectangular frame is four narrow bars; rastering across the
+                # corner of two perpendicular bars bends the stroke. One
+                # lengthwise pass per exposed face of each bar instead.
+                counts[semantic] = counts.get(semantic, 0) + 1
+                comp_center = np.vstack([corners(s) for s in component]).mean(axis=0) * 1000
+                bars = defaultdict(list)
+                for surface in component:
+                    quad = corners(surface) * 1000
+                    extent = np.ptp(quad, axis=0)
+                    bar_axis = int(np.argmax(extent))
+                    others = [other for other in range(3) if other != bar_axis]
+                    other = others[int(np.argmax(extent[others]))]
+                    offset = quad.mean(axis=0)[other] - comp_center[other]
+                    bars[(bar_axis, other, int(np.sign(offset) or 1))].append(surface)
+                for group in bars.values():
+                    g_points, g_normals = samples(group, target)
+                    if len(g_points) < 2:
+                        continue
+                    g_allowed = face_mask(mesh, group)
+                    dominant = np.argmax(np.abs(g_normals), axis=1)
+                    for axis in range(3):
+                        for sign in (1.0, -1.0):
+                            facing = (dominant == axis) & (g_normals[:, axis] * sign > 0.3)
+                            if facing.sum() < 4:
+                                continue
+                            side = g_points[facing]
+                            direction = np.eye(3)[axis] * sign
+                            if np.dot(direction, side.mean(axis=0) - object_center) <= 0:
+                                continue
+                            lines = member_line(mesh, group, direction, "door_frame",
+                                                "door_frame_bar", trim_mm=8.0,
+                                                allowed_faces=g_allowed, dense=True)
+                            for line in lines:
+                                line["allowed_parts"] = list(target_part_names)
+                            strokes.extend(lines)
+            elif semantic in CABINET_BOARD_SEMANTICS:
+                # One raster per exposed side of a swept board; inward and
+                # floor-side faces stay out of the coating scope.
+                dominant = np.argmax(np.abs(normals), axis=1)
+                for axis in range(3):
+                    for sign in (1.0, -1.0):
+                        facing = (dominant == axis) & (normals[:, axis] * sign > 0.3)
+                        if facing.sum() < 6:
+                            continue
+                        side = points[facing]
+                        direction = np.eye(3)[axis] * sign
+                        if np.dot(direction, side.mean(axis=0) - object_center) <= 0:
+                            continue
+                        if (semantic in {"carcass", "storage_cell_shelf"} and axis == 2
+                                and sign < 0 and floor_side_z is not None
+                                and float(side[:, 2].min()) <= floor_side_z + 5):
+                            # Floor-side bottom face cannot be sprayed in assembly.
+                            continue
+                        if axis == 2 and sign > 0:
+                            # An upward face needs real standoff room above the
+                            # nozzle plane; skip faces built under a fixed top
+                            # or under a board edge that grazes the nozzle plane.
+                            probes = side[::max(1, len(side) // 12)] + np.array([0.0, 0.0, 120.0])
+                            ups = np.tile(np.array([0.0, 0.0, 1.0]), (len(probes), 1))
+                            nearest = float(mesh.nearest.on_surface(probes)[1].min())
+                            overhead = np.inf
+                            hits, ray_ids, _ = mesh.ray.intersects_location(
+                                probes, ups, multiple_hits=False)
+                            if len(ray_ids):
+                                overhead = float(np.min(
+                                    np.linalg.norm(hits - probes[ray_ids], axis=1)))
+                            if min(nearest, overhead) < 10.0:
+                                continue
+                        others = [other for other in range(3) if other != axis]
+                        side_extent = np.ptp(side, axis=0)
+                        along = others[int(np.argmax(side_extent[others]))]
+                        across = others[1 - int(np.argmax(side_extent[others]))]
+
+                        def board_rows(serpentine):
+                            rows = []
+                            for stroke in sweep(mesh, points, normals, center,
+                                                np.eye(3), direction, across, along,
+                                                part_name, f"{semantic}_board_raster",
+                                                serpentine=serpentine,
+                                                allowed_faces=allowed):
+                                rows.extend(_split_at_kinks(
+                                    _validated_smooth(mesh, stroke, allowed)))
+                            return rows
+
+                        board = _prefer_connected(mesh, board_rows(False),
+                                                  board_rows(True), allowed)
+                        for stroke in board:
+                            stroke["allowed_parts"] = list(target_part_names)
+                        strokes.extend(board)
+                edge_directions = []
             else:
                 branches = [component]
                 if (category in {"backed_bench", "backless_bench"} and extent[1] > 180

@@ -148,6 +148,17 @@ def face_mask(mesh, surfaces):
     return mask
 
 
+def majority_part_name(model, surfaces):
+    """Legend name of the faces behind these parametric surfaces, for stroke labels."""
+    ids = [index for surface in surfaces
+           for index in surface['mesh_mapping']['construction_triangle_ids']]
+    if not ids:
+        return None
+    face_parts = np.asarray(model['part_id'])
+    values, counts = np.unique(face_parts[np.asarray(ids, dtype=int)], return_counts=True)
+    return model['part_legend'][str(int(values[int(np.argmax(counts))]))]
+
+
 def smooth_stroke(stroke, passes=16, landing=True):
     """Round the nozzle and landing polyline together, preserving every sample."""
     surface = np.asarray(stroke['surface_points'], dtype=float)

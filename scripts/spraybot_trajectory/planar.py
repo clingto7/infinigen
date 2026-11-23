@@ -24,6 +24,20 @@ EDGE_TRIM_MM = 25.0
 JOIN_GUARD_SAMPLES = 1
 MIN_ROW_MM = 65.0
 
+# Parametric semantic names that differ from the shared part legend.
+SEMANTIC_TO_PART = {"storage_cell_shelf": "shelf"}
+
+
+def majority_part_name(model, surfaces):
+    """Legend name of the faces behind these parametric surfaces, for stroke labels."""
+    ids = [index for surface in surfaces
+           for index in surface["mesh_mapping"]["construction_triangle_ids"]]
+    if not ids:
+        return None
+    face_parts = np.asarray(model["part_id"])
+    values, counts = np.unique(face_parts[np.asarray(ids, dtype=int)], return_counts=True)
+    return model["part_legend"][str(int(values[int(np.argmax(counts))]))]
+
 
 @dataclass(frozen=True)
 class SurfacePolicy:
@@ -46,6 +60,10 @@ PLANAR_WORKPIECES = {
         "folding_chair", "folding_table", "hairpin_leg_table",
         "ladder_back_chair", "serving_cart", "trestle_table", "workbench",
         "coat_rack",
+        "bookcase_with_doors", "corner_cabinet", "desk_with_hutch",
+        "dressing_table", "kitchen_island", "nightstand", "rocking_chair",
+        "sideboard", "sliding_door_cabinet", "storage_bench", "tv_stand",
+        "wall_cabinet",
     )},
 }
 
@@ -90,14 +108,15 @@ def _selected(surface: dict, semantic: str, target: np.ndarray,
         return False
     if semantic in {"top", "seat"}:
         return normal[2] > 0.8 or max(abs(normal[0]), abs(normal[1])) > 0.8
-    if semantic == "shelf":
+    if semantic in {"shelf", "storage_cell_shelf"}:
         return abs(normal[2]) > 0.8 or np.linalg.norm(normal[:2]) > 0.8
     if semantic == "slat" and category == "ladder_back_chair":
         return abs(normal[0]) > 0.8
     if semantic in {"back_panel", "back"}:
         return abs(normal[0]) > 0.8 or (abs(normal[1]) > 0.8 and
                                        np.dot(normal, center - object_center) > 0)
-    if semantic in {"frame", "carcass", "leg_base", "slat"}:
+    if semantic in {"frame", "carcass", "leg_base", "slat",
+                    "door_frame", "door_panel", "drawer_front"}:
         radial = center - object_center
         radial /= max(np.linalg.norm(radial), 1.0)
         return np.dot(normal, radial) > 0.2 or (normal[2] > 0.8 and semantic == "frame"
@@ -383,6 +402,9 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                 continue
             origin, u, v, _ = _plane({**surface, "type": "plane_rectangle"})
             corners.extend((origin, origin + u, origin + v, origin + u + v))
+    if not corners:
+        # Fully swept interfaces plan in curved_members; nothing to select here.
+        return [], {"blocked_rows": [], "selected_surfaces": 0}
     bounds = np.asarray(corners)
     object_center = (bounds.min(axis=0) + bounds.max(axis=0)) / 2
     envelope_equations = (ConvexHull(np.asarray(mesh.vertices)).equations
@@ -538,15 +560,24 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
             selected_surfaces += 1
             edge_trim = (10.0 if category in {"cabriole_leg_table", "trestle_table"}
                          and semantic == "leg_base" else EDGE_TRIM_MM)
-            minimum_segment = (30.0 if category in {"cabriole_leg_table", "trestle_table"}
-                               and semantic == "leg_base" else MIN_ROW_MM)
-            if category in {"corner_shelf", "ladder_shelf", "metal_shelving", "workbench"} and semantic == "shelf" and normal[2] < -0.8:
-                shelf_bottoms = [min(_plane({**other, "type": "plane_rectangle"})[0][2]
-                                     for other in item["surfaces"]
-                                     if other["type"] in {"plane_rectangle", "plane_triangle"})
-                                 for item in model["parametric"]["parts"] if item["semantic"] == "shelf"]
-                if (category == "workbench" or min(shelf_bottoms) >=
-                        _plane({**surface, "type": "plane_rectangle"})[0][2] - 1):
+            minimum_segment = 30.0 if semantic == "leg_base" else MIN_ROW_MM
+            if (category in {"corner_shelf", "ladder_shelf", "metal_shelving", "workbench",
+                             "bookcase_with_doors", "corner_cabinet", "desk_with_hutch",
+                             "dressing_table", "kitchen_island", "nightstand", "sideboard",
+                             "sliding_door_cabinet", "storage_bench", "tv_stand",
+                             "wall_cabinet"}
+                    and semantic in {"shelf", "storage_cell_shelf"} and normal[2] < -0.8):
+                shelf_bottoms = []
+                for item in model["parametric"]["parts"]:
+                    if item["semantic"] not in {"shelf", "storage_cell_shelf"}:
+                        continue
+                    bottoms = [_plane({**other, "type": "plane_rectangle"})[0][2]
+                               for other in item["surfaces"]
+                               if other["type"] in {"plane_rectangle", "plane_triangle"}]
+                    if bottoms:
+                        shelf_bottoms.append(min(bottoms))
+                if shelf_bottoms and (category == "workbench" or min(shelf_bottoms) >=
+                                      _plane({**surface, "type": "plane_rectangle"})[0][2] - 1):
                     continue
             rows = (_rectangle_rows(surface, edge_trim)
                     if surface["type"] == "plane_rectangle"
@@ -602,7 +633,8 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                 motion = clear_motion(mesh, nozzle)
                 segments = split_runs(
                     mesh, landing, nozzle, guarded,
-                    f"{part['id']}:{surface['id']}:row_{row_index}", semantic,
+                    f"{part['id']}:{surface['id']}:row_{row_index}",
+                    majority_part_name(model, [surface]) or SEMANTIC_TO_PART.get(semantic, semantic),
                     allowed_faces=face_mask,
                 )
                 segments = [segment for segment in segments
@@ -616,6 +648,12 @@ def plan_planar_faces(model: dict, mesh) -> tuple[list[dict], dict]:
                         segment["allowed_parts"] = (["leg_base", "shelf"] if category == "metal_shelving"
                                                      else ["leg_base", "shelf", "frame"])
                 if not np.all(valid) or not np.all(motion) or not segments:
+                    if semantic == "top" and abs(normal[2]) > 0.8 and not np.all(motion):
+                        # A horizontal top row whose nozzle travel is blocked
+                        # sits under another component (hutch, riser); that
+                        # covered row leaves the coating scope, like the crib
+                        # mattress support, instead of failing the gate.
+                        continue
                     complete_rows = False
                     blocked.append({"part": part["id"], "surface": surface["id"],
                                     "row": row_index, "valid_samples": int(valid.sum()),
