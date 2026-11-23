@@ -1,14 +1,22 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:sliding_door_cabinet",
-  "status": "awaiting_review",
+  "status": "ready",
   "machine_gate": {
     "status": "passed",
-    "sha256": "bf7b410ce4d5af5d800b614748b2792ce7f2aa6b94a65400ac60d012adf683d6",
+    "sha256": "d614d1f191ad2e46ca12b143b6b013a8c7bf34bd7328a26e1ee45d31fab47cd6",
     "source_commit": null,
     "geometry_episodes": 20,
     "invariance_seeds": 20,
-    "recorded_at": "2026-11-15T12:31:56.719778+00:00"
+    "recorded_at": "2026-11-23T15:48:39.459327+00:00"
   },
-  "human_review": null
+  "human_review": {
+    "status": "accepted",
+    "reviewer": "hqb",
+    "notes": "2026-11-23 人工审查通过：10 seed 几何、逐面字段与参数化叠层复查无问题；把手为部件策略排除（非喷涂目标），玻璃为材料排除；机器证据 /sfs/hqb/parametric-evidence/furniture12-20seed-eff0fe3d（20 seed 门禁+捕获不变性）。",
+    "field_issues": [],
+    "seed_issues": [],
+    "interface_id": "workpiece:sliding_door_cabinet",
+    "reviewed_at": "2026-11-23T15:48:39.459444+00:00"
+  }
 }

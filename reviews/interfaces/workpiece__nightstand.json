@@ -1,14 +1,22 @@
 {
   "schema": "spraybot.interface-review.v1",
   "interface_id": "workpiece:nightstand",
-  "status": "awaiting_review",
+  "status": "ready",
   "machine_gate": {
     "status": "passed",
-    "sha256": "0d6b9b0ce41e3e1d6df8d5feabca5bc89aa7e932790dd42525bb239941308a11",
+    "sha256": "fa200d8db34b9c2fcebc37f80429febab82cc0e2b0c51de88297dbdcac494aaa",
     "source_commit": null,
     "geometry_episodes": 20,
     "invariance_seeds": 20,
-    "recorded_at": "2026-11-15T12:31:56.718781+00:00"
+    "recorded_at": "2026-11-23T15:48:39.457902+00:00"
   },
-  "human_review": null
+  "human_review": {
+    "status": "accepted",
+    "reviewer": "hqb",
+    "notes": "2026-11-23 人工审查通过：10 seed 几何、逐面字段与参数化叠层复查无问题；把手为部件策略排除（非喷涂目标），玻璃为材料排除；机器证据 /sfs/hqb/parametric-evidence/furniture12-20seed-eff0fe3d（20 seed 门禁+捕获不变性）。",
+    "field_issues": [],
+    "seed_issues": [],
+    "interface_id": "workpiece:nightstand",
+    "reviewed_at": "2026-11-23T15:48:39.458024+00:00"
+  }
 }

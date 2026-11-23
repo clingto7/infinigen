@@ -128,6 +128,54 @@
     "workpiece:trestle_table": {
       "parametric_schema": "spraybot.parametric.v1",
       "tested_seeds": 20
+    },
+    "workpiece:bookcase_with_doors": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:corner_cabinet": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:desk_with_hutch": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:dressing_table": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:kitchen_island": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:nightstand": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:rocking_chair": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:sideboard": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:sliding_door_cabinet": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:storage_bench": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:tv_stand": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
+    },
+    "workpiece:wall_cabinet": {
+      "parametric_schema": "spraybot.parametric.v3",
+      "tested_seeds": 20
     }
   }
 }

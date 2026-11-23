@@ -386,3 +386,5 @@ parameter set on every small source patch.
 Native output remains a candidate until the same 20-seed geometry, independent
 consumer, and capture-invariance gates pass. Manual Web review opens only
 after all 100 registered interfaces complete those automatic checks.
+
+2026-11-23 补充：柜体批次 12 个接口（`bookcase_with_doors`、`corner_cabinet`、`desk_with_hutch`、`dressing_table`、`kitchen_island`、`nightstand`、`rocking_chair`、`sideboard`、`sliding_door_cabinet`、`storage_bench`、`tv_stand`、`wall_cabinet`）各通过 20-seed 参数化几何门禁与捕获不变性检查（20/20 seed），生成接口审查 `ready`，已加入参数化就绪清单（schema `spraybot.parametric.v3`）。证据批次位于 spraybot 服务器共享盘 `/sfs/hqb/parametric-evidence/furniture12-20seed-eff0fe3d`（源码提交 `eff0fe3d`）；正式就绪集合以 `scripts/spraybot_parametric_readiness.json` 为准。
