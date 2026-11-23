@@ -37,14 +37,22 @@ def main():
     parser.add_argument('--count', type=int, default=10)
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--timeout', type=int, default=300)
+    parser.add_argument('--categories', nargs='+', metavar='ID',
+                        help='limit to these interface IDs; bare workpiece names are accepted')
     args = parser.parse_args()
     if min(args.count, args.workers, args.timeout) < 1:
         parser.error('count, workers, timeout must be positive')
     from spraybot_generator_ui_server import GENERATORS
+    categories = ({value if ':' in value else f'workpiece:{value}'
+                   for value in args.categories} if args.categories else None)
+    unknown = sorted(categories - {item['id'] for item in GENERATORS}) if categories else []
+    if unknown:
+        parser.error(f'unknown categories: {", ".join(unknown)}')
     root = ensure(args.output)
     logs = root / 'run-logs'
     logs.mkdir(exist_ok=True)
-    jobs = [(item, seed) for seed in range(args.count) for item in GENERATORS]
+    jobs = [(item, seed) for seed in range(args.count) for item in GENERATORS
+            if categories is None or item['id'] in categories]
     results = []
     save_lock = Lock()
 
