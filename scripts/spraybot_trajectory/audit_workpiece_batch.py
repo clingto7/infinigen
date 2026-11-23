@@ -11,11 +11,9 @@ from spraybot_trajectory.pair_workpiece import _check_paintds
 
 
 CATEGORIES = (
-    "corner_shelf", "ladder_shelf", "metal_shelving",
-    "backed_bench", "backless_bench", "bar_chair", "armchair",
-    "folding_chair", "ladder_back_chair",
-    "cabriole_leg_table", "corner_desk", "folding_table", "hairpin_leg_table",
-    "trestle_table", "workbench", "crib", "coat_rack", "serving_cart",
+    "bookcase_with_doors", "corner_cabinet", "desk_with_hutch", "dressing_table",
+    "kitchen_island", "nightstand", "rocking_chair", "sideboard",
+    "sliding_door_cabinet", "storage_bench", "tv_stand", "wall_cabinet",
 )
 
 
