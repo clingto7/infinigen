@@ -18,13 +18,23 @@
 
 spraybot 服务器（ModelArts 实例）的原 `/home/ma-user/ws/` 用户空间证据已被实例回收；
 项目部署与后续证据统一放在共享盘 `/sfs/hqb/`：代码在 `/sfs/hqb/infinigen-spray`
-（Git HEAD `fe3bc4b6`，与本仓库 origin/main 同步；实例无法直连 GitHub，用 rsync 从本机同步），
+（与本仓库 origin/main 同步；实例无法直连 GitHub，用 rsync 从本机同步），
 Python 环境在 `/sfs/hqb/envs/infinigen`（conda prefix，Python 3.11.18，按 Dockerfile 依赖
-`pip install -e ".[dev]"` 安装，pip 走华为云镜像）。运行方式：
-`/sfs/hqb/envs/infinigen/bin/python`，脚本类调用加 `PYTHONPATH=scripts`。
-2026-11-23 冒烟通过：bpy 4.2.0 headless 导入、`coat_rack` seed 0 真实生成、
-`spraybot_trajectory` 与审查模块导入均正常。生成不是跨平台位级可复现的，
+`pip install -e ".[dev]"` 安装，pip 走华为云镜像；2026-11-25 为运行三个原生接口
+（`car_bumper`、`opus_chair`、`infinigen_chair`）补装 infinigen1 可选组依赖
+`gin-config`、`networkx`、`scikit-learn`、`psutil`、`geomdl`、`scikit-image`、`coacd`、
+`landlab`、`pyrender`，系统补 `libglu1-mesa`——缺它们时原生接口在 terrain 导入链上
+段错误或挂起）。运行方式：`/sfs/hqb/envs/infinigen/bin/python`，脚本类调用加
+`PYTHONPATH=scripts`。2026-11-23 冒烟通过：bpy 4.2.0 headless 导入、`coat_rack` seed 0
+真实生成、`spraybot_trajectory` 与审查模块导入均正常。生成不是跨平台位级可复现的，
 证据哈希只对产出主机有效，见 [接口工作流](interface-workflow.md) 第 6 节。
+
+2026-11-25 起 `workpiece:` 注册表全部 79 个接口的模型与参数化描述（各 10 seed）已在
+服务器生成完毕，分布在四个 review root：`accepted18-reproduction-9031a8b6`（18 个已审核
+接口的复现浏览版）、`furniture12-seeds10-eff0fe3d`（柜体批次 12）、
+`batch3-8seeds10-9031a8b6`（柜体收尾+壳体管件 17）、`backlog-workpiece-9031a8b6`
+（其余 32，含搁置 2、已认证 5、原生 3、被排除候选 7、剩余壳体 15）。原生 3 个为
+`candidate`（其认证走原生校验路径）；旧入口 `spraybot:` 21 类无参数化捕获，未生成。
 
 轨迹生成结果的展示汇总（18 接口 × 5 新 seed × 参数化/轨迹八视角图）见飞书文档
 "轨迹生成结果汇总"（wiki `EiwLwVY9Ci9Rf7k0fV3c1JQInAj`）。
